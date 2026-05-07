@@ -1,0 +1,191 @@
+﻿/* ------ Container --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+.visitor-types-container {
+  padding: 0;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.item-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-default, #e5e7eb);
+  border-radius: 0.875rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.item-card:hover {
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+  transform: translateY(-2px);
+}
+
+.card-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #374151);
+  line-height: 1.4;
+}
+
+.card-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.req {
+  color: #dc2626;
+}
+
+.selected-field-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.selected-field-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ------ Hint box (create mode) ------------------------------------------------------------------------------------------------------------------------------------------------------ */
+.dlg-hint-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 0.75rem;
+  font-size: 0.82rem;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.dlg-hint-box i {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+/* ------ Custom fields list ------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+.fields-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.25rem;
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.875rem;
+  justify-content: center;
+}
+
+.fields-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-default, #e5e7eb);
+  border-radius: 0.75rem;
+  background: var(--bg-card-hover, #f9fafb);
+  transition: border-color 0.15s;
+}
+
+.field-row:hover {
+  border-color: #c7d2fe;
+}
+
+.field-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.field-row-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-row-meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.field-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.field-chip-type {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+.field-chip-required {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.field-chip-optional {
+  background: rgba(100, 116, 139, 0.1);
+  color: #475569;
+}
+
+.field-chip-vis {
+  background: rgba(13, 148, 136, 0.1);
+  color: #0f766e;
+}
+
+.field-chip-system {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.field-row-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+/* ------ Responsive ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  .selected-field-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

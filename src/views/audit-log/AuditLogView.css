@@ -1,0 +1,26 @@
+﻿.audit-log-container {
+  padding: 0;
+}
+
+.icon-wrapper {
+  width: 4rem;
+  height: 4rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(13, 148, 136, 0.15));
+  border-radius: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--blue-primary, #2563eb);
+}
+
+pre {
+  font-family: 'Courier New', monospace;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+code {
+  font-family: 'Courier New', monospace;
+}
+

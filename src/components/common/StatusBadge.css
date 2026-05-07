@@ -1,0 +1,47 @@
+:deep(.status-badge) {
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+:deep(.badge-small) {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+}
+
+:deep(.badge-normal) {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+:deep(.p-tag) {
+  border: none;
+}
+
+:deep(.p-tag.p-tag-success) {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+}
+
+:deep(.p-tag.p-tag-warn) {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #78350f;
+}
+
+:deep(.p-tag.p-tag-warning) {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #78350f;
+}
+
+:deep(.p-tag.p-tag-danger) {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #7f1d1d;
+}
+
+:deep(.p-tag.p-tag-info) {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #0c2340;
+}

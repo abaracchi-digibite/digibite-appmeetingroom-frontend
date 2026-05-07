@@ -1,0 +1,42 @@
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import PrimeVue from 'primevue/config'
+import Aura from '@primevue/themes/aura'
+import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
+import DialogService from 'primevue/dialogservice'
+import Tooltip from 'primevue/tooltip'
+
+import App from './App.vue'
+import router from './router'
+import i18n from './i18n'
+import '@/assets/styles/main.css'
+
+const app = createApp(App)
+
+// Core Plugins
+app.use(createPinia())
+app.use(router)
+app.use(i18n)
+
+// PrimeVue Setup
+app.use(PrimeVue, {
+  theme: {
+    preset: Aura,
+    options: {
+      prefix: 'p',
+      darkModeSelector: '.dark',
+      cssLayer: false,
+    },
+  },
+})
+
+// PrimeVue Services
+app.use(ToastService)
+app.use(ConfirmationService)
+app.use(DialogService)
+
+// PrimeVue Directives (globally available: v-tooltip, etc.)
+app.directive('tooltip', Tooltip)
+
+app.mount('#app')

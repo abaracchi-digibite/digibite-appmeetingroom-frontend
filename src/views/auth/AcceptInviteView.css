@@ -1,0 +1,147 @@
+﻿.accept-invite-container {
+  width: 100%;
+}
+
+.accept-invite-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.accept-invite-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.accept-invite-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.accept-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-error {
+  font-size: 0.85rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+:deep(.password-wrapper) {
+  width: 100%;
+  display: flex;
+}
+
+:deep(.password-wrapper .p-password) {
+  width: 100%;
+  display: flex;
+}
+
+:deep(.password-wrapper .p-password-root),
+:deep(.password-wrapper [data-pc-name="password"]) {
+  width: 100%;
+}
+
+:deep(.password-wrapper input) {
+  width: 100% !important;
+  padding: 0.875rem !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  font-family: inherit !important;
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  outline: none;
+  box-sizing: border-box;
+}
+
+:deep(.password-wrapper input:focus) {
+  border-color: #667eea !important;
+  background-color: var(--bg-card) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+:deep(.password-wrapper.form-input-error input) {
+  border-color: #ef4444 !important;
+}
+
+.accept-button {
+  padding: 0.875rem !important;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  margin-top: 0.5rem;
+  color: #ffffff !important;
+}
+
+:deep(.accept-button:not(:disabled):hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+:deep(.accept-button:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+:deep(.error-message) {
+  margin: -0.5rem 0 0 0;
+  border-radius: 6px;
+  border-left: 4px solid #ef4444;
+}
+
+.token-error-state,
+.success-state {
+  text-align: center;
+  padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.token-error-icon {
+  font-size: 3rem;
+  color: #ef4444;
+}
+
+.success-icon {
+  font-size: 3rem;
+  color: #22c55e;
+}
+
+.success-state h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.success-state p,
+.token-error-state p {
+  color: var(--text-muted);
+  margin: 0;
+}
+

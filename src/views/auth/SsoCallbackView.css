@@ -1,0 +1,72 @@
+﻿.sso-callback-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 220px;
+}
+
+.sso-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.sso-spinner {
+  display: flex;
+  justify-content: center;
+}
+
+.sso-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.sso-icon--success {
+  color: #22c55e;
+}
+
+.sso-icon--error {
+  color: #ef4444;
+}
+
+.sso-message {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sso-submessage {
+  margin: -0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.sso-title-error {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sso-error-message {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+.sso-back-btn {
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  border-radius: 8px;
+  padding: 0.75rem 2rem !important;
+  font-weight: 600;
+  color: #ffffff !important;
+}
+

@@ -1,0 +1,308 @@
+﻿.login-container {
+  width: 100%;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ------ Email input --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+.form-input {
+  padding: 0.875rem !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+}
+
+.form-input:focus {
+  border-color: #667eea !important;
+  background-color: var(--bg-card) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+  outline: none;
+}
+
+.form-input.form-input-error {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* ------ Password wrapper - match email input appearance --------------------------------------------------------------- */
+:deep(.password-wrapper) {
+  width: 100%;
+  display: flex;
+}
+
+:deep(.password-wrapper .p-password) {
+  width: 100%;
+  display: flex;
+}
+
+/* Il wrapper root del Password di PrimeVue 4 */
+:deep(.password-wrapper .p-password-root),
+:deep(.password-wrapper [data-pc-name="password"]) {
+  width: 100%;
+}
+
+/* L'input interno del password - identico all'email */
+:deep(.password-wrapper input) {
+  width: 100% !important;
+  padding: 0.875rem !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  font-family: inherit !important;
+  transition: all 0.2s ease;
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  outline: none;
+  box-sizing: border-box;
+}
+
+:deep(.password-wrapper input:focus) {
+  border-color: #667eea !important;
+  background-color: var(--bg-card) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+:deep(.password-wrapper input::placeholder) {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+/* Errore sul password */
+:deep(.password-wrapper.form-input-error input) {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+:deep(.password-wrapper.form-input-error input:focus) {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Icona toggle (occhio) - posizionata dentro l'input */
+:deep(.password-wrapper .p-password-toggle-mask-btn),
+:deep(.password-wrapper .p-password-clear-icon),
+:deep(.password-wrapper button[data-pc-section="togglebutton"]),
+:deep(.password-wrapper .p-icon-field-right > .p-icon-wrapper),
+:deep(.password-wrapper svg) {
+  color: var(--text-muted) !important;
+  cursor: pointer;
+}
+
+:deep(.password-wrapper .p-password-toggle-mask-btn:hover),
+:deep(.password-wrapper button[data-pc-section="togglebutton"]:hover) {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+}
+
+/* ------ PrimeVue generici - InputText --------------------------------------------------------------------------------------------------------------------- */
+:deep(.p-inputtext) {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
+}
+
+:deep(.p-inputtext:focus),
+:deep(.p-inputtext:enabled:focus) {
+  border-color: #667eea !important;
+  background-color: var(--bg-card) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+/* ------ Form error text --------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+.form-error {
+  font-size: 0.85rem;
+  color: #ef4444;
+  font-weight: 500;
+  margin-top: -0.25rem;
+}
+
+/* ------ Remember me --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+.remember-group {
+  margin-top: -0.5rem;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+:deep(.p-checkbox) {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+:deep(.p-checkbox .p-checkbox-box) {
+  background-color: var(--bg-input);
+  border-color: var(--border-default);
+}
+
+:deep(.p-checkbox .p-checkbox-box.p-highlight) {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.remember-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+/* ------ Error message --------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+:deep(.error-message) {
+  margin: -0.5rem 0 0 0;
+  border-radius: 6px;
+  padding: 0.75rem !important;
+  border-left: 4px solid #ef4444;
+}
+
+:deep(.p-message-text) {
+  font-size: 0.9rem;
+}
+
+/* ------ Login button ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+.login-button {
+  padding: 0.875rem !important;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  margin-top: 0.5rem;
+  transition: all 0.3s ease;
+  color: #ffffff !important;
+}
+
+:deep(.login-button:not(:disabled):hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+:deep(.login-button:disabled) {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ------ Responsive ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  .login-container {
+    padding: 0;
+  }
+
+  .login-form {
+    gap: 1.25rem;
+  }
+
+  .form-input,
+  :deep(.password-wrapper input) {
+    font-size: 16px !important;
+  }
+}
+
+:deep(.password-wrapper input:focus) {
+  border-color: #667eea !important;
+  background-color: var(--bg-card) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+:deep(.password-wrapper input::placeholder) { color: var(--text-muted) !important; opacity: 0.7; }
+:deep(.password-wrapper.form-input-error input) { border-color: #ef4444 !important; background-color: rgba(239, 68, 68, 0.05) !important; }
+:deep(.password-wrapper .p-password-toggle-mask-btn), :deep(.password-wrapper button[data-pc-section="togglebutton"]) { color: var(--text-muted) !important; cursor: pointer; }
+:deep(.p-inputtext) { background-color: var(--bg-input) !important; color: var(--text-primary) !important; border-color: var(--border-default) !important; }
+:deep(.p-inputtext:focus), :deep(.p-inputtext:enabled:focus) { border-color: #667eea !important; background-color: var(--bg-card) !important; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important; }
+.form-error { font-size: 0.85rem; color: #ef4444; font-weight: 500; margin-top: -0.25rem; }
+.remember-group { margin-top: -0.5rem; }
+.checkbox-wrapper { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+:deep(.p-checkbox .p-checkbox-box) { background-color: var(--bg-input); border-color: var(--border-default); }
+:deep(.p-checkbox .p-checkbox-box.p-highlight) { background-color: #667eea; border-color: #667eea; }
+.remember-label { font-size: 0.9rem; color: var(--text-muted); cursor: pointer; user-select: none; font-weight: 500; }
+:deep(.error-message) { margin: -0.5rem 0 0 0; border-radius: 6px; padding: 0.75rem !important; border-left: 4px solid #ef4444; }
+:deep(.p-message-text) { font-size: 0.9rem; }
+
+.login-button {
+  padding: 0.875rem !important;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  margin-top: 0.5rem;
+  color: #ffffff !important;
+}
+
+/* ------ SSO styles ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+.sso-checking { display: flex; justify-content: center; padding: 2rem 0; }
+
+.sso-section { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.sso-button {
+  width: 100%;
+  padding: 0.9rem !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  background: linear-gradient(135deg, #1a73e8 0%, #0f5db5 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  transition: all 0.3s ease;
+}
+:deep(.sso-button:not(:disabled):hover) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(26, 115, 232, 0.3); }
+
+.sso-divider { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0; }
+.sso-divider-line { flex: 1; height: 1px; background: var(--border-default); }
+.sso-divider-text { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.sso-only-notice { text-align: center; padding: 2rem 1rem; }
+.sso-only-notice i { font-size: 2.5rem; color: var(--text-muted); margin-bottom: 1rem; }
+.sso-only-notice p { color: var(--text-muted); font-size: 0.95rem; }
+
+@media (max-width: 640px) {
+  .login-container { padding: 0; }
+  .login-form { gap: 1.25rem; }
+  .form-input, :deep(.password-wrapper input) { font-size: 16px !important; }
+}
+

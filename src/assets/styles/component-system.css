@@ -1,0 +1,372 @@
+:root {
+  --app-action-height: 2.75rem;
+  --app-action-height-sm: 2.25rem;
+  --app-action-radius: 0.85rem;
+  --app-action-gap: 0.55rem;
+  --app-focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  --app-dialog-radius: 1.1rem;
+  --app-dialog-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  --app-card-radius: 1rem;
+}
+
+/* PrimeVue buttons */
+.p-button {
+  min-height: var(--app-action-height);
+  border-radius: var(--app-action-radius) !important;
+  border-width: 1px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+  box-shadow: none !important;
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.p-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.p-button:focus-visible {
+  box-shadow: var(--app-focus-ring) !important;
+}
+
+.p-button.p-button-sm {
+  min-height: var(--app-action-height-sm);
+  padding: 0.55rem 0.9rem !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.875rem !important;
+}
+
+.p-button .p-button-label {
+  font-weight: 600 !important;
+}
+
+.p-button .p-button-icon {
+  font-size: 0.95rem;
+}
+
+/* Semantic logic:
+   - primary and success are the same visual language for create/save/add actions
+   - secondary is neutral
+   - warning is edit
+   - danger is destructive
+*/
+.p-button,
+.p-button.p-button-success {
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500)) !important;
+  border-color: var(--color-primary-600) !important;
+  color: #ffffff !important;
+}
+
+.p-button:not(:disabled):hover,
+.p-button.p-button-success:not(:disabled):hover {
+  background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-600)) !important;
+  border-color: var(--color-primary-700) !important;
+}
+
+.p-button.p-button-outlined {
+  background: rgba(255, 255, 255, 0.86) !important;
+}
+
+.p-button.p-button-secondary,
+.p-button.p-button-outlined.p-button-secondary {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--border-default, #dbe4f0) !important;
+  color: var(--text-secondary, #3d4f6e) !important;
+}
+
+.p-button.p-button-secondary:not(:disabled):hover,
+.p-button.p-button-outlined.p-button-secondary:not(:disabled):hover {
+  background: var(--color-secondary-50) !important;
+  border-color: var(--color-secondary-300) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+.p-button.p-button-warning,
+.p-button.p-button-outlined.p-button-warning {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.28) !important;
+  color: var(--color-warning-700) !important;
+}
+
+.p-button.p-button-warning:not(:disabled):hover,
+.p-button.p-button-outlined.p-button-warning:not(:disabled):hover {
+  background: rgba(245, 158, 11, 0.16) !important;
+  border-color: rgba(245, 158, 11, 0.38) !important;
+}
+
+.p-button.p-button-danger,
+.p-button.p-button-outlined.p-button-danger {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  color: var(--color-danger-700) !important;
+}
+
+.p-button.p-button-danger:not(:disabled):hover,
+.p-button.p-button-outlined.p-button-danger:not(:disabled):hover {
+  background: rgba(239, 68, 68, 0.14) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.p-button.p-button-text {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--color-primary-600) !important;
+}
+
+.p-button.p-button-text:not(:disabled):hover {
+  background: rgba(99, 102, 241, 0.08) !important;
+  color: var(--color-primary-700) !important;
+}
+
+.p-button.p-button-icon-only {
+  width: var(--app-action-height);
+  min-width: var(--app-action-height);
+  padding-inline: 0 !important;
+}
+
+.p-button.p-button-icon-only.p-button-sm {
+  width: var(--app-action-height-sm);
+  min-width: var(--app-action-height-sm);
+}
+
+/* Raw button system used across custom pages */
+:where(
+  .btn-new,
+  .btn-create,
+  .option-add-btn,
+  .btn-submit,
+  .btn-save,
+  .dialog-btn-save,
+  .field-add-btn,
+  .slot-trigger-btn,
+  .slot-add-btn,
+  .btn-add-item,
+  .btn-primary,
+  .btn-outline-primary,
+  .action-chip.action-primary,
+  .btn-create-sm
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-action-gap);
+  min-height: var(--app-action-height) !important;
+  padding: 0.75rem 1rem !important;
+  border: 1px solid var(--color-primary-600) !important;
+  border-radius: var(--app-action-radius) !important;
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500)) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  text-decoration: none;
+  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.18) !important;
+}
+
+:where(
+  .btn-new,
+  .btn-create,
+  .option-add-btn,
+  .btn-submit,
+  .btn-save,
+  .dialog-btn-save,
+  .field-add-btn,
+  .slot-trigger-btn,
+  .slot-add-btn,
+  .btn-add-item,
+  .btn-primary,
+  .btn-outline-primary,
+  .action-chip.action-primary,
+  .btn-create-sm
+):not(:disabled):hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-600)) !important;
+  border-color: var(--color-primary-700) !important;
+}
+
+:where(
+  .btn-cancel,
+  .dialog-btn-cancel,
+  .btn-secondary,
+  .btn-reset,
+  .btn-help,
+  .back-btn
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-action-gap);
+  min-height: var(--app-action-height) !important;
+  padding: 0.75rem 1rem !important;
+  border: 1px solid var(--border-default, #dbe4f0) !important;
+  border-radius: var(--app-action-radius) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--text-secondary, #3d4f6e) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+:where(
+  .btn-cancel,
+  .dialog-btn-cancel,
+  .btn-secondary,
+  .btn-reset,
+  .btn-help,
+  .back-btn
+):not(:disabled):hover {
+  transform: translateY(-1px);
+  background: var(--color-secondary-50) !important;
+  border-color: var(--color-secondary-300) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+:where(.btn-icon, .btn-icon-sm, .field-action-btn, .card-btn, .slot-row-remove, .chip-remove, .pc-remove) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem !important;
+  border: 1px solid transparent !important;
+  background: rgba(241, 245, 249, 0.9) !important;
+  color: var(--text-secondary, #475569) !important;
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+:where(.btn-icon, .field-action-btn, .card-btn, .slot-row-remove) {
+  width: var(--app-action-height) !important;
+  min-width: var(--app-action-height) !important;
+  height: var(--app-action-height) !important;
+}
+
+:where(.btn-icon-sm, .chip-remove, .pc-remove) {
+  width: var(--app-action-height-sm) !important;
+  min-width: var(--app-action-height-sm) !important;
+  height: var(--app-action-height-sm) !important;
+}
+
+:where(.btn-icon, .btn-icon-sm, .field-action-btn, .card-btn, .slot-row-remove, .chip-remove, .pc-remove):not(:disabled):hover {
+  transform: translateY(-1px);
+  background: rgba(226, 232, 240, 0.95) !important;
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+:where(.field-action-delete, .card-btn-delete, .action-chip.action-delete):not(:disabled),
+:where(.field-action-btn.field-action-delete):not(:disabled) {
+  color: var(--color-danger-700) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+:where(.field-action-edit, .card-btn-edit):not(:disabled) {
+  color: var(--color-warning-700) !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.16) !important;
+}
+
+:where(.dialog-btn-save, .dialog-btn-cancel, .btn-submit, .btn-cancel) {
+  min-width: 8rem;
+}
+
+:where(.dialog-btn-save, .dialog-btn-cancel) {
+  min-height: var(--app-action-height-sm);
+  padding: 0.65rem 0.95rem;
+}
+
+/* Global dialog logic for every PrimeVue modal */
+.p-dialog {
+  border-radius: var(--app-dialog-radius) !important;
+  border: 1px solid var(--border-default, #e2e8f0) !important;
+  box-shadow: var(--app-dialog-shadow) !important;
+  overflow: hidden !important;
+  background: var(--bg-card, #ffffff) !important;
+}
+
+.p-dialog .p-dialog-header {
+  padding: 1.2rem 1.4rem 1rem !important;
+  border-bottom: 1px solid var(--border-default, #e2e8f0) !important;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.045), rgba(99, 102, 241, 0));
+}
+
+.p-dialog .p-dialog-title {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 1.25rem 1.4rem !important;
+  background: var(--bg-card, #ffffff) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 1rem 1.4rem 1.2rem !important;
+  border-top: 1px solid var(--border-default, #e2e8f0) !important;
+  background: rgba(248, 250, 252, 0.74) !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-actions .p-button,
+.p-dialog .p-dialog-header-icon,
+.p-dialog .p-dialog-close-button {
+  width: 2rem !important;
+  min-width: 2rem !important;
+  height: 2rem !important;
+  border-radius: 0.7rem !important;
+  background: transparent !important;
+  color: var(--text-muted, #64748b) !important;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-actions .p-button:hover,
+.p-dialog .p-dialog-close-button:hover {
+  background: rgba(99, 102, 241, 0.08) !important;
+  color: var(--color-primary-600) !important;
+}
+
+/* Dark mode */
+.dark .p-button.p-button-secondary,
+.dark .p-button.p-button-outlined.p-button-secondary,
+.dark :where(.btn-cancel, .dialog-btn-cancel, .btn-secondary, .btn-reset, .btn-help, .back-btn) {
+  background: rgba(30, 41, 59, 0.88) !important;
+  border-color: var(--border-default, #334155) !important;
+  color: var(--text-secondary, #cbd5e1) !important;
+}
+
+.dark :where(.btn-icon, .btn-icon-sm, .field-action-btn, .card-btn, .slot-row-remove, .chip-remove, .pc-remove) {
+  background: rgba(30, 41, 59, 0.92);
+  color: var(--text-secondary, #cbd5e1);
+  border-color: rgba(51, 65, 85, 0.9);
+}
+
+.dark .p-dialog {
+  border-color: var(--border-default, #334155) !important;
+  background: var(--bg-card, #1e293b) !important;
+}
+
+.dark .p-dialog .p-dialog-header {
+  border-bottom-color: var(--border-default, #334155) !important;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0));
+}
+
+.dark .p-dialog .p-dialog-content {
+  background: var(--bg-card, #1e293b) !important;
+  color: var(--text-primary, #f8fafc) !important;
+}
+
+.dark .p-dialog .p-dialog-footer {
+  border-top-color: var(--border-default, #334155) !important;
+  background: rgba(15, 23, 42, 0.56) !important;
+}
+
+@media (max-width: 640px) {
+  .p-dialog .p-dialog-footer {
+    flex-direction: column-reverse;
+  }
+
+  .p-dialog .p-dialog-footer .p-button,
+  :where(.dialog-btn-save, .dialog-btn-cancel, .btn-submit, .btn-cancel) {
+    width: 100%;
+  }
+}

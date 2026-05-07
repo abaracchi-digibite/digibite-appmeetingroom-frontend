@@ -1,0 +1,47 @@
+{
+  "name": "digibite-appmeetingroom-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
+    "@fullcalendar/vue3": "^6.1.20",
+    "@primevue/themes": "^4.5.4",
+    "@vuelidate/core": "^2.0.3",
+    "@vuelidate/validators": "^2.0.4",
+    "@vueuse/core": "^14.2.1",
+    "axios": "^1.14.0",
+    "chart.js": "^4.5.1",
+    "dayjs": "^1.11.20",
+    "pinia": "^3.0.4",
+    "primeflex": "^4.0.0",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.5.4",
+    "qrcode": "^1.5.4",
+    "vue": "^3.5.30",
+    "vue-chartjs": "^5.3.3",
+    "vue-i18n": "^9.14.5",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^24.12.0",
+    "@types/qrcode": "^1.5.6",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/tsconfig": "^0.9.0",
+    "autoprefixer": "^10.4.27",
+    "tailwindcss": "^4.2.2",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1",
+    "vite-plugin-vue-devtools": "^8.1.1",
+    "vue-tsc": "^3.2.5"
+  }
+}

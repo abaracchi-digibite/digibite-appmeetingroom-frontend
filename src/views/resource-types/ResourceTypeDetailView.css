@@ -1,0 +1,26 @@
+﻿.detail-container { padding: 0; }
+
+.req { color: #dc2626; }
+
+.dlg-section-status { padding-top: 1rem; padding-bottom: 1rem; }
+
+.selected-field-meta { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.selected-field-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.meta-chip {
+  display: inline-flex; align-items: center; padding: 0.25rem 0.6rem;
+  border-radius: 999px; background: rgba(79,70,229,0.1); color: #4f46e5; font-size: 0.75rem; font-weight: 600;
+}
+
+.field-name-code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: rgba(99,102,241,0.08);
+  color: #4f46e5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.4rem;
+}
+
+@media (max-width: 640px) {
+  .selected-field-meta { flex-direction: column; align-items: flex-start; }
+}
+
