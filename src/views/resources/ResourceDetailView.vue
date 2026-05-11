@@ -161,14 +161,14 @@
                   {{ t('resources.publicPage.pinActiveHint') }}
                 </p>
 
-                <div class="public-preview-facts" role="list" aria-label="Informazioni rapide pagina pubblica">
+                <div class="public-preview-facts" role="list" :aria-label="t('resources.publicPage.quickFactsAriaLabel')">
                   <span class="public-fact" role="listitem">
                     <i class="pi pi-building-columns" />
                     {{ plantsStore.plantById(resource.plantId)?.name || '-' }}
                   </span>
                   <span class="public-fact" role="listitem">
                     <i class="pi pi-users" />
-                    {{ resource.capacity || 0 }} posti
+                    {{ resource.capacity || 0 }} {{ t('resources.publicPage.seatsLabel') }}
                   </span>
                   <span class="public-fact" role="listitem">
                     <i class="pi pi-tablet" />
@@ -198,7 +198,7 @@
                           <i class="pi pi-building" />
                         </div>
                         <div>
-                          <span class="tablet-mini-kicker">Tablet view</span>
+                          <span class="tablet-mini-kicker">{{ t('resources.publicPage.tabletViewKicker') }}</span>
                           <strong>{{ resource.name }}</strong>
                         </div>
                       </div>
@@ -271,15 +271,15 @@
                  <p class="text-sm">{{ t('resourceTypes.noFields') }}</p>
                </div>
             </template>
-            <Column field="label" header="Etichetta" />
-            <Column field="fieldType" header="Tipo" />
-            <Column field="isRequired" header="Obbligatorio" style="width: 100px">
+            <Column field="label" :header="t('resourceTypes.fieldLabel')" />
+            <Column field="fieldType" :header="t('resourceTypes.fieldType')" />
+            <Column field="isRequired" :header="t('resourceTypes.required')" style="width: 100px">
               <template #body="{ data }">
                 <Tag :value="data.isRequired ? t('common.yes') : t('common.no')" :severity="data.isRequired ? 'info' : 'warning'" />
               </template>
             </Column>
-            <Column field="visibility" header="Visibilità" />
-            <Column field="sortOrder" header="Ordine" style="width: 80px" />
+            <Column field="visibility" :header="t('resourceTypes.visibility')" />
+            <Column field="sortOrder" :header="t('resourceTypes.sortOrder')" style="width: 80px" />
             <Column :header="t('common.name')" style="width: 150px">
               <template #body="{ data }">
                 <code class="field-name-code">{{ data.name }}</code>
@@ -309,7 +309,7 @@
           <div class="dlg-section">
             <div class="dlg-fields-2">
               <div class="dlg-field dlg-field-full">
-                <label class="dlg-label">Campo dal catalogo <span class="req">*</span></label>
+                <label class="dlg-label">{{ t('resourceTypes.catalogField') }} <span class="req">*</span></label>
                 <Select
                   v-model="fieldLinkData.customFieldId"
                   :options="availableCatalogFields"
@@ -317,17 +317,17 @@
                   option-value="id"
                   filter
                   :disabled="isEditingField"
-                  placeholder="Seleziona un campo personalizzato"
+                  :placeholder="t('resourceTypes.selectCustomFieldPlaceholder')"
                   class="w-full"
                 />
-                <small class="dlg-help">Mostra i campi creati nella pagina "Campi personalizzati"</small>
+                <small class="dlg-help">{{ t('resourceTypes.catalogFieldHint') }}</small>
               </div>
               <div class="dlg-field">
-                <label class="dlg-label">Ordine</label>
+                <label class="dlg-label">{{ t('resourceTypes.sortOrder') }}</label>
                 <InputNumber v-model="fieldLinkData.sortOrder" class="w-full" :min="0" />
               </div>
               <div class="dlg-field">
-                <label class="dlg-label">Visibilità</label>
+                <label class="dlg-label">{{ t('resourceTypes.visibility') }}</label>
                 <Select v-model="fieldLinkData.visibility" :options="visibilityOptions" option-label="label" option-value="value" class="w-full" />
               </div>
             </div>
@@ -430,8 +430,8 @@ const defaultFieldLinkData = () => ({
 })
 
 const visibilityOptions = computed(() => [
-  { label: 'Interno', value: FieldVisibility.Internal },
-  { label: 'Pubblico', value: FieldVisibility.Public },
+  { label: t('visitorTypes.visibilityInternal'), value: FieldVisibility.Internal },
+  { label: t('visitorTypes.visibilityPublic'),   value: FieldVisibility.Public },
 ])
 
 const currentCustomFields = ref<FieldLinkResponse[]>([])

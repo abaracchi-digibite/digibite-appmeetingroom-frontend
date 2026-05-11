@@ -1,258 +1,316 @@
 ﻿<template>
   <MainLayout>
-    <div class="resources-container unavailability-page">
-      <!-- Toolbar -->
-      <div class="toolbar-section mb-4 p-4 rounded-lg" style="background-color: var(--bg-card);">
-        <div class="flex flex-col gap-4">
-          <div class="flex gap-3 flex-wrap items-center">
-            <Button
-                :label="t('unavailability.createBlock')"
-                icon="pi pi-plus"
-                severity="primary"
-                size="small"
-                class="btn-new"
-                @click="openBlockDialog()"
-            />
-            <Button
-                :label="t('unavailability.createHoliday')"
-                icon="pi pi-calendar-plus"
-                size="small"
-                severity="secondary"
-                class="secondary-new-btn"
-                @click="openHolidayDialog()"
-            />
+    <div class="list-page">
 
-            <div class="ml-auto active-filter">
-              <Checkbox
-                  v-model="activeOnly"
-                  inputId="activeOnly"
-                  binary
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
+          </div>
+          <button type="button" class="list-btn-secondary" @click="openHolidayDialog()">
+            <i class="pi pi-calendar-plus" />
+            <span>{{ t('unavailability.createHoliday') }}</span>
+          </button>
+          <button type="button" class="list-btn-primary" @click="openBlockDialog()">
+            <i class="pi pi-plus" />
+            <span>{{ t('unavailability.createBlock') }}</span>
+          </button>
+        </div>
+
+        <div class="list-row-secondary">
+          <div class="list-filters-group">
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('common.status') }}</label>
+              <PrimeMultiSelect
+                v-model="statusFilter"
+                :options="statusFilterOptions"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('common.all')"
+                display="chip"
+                :max-selected-labels="1"
+                :selected-items-label="`{0} ${t('common.selected')}`"
+                class="list-filter-select"
               />
-              <label for="activeOnly">{{ t('unavailability.activeOnly') }}</label>
             </div>
           </div>
 
-          <div class="flex gap-3 flex-wrap items-center compact-stats">
-            <span class="badge-stat">
-              <i class="pi pi-ban"></i>
-              {{ visibleBlocks.length }} {{ t('unavailability.blocksTab') }}
-            </span>
-            <span class="badge-stat holiday-stat">
-              <i class="pi pi-calendar"></i>
-              {{ visibleHolidays.length }} {{ t('unavailability.holidaysTab') }}
-            </span>
-<!--            <span class="text-sm text-slate-600">-->
-<!--              {{ t('common.status') }}: {{ activeOnly ? t('unavailability.statusActive') : t('common.all') }}-->
-<!--            </span>-->
+          <div class="list-row-secondary-right">
+            <div class="list-tab-segments" role="group" :aria-label="t('common.viewTable')">
+              <button
+                type="button"
+                class="list-tab-segment"
+                :class="{ active: activeTab === 'blocks' }"
+                @click="activeTab = 'blocks'"
+              >
+                <i class="pi pi-ban" />
+                {{ t('unavailability.blocksTab') }}
+                <span class="list-tab-count">{{ visibleBlocks.length }}</span>
+              </button>
+              <button
+                type="button"
+                class="list-tab-segment"
+                :class="{ active: activeTab === 'holidays' }"
+                @click="activeTab = 'holidays'"
+              >
+                <i class="pi pi-calendar" />
+                {{ t('unavailability.holidaysTab') }}
+                <span class="list-tab-count">{{ visibleHolidays.length }}</span>
+              </button>
+            </div>
+
+            <div class="list-view-flat">
+              <button
+                type="button"
+                class="list-view-icon"
+                :class="{ active: viewMode === 'table' }"
+                :title="t('common.viewTable')"
+                @click="setViewMode('table')"
+              >
+                <i class="pi pi-list" />
+              </button>
+              <button
+                type="button"
+                class="list-view-icon"
+                :class="{ active: viewMode === 'card' }"
+                :title="t('common.viewCards')"
+                @click="setViewMode('card')"
+              >
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="initialLoading" class="flex justify-center items-center h-96">
-        <div class="text-center">
-          <PrimeProgressSpinner class="mb-4" />
-          <p class="text-slate-600">{{ t('common.loading') }}</p>
+      <!-- ── Loading ──────────────────────────────────────────────── -->
+      <div v-if="initialLoading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
+        <span>{{ t('common.loading') }}</span>
+      </div>
+
+      <!-- ── BLOCKS ───────────────────────────────────────────────── -->
+      <template v-else-if="activeTab === 'blocks'">
+        <div v-if="visibleBlocks.length === 0" class="list-empty">
+          <i class="pi pi-ban" />
+          <p>{{ t('unavailability.noBlocks') }}</p>
         </div>
-      </div>
 
-      <!-- Content -->
-      <div v-else class="content-shell">
-        <TabView class="tabs-shell">
-          <TabPanel :header="t('unavailability.blocksTab')">
-            <DataTable
-                :value="visibleBlocks"
-                responsiveLayout="scroll"
-                stripedRows
-                class="unavailability-table"
-            >
-              <template #empty>
-                <div class="empty-state">
-                  <i class="pi pi-ban" />
-                  <strong>{{ t('unavailability.noBlocks') }}</strong>
-                  <p>{{ t('unavailability.noBlocksDescription') }}</p>
+        <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+          <DataTable :value="visibleBlocks" responsiveLayout="scroll" stripedRows class="list-table">
+            <Column :header="t('unavailability.scope')" :sortable="true" sort-field="scopeName" style="width: 22%">
+              <template #body="{ data }">
+                <div>
+                  <Tag :value="getBlockScopeLabel(data)" :severity="data.resourceId ? 'info' : 'secondary'" />
+                  <div class="list-cell-strong" style="margin-top:0.25rem;">{{ getBlockScopeName(data) }}</div>
+                  <small class="list-cell-muted">{{ getBlockImpactLabel(data) }}</small>
                 </div>
               </template>
+            </Column>
 
-              <Column :header="t('unavailability.scope')" style="width: 22rem">
-                <template #body="{ data }">
-                  <div class="cell-stack">
-                    <Tag
-                        :value="getBlockScopeLabel(data)"
-                        :severity="data.resourceId ? 'info' : 'secondary'"
-                    />
-                    <strong>{{ getBlockScopeName(data) }}</strong>
-                    <span class="cell-muted">{{ getBlockImpactLabel(data) }}</span>
-                  </div>
-                </template>
-              </Column>
+            <Column field="blockType" :header="t('unavailability.typeOptionsLabel')" :sortable="true" style="width: 14%">
+              <template #body="{ data }">
+                <Tag :value="getBlockTypeLabel(data.blockType)" :severity="getBlockTypeSeverity(data.blockType)" />
+                <small v-if="data.customTypeLabel" class="list-cell-muted" style="display:block; margin-top:0.25rem;">
+                  {{ data.customTypeLabel }}
+                </small>
+              </template>
+            </Column>
 
-              <Column :header="t('unavailability.typeOptionsLabel')" style="width: 16rem">
-                <template #body="{ data }">
-                  <div class="cell-stack">
-                    <Tag
-                        :value="getBlockTypeLabel(data.blockType)"
-                        :severity="getBlockTypeSeverity(data.blockType)"
-                    />
-                    <span v-if="data.customTypeLabel" class="cell-muted">
-                      {{ data.customTypeLabel }}
-                    </span>
-                  </div>
-                </template>
-              </Column>
+            <Column field="startTime" :header="t('unavailability.blockWindow')" :sortable="true" style="width: 20%">
+              <template #body="{ data }">
+                <div class="list-cell-strong">{{ formatBlockStart(data) }}</div>
+                <small class="list-cell-muted">{{ formatBlockEnd(data) }}</small>
+              </template>
+            </Column>
 
-              <Column :header="t('unavailability.blockWindow')" style="width: 20rem">
-                <template #body="{ data }">
-                  <div class="cell-stack">
-                    <strong>{{ formatBlockStart(data) }}</strong>
-                    <span class="cell-muted">{{ formatBlockEnd(data) }}</span>
-                  </div>
-                </template>
-              </Column>
-
-              <Column :header="t('common.status')" style="width: 14rem">
-                <template #body="{ data }">
-                  <div class="status-stack">
-                    <Tag
-                        :value="data.isActive ? t('unavailability.statusActive') : t('unavailability.statusInactive')"
-                        :severity="data.isActive ? 'success' : 'danger'"
-                    />
-                    <Tag
-                        :value="data.isRecurring ? t('unavailability.recurringBadge') : t('unavailability.singleBadge')"
-                        :severity="data.isRecurring ? 'warning' : 'contrast'"
-                    />
-                    <Tag
-                        v-if="data.isAllDay"
-                        :value="t('unavailability.allDay')"
-                        severity="secondary"
-                    />
-                  </div>
-                </template>
-              </Column>
-
-              <Column :header="t('unavailability.notes')" style="min-width: 18rem">
-                <template #body="{ data }">
-                    <p class="notes-preview">
-                    {{ data.notes || t('emptyDash') }}
-                  </p>
-                </template>
-              </Column>
-
-              <Column :header="t('common.actions')" style="width: 10rem">
-                <template #body="{ data }">
-                  <div class="actions-row">
-                    <Button
-                        icon="pi pi-pencil"
-                        text
-                        rounded
-                        severity="info"
-                        class="action-btn"
-                        :aria-label="t('common.edit')"
-                        @click="openBlockDialog(data)"
-                    />
-                    <Button
-                        icon="pi pi-trash"
-                        text
-                        rounded
-                        severity="danger"
-                        class="action-btn"
-                        :aria-label="t('common.delete')"
-                        @click="deleteBlock(data.id)"
-                    />
-                  </div>
-                </template>
-              </Column>
-            </DataTable>
-          </TabPanel>
-
-          <TabPanel :header="t('unavailability.holidaysTab')">
-            <DataTable
-                :value="visibleHolidays"
-                responsiveLayout="scroll"
-                stripedRows
-                class="unavailability-table"
-            >
-              <template #empty>
-                <div class="empty-state">
-                  <i class="pi pi-calendar" />
-                  <strong>{{ t('unavailability.noHolidays') }}</strong>
-                  <p>{{ t('unavailability.noHolidaysDescription') }}</p>
+            <Column field="isActive" :header="t('common.status')" :sortable="true" style="width: 18%">
+              <template #body="{ data }">
+                <div class="status-stack">
+                  <Tag
+                    :value="data.isActive ? t('unavailability.statusActive') : t('unavailability.statusInactive')"
+                    :severity="data.isActive ? 'success' : 'danger'"
+                  />
+                  <Tag
+                    :value="data.isRecurring ? t('unavailability.recurringBadge') : t('unavailability.singleBadge')"
+                    :severity="data.isRecurring ? 'warning' : 'contrast'"
+                  />
+                  <Tag v-if="data.isAllDay" :value="t('unavailability.allDay')" severity="secondary" />
                 </div>
               </template>
+            </Column>
 
-              <Column :header="t('unavailability.name')" style="width: 21rem">
-                <template #body="{ data }">
-                  <div class="cell-stack">
-                    <strong>{{ data.name }}</strong>
-                    <span class="cell-muted">{{ getHolidayTypeLabel(data.holidayType) }}</span>
-                  </div>
-                </template>
-              </Column>
+            <Column :header="t('unavailability.notes')" style="min-width: 14%">
+              <template #body="{ data }">
+                <span class="list-cell-muted">{{ data.notes || '—' }}</span>
+              </template>
+            </Column>
 
-              <Column :header="t('unavailability.holidayWindow')" style="width: 18rem">
-                <template #body="{ data }">
-                  <div class="cell-stack">
-                    <strong>{{ formatHolidayStart(data) }}</strong>
-                    <span class="cell-muted">{{ formatHolidayEnd(data) }}</span>
-                  </div>
-                </template>
-              </Column>
+            <Column :header="t('common.actions')" style="width: 90px" class="list-col-actions">
+              <template #body="{ data }">
+                <div class="list-row-actions">
+                  <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="openBlockDialog(data)">
+                    <i class="pi pi-pencil" />
+                  </button>
+                  <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteBlock(data.id)">
+                    <i class="pi pi-trash" />
+                  </button>
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
 
-              <Column :header="t('unavailability.scope')" style="width: 20rem">
-                <template #body="{ data }">
-                  <div class="cell-stack">
-                    <Tag
-                        :value="data.plantId ? t('unavailability.scopePlant') : t('unavailability.allPlantsScope')"
-                        :severity="data.plantId ? 'info' : 'secondary'"
-                    />
-                    <strong>{{ getHolidayPlantLabel(data.plantId) }}</strong>
-                  </div>
-                </template>
-              </Column>
+        <div v-else class="list-cards-grid">
+          <article v-for="block in visibleBlocks" :key="block.id" class="list-card">
+            <div class="list-card-head">
+              <h3 class="list-card-title">{{ getBlockScopeName(block) }}</h3>
+              <Tag
+                :value="block.isActive ? t('unavailability.statusActive') : t('unavailability.statusInactive')"
+                :severity="block.isActive ? 'success' : 'danger'"
+              />
+            </div>
+            <p class="list-card-subtitle">{{ getBlockImpactLabel(block) }}</p>
+            <div class="list-card-info">
+              <div class="list-card-info-row">
+                <i :class="block.resourceId ? 'pi pi-box' : 'pi pi-building'" />
+                <Tag :value="getBlockScopeLabel(block)" :severity="block.resourceId ? 'info' : 'secondary'" />
+              </div>
+              <div class="list-card-info-row">
+                <i class="pi pi-tag" />
+                <Tag :value="getBlockTypeLabel(block.blockType)" :severity="getBlockTypeSeverity(block.blockType)" />
+              </div>
+              <div class="list-card-info-row">
+                <i class="pi pi-calendar" />
+                <span>{{ formatBlockStart(block) }} → {{ formatBlockEnd(block) }}</span>
+              </div>
+              <div v-if="block.isRecurring || block.isAllDay" class="list-card-info-row">
+                <i class="pi pi-sync" />
+                <Tag v-if="block.isRecurring" :value="t('unavailability.recurringBadge')" severity="warning" />
+                <Tag v-if="block.isAllDay" :value="t('unavailability.allDay')" severity="secondary" />
+              </div>
+              <div v-if="block.notes" class="list-card-info-row">
+                <i class="pi pi-align-left" />
+                <span>{{ block.notes }}</span>
+              </div>
+            </div>
+            <div class="list-card-actions">
+              <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="openBlockDialog(block)">
+                <i class="pi pi-pencil" />
+              </button>
+              <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteBlock(block.id)">
+                <i class="pi pi-trash" />
+              </button>
+            </div>
+          </article>
+        </div>
+      </template>
 
-              <Column :header="t('common.status')" style="width: 14rem">
-                <template #body="{ data }">
-                  <div class="status-stack">
-                    <Tag
-                        :value="data.isActive ? t('unavailability.statusActive') : t('unavailability.statusInactive')"
-                        :severity="data.isActive ? 'success' : 'danger'"
-                    />
-                    <Tag
-                        :value="data.holidayType === HolidayType.RecurringAnnual ? t('unavailability.recurringBadge') : t('unavailability.singleBadge')"
-                        :severity="data.holidayType === HolidayType.RecurringAnnual ? 'warning' : 'contrast'"
-                    />
-                  </div>
-                </template>
-              </Column>
+      <!-- ── HOLIDAYS ─────────────────────────────────────────────── -->
+      <template v-else>
+        <div v-if="visibleHolidays.length === 0" class="list-empty">
+          <i class="pi pi-calendar" />
+          <p>{{ t('unavailability.noHolidays') }}</p>
+        </div>
 
-              <Column :header="t('common.actions')" style="width: 10rem">
-                <template #body="{ data }">
-                  <div class="actions-row">
-                    <Button
-                        icon="pi pi-pencil"
-                        text
-                        rounded
-                        severity="info"
-                        class="action-btn"
-                        :aria-label="t('common.edit')"
-                        @click="openHolidayDialog(data)"
-                    />
-                    <Button
-                        icon="pi pi-trash"
-                        text
-                        rounded
-                        severity="danger"
-                        class="action-btn"
-                        :aria-label="t('common.delete')"
-                        @click="deleteHoliday(data.id)"
-                    />
-                  </div>
-                </template>
-              </Column>
-            </DataTable>
-          </TabPanel>
-        </TabView>
-      </div>
+        <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+          <DataTable :value="visibleHolidays" responsiveLayout="scroll" stripedRows class="list-table">
+            <Column field="name" :header="t('unavailability.name')" :sortable="true" style="width: 22%">
+              <template #body="{ data }">
+                <div class="list-cell-strong">{{ data.name }}</div>
+                <small class="list-cell-muted">{{ getHolidayTypeLabel(data.holidayType) }}</small>
+              </template>
+            </Column>
+
+            <Column field="startDate" :header="t('unavailability.holidayWindow')" :sortable="true" style="width: 22%">
+              <template #body="{ data }">
+                <div class="list-cell-strong">{{ formatHolidayStart(data) }}</div>
+                <small class="list-cell-muted">{{ formatHolidayEnd(data) }}</small>
+              </template>
+            </Column>
+
+            <Column :header="t('unavailability.scope')" style="width: 22%">
+              <template #body="{ data }">
+                <Tag
+                  :value="data.plantId ? t('unavailability.scopePlant') : t('unavailability.allPlantsScope')"
+                  :severity="data.plantId ? 'info' : 'secondary'"
+                />
+                <div class="list-cell-strong" style="margin-top:0.25rem;">{{ getHolidayPlantLabel(data.plantId) }}</div>
+              </template>
+            </Column>
+
+            <Column field="isActive" :header="t('common.status')" :sortable="true" style="width: 18%">
+              <template #body="{ data }">
+                <div class="status-stack">
+                  <Tag
+                    :value="data.isActive ? t('unavailability.statusActive') : t('unavailability.statusInactive')"
+                    :severity="data.isActive ? 'success' : 'danger'"
+                  />
+                  <Tag
+                    :value="data.holidayType === HolidayType.RecurringAnnual ? t('unavailability.recurringBadge') : t('unavailability.singleBadge')"
+                    :severity="data.holidayType === HolidayType.RecurringAnnual ? 'warning' : 'contrast'"
+                  />
+                </div>
+              </template>
+            </Column>
+
+            <Column :header="t('common.actions')" style="width: 90px" class="list-col-actions">
+              <template #body="{ data }">
+                <div class="list-row-actions">
+                  <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="openHolidayDialog(data)">
+                    <i class="pi pi-pencil" />
+                  </button>
+                  <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteHoliday(data.id)">
+                    <i class="pi pi-trash" />
+                  </button>
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+
+        <div v-else class="list-cards-grid">
+          <article v-for="holiday in visibleHolidays" :key="holiday.id" class="list-card">
+            <div class="list-card-head">
+              <h3 class="list-card-title">{{ holiday.name }}</h3>
+              <Tag
+                :value="holiday.isActive ? t('unavailability.statusActive') : t('unavailability.statusInactive')"
+                :severity="holiday.isActive ? 'success' : 'danger'"
+              />
+            </div>
+            <p class="list-card-subtitle">{{ getHolidayTypeLabel(holiday.holidayType) }}</p>
+            <div class="list-card-info">
+              <div class="list-card-info-row">
+                <i class="pi pi-calendar" />
+                <span>{{ formatHolidayStart(holiday) }} → {{ formatHolidayEnd(holiday) }}</span>
+              </div>
+              <div class="list-card-info-row">
+                <i :class="holiday.plantId ? 'pi pi-building' : 'pi pi-globe'" />
+                <span>{{ getHolidayPlantLabel(holiday.plantId) }}</span>
+              </div>
+              <div v-if="holiday.holidayType === HolidayType.RecurringAnnual" class="list-card-info-row">
+                <i class="pi pi-sync" />
+                <Tag :value="t('unavailability.recurringBadge')" severity="warning" />
+              </div>
+            </div>
+            <div class="list-card-actions">
+              <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="openHolidayDialog(holiday)">
+                <i class="pi pi-pencil" />
+              </button>
+              <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteHoliday(holiday.id)">
+                <i class="pi pi-trash" />
+              </button>
+            </div>
+          </article>
+        </div>
+      </template>
 
       <Dialog
           v-model:visible="showBlockDialog"
@@ -502,7 +560,6 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
 import MainLayout from '@/layouts/MainLayout.vue'
-import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
@@ -510,9 +567,6 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import PrimeMultiSelect from 'primevue/multiselect'
-import PrimeProgressSpinner from 'primevue/progressspinner'
-import TabPanel from 'primevue/tabpanel'
-import TabView from 'primevue/tabview'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
 import { usePlantsStore } from '@/stores/plants.store'
@@ -571,7 +625,30 @@ const editingBlockId = ref<string | null>(null)
 const editingHolidayId = ref<string | null>(null)
 const initialLoading = ref(true)
 const submitLoading = ref(false)
-const activeOnly = ref(true)
+
+// View / filter state
+const searchQuery = ref('')
+const statusFilter = ref<boolean[]>([true]) // default: solo attivi
+const activeTab = ref<'blocks' | 'holidays'>(
+  (localStorage.getItem('unavailability_active_tab') as 'blocks' | 'holidays') ?? 'blocks'
+)
+const viewMode = ref<'card' | 'table'>(
+  (localStorage.getItem('unavailability_view_mode') as 'card' | 'table') ?? 'table'
+)
+
+const setViewMode = (mode: 'card' | 'table') => {
+  viewMode.value = mode
+  localStorage.setItem('unavailability_view_mode', mode)
+}
+
+watch(activeTab, (val) => {
+  localStorage.setItem('unavailability_active_tab', val)
+})
+
+const statusFilterOptions = computed(() => [
+  { label: t('unavailability.statusActive'),   value: true },
+  { label: t('unavailability.statusInactive'), value: false },
+])
 
 const blockForm = reactive<BlockFormState>(createDefaultBlockForm())
 const holidayForm = reactive<HolidayFormState>(createDefaultHolidayForm())
@@ -627,17 +704,46 @@ const plantOptions = computed(() =>
         }))
 )
 
-const visibleBlocks = computed(() =>
-    [...unavailabilityStore.unavailabilityBlocks]
-        .filter((block) => (activeOnly.value ? block.isActive : true))
-        .sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime())
-)
+const visibleBlocks = computed(() => {
+  let list = [...unavailabilityStore.unavailabilityBlocks]
+    .map((b) => ({
+      ...b,
+      scopeName: getBlockScopeName(b),
+    }))
 
-const visibleHolidays = computed(() =>
-    [...unavailabilityStore.holidays]
-        .filter((holiday) => (activeOnly.value ? holiday.isActive : true))
-        .sort((left, right) => new Date(left.startDate).getTime() - new Date(right.startDate).getTime())
-)
+  if (statusFilter.value.length > 0) {
+    list = list.filter((b) => statusFilter.value.includes(b.isActive))
+  }
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter((b) =>
+      getBlockScopeName(b).toLowerCase().includes(q)
+      || (b.notes ?? '').toLowerCase().includes(q)
+      || (b.customTypeLabel ?? '').toLowerCase().includes(q)
+    )
+  }
+
+  return list.sort((l, r) => new Date(l.startTime).getTime() - new Date(r.startTime).getTime())
+})
+
+const visibleHolidays = computed(() => {
+  let list = [...unavailabilityStore.holidays]
+
+  if (statusFilter.value.length > 0) {
+    list = list.filter((h) => statusFilter.value.includes(h.isActive))
+  }
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter((h) =>
+      h.name.toLowerCase().includes(q)
+      || getHolidayPlantLabel(h.plantId).toLowerCase().includes(q)
+    )
+  }
+
+  return list.sort((l, r) => new Date(l.startDate).getTime() - new Date(r.startDate).getTime())
+})
 
 const blockStartDateValue = computed(() => extractDatePortion(blockForm.startValue))
 

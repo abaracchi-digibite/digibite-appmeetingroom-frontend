@@ -24,6 +24,8 @@ export interface TenantSsoConfig {
   authority: string
   clientId: string
   hasClientSecret: boolean
+  /** Se true, l'app sull'IdP è registrata come client pubblico (PKCE-only, niente client_secret). */
+  isPublicClient: boolean
   scopes: string
   jitProvisioning: boolean
   jitDefaultRole: string
@@ -42,8 +44,10 @@ export interface SaveTenantSsoConfigPayload {
   isEnabled: boolean
   authority: string
   clientId: string
-  /** Null = mantieni il secret esistente; stringa = aggiorna il secret. */
+  /** Null = mantieni il secret esistente; stringa = aggiorna il secret. Ignorato se isPublicClient = true. */
   clientSecret: string | null
+  /** Se true, app pubblica (es. SPA su Entra) — niente client_secret nello scambio code. */
+  isPublicClient: boolean
   scopes: string
   jitProvisioning: boolean
   jitDefaultRole: string
@@ -59,6 +63,7 @@ export interface PlatformSsoConfig {
   authority: string
   clientId: string
   hasClientSecret: boolean
+  isPublicClient: boolean
   scopes: string
   claimEmail: string
   claimName: string
@@ -74,6 +79,7 @@ export interface SavePlatformSsoConfigPayload {
   authority: string
   clientId: string
   clientSecret: string | null
+  isPublicClient: boolean
   scopes: string
   claimEmail: string
   claimName: string
@@ -108,12 +114,16 @@ export const ssoApi = {
 
   /**
    * Avvia il flusso SSO del dominio corrente.
-   * Il tenant viene risolto lato backend dall'Host della richiesta.
+   * Il tenant viene risolto lato backend dall'Host (con fallback Origin/Referer).
+   * Usiamo VITE_API_BASE_URL così l'URL punta al backend anche in deploy multi-dominio
+   * (default '/api' per dev e single-host).
    */
   initiateLogin(returnUrl?: string): void {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
     const params = new URLSearchParams()
     if (returnUrl) params.append('returnUrl', returnUrl)
-    window.location.href = `/api/auth/sso/initiate${params.toString() ? '?' + params.toString() : ''}`
+    const qs = params.toString() ? '?' + params.toString() : ''
+    window.location.href = `${apiBase}/auth/sso/initiate${qs}`
   },
 
   /**
@@ -121,9 +131,11 @@ export const ssoApi = {
    * Redirige verso l'IdP configurato nella platform_sso_config.
    */
   initiatePlatformLogin(returnUrl?: string): void {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
     const params = new URLSearchParams()
     if (returnUrl) params.append('returnUrl', returnUrl)
-    window.location.href = `/api/auth/sso/platform-initiate${params.toString() ? '?' + params.toString() : ''}`
+    const qs = params.toString() ? '?' + params.toString() : ''
+    window.location.href = `${apiBase}/auth/sso/platform-initiate${qs}`
   },
 
   // -- Configurazione SSO tenant (pannello admin) -------------------------------

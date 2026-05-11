@@ -1,197 +1,172 @@
 ﻿<template>
   <MainLayout>
-    <div class="notif-page">
+    <div class="list-page">
 
-      <!-- --------- Header --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -->
-      <div class="notif-header">
-        <div class="header-content">
-          <div class="header-left">
-            <div class="header-icon">
-              <i class="pi pi-bell" />
-            </div>
-              <div>
-                <!-- <h1 class="header-title">{{ t('notifications.title') }}</h1> -->
-                <p class="header-subtitle">{{ t('notifications.subtitle') }}</p>
-              </div>
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
           </div>
-          <div class="header-actions">
-            <button type="button" class="btn-help" :aria-label="t('notifications.howItWorks')" @click="showHelpModal = true">
-              <i class="pi pi-question-circle" aria-hidden="true" />
-              {{ t('notifications.howItWorks') }}
-            </button>
-            <button type="button" class="btn-new" :aria-label="t('notifications.createNew')" @click="openCreateDialog">
-              <i class="pi pi-plus" aria-hidden="true" />
-              {{ t('notifications.createNew') }}
-            </button>
+          <button type="button" class="list-btn-secondary" @click="showHelpModal = true">
+            <i class="pi pi-question-circle" />
+            <span>{{ t('notifications.howItWorks') }}</span>
+          </button>
+          <button type="button" class="list-btn-primary" @click="openCreateDialog">
+            <i class="pi pi-plus" />
+            <span>{{ t('notifications.createNew') }}</span>
+          </button>
+        </div>
+
+        <div class="list-row-secondary">
+          <div class="list-filter-inline">
+            <label class="list-filter-label-inline">{{ t('common.status') }}</label>
+            <PrimeMultiSelect
+              v-model="statusFilter"
+              :options="statusOptions"
+              option-label="label"
+              option-value="value"
+              :placeholder="t('common.all')"
+              display="chip"
+              :max-selected-labels="1"
+              :selected-items-label="`{0} ${t('common.selected')}`"
+              class="list-filter-select"
+            />
+          </div>
+
+          <div class="list-row-secondary-right">
+            <span class="list-count-flat">{{ filteredRules.length }} {{ t('common.results') }}</span>
+            <div class="list-view-flat">
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
+                <i class="pi pi-list" />
+              </button>
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'card' }" :title="t('common.viewCards')" @click="setViewMode('card')">
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- --------- Body --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -->
-      <div class="notif-body">
-        <div class="notif-toolbar" :aria-label="t('notifications.overview')">
-          <div class="toolbar-copy">
-            <p class="toolbar-kicker">{{ t('notifications.overview') }}</p>
-            <h2 class="toolbar-title">{{ t('notifications.configuredRules') }}</h2>
-            <p class="toolbar-subtitle">{{ t('notifications.ruleHint') }}</p>
-          </div>
-          <div class="toolbar-stats" aria-live="polite">
-            <div class="toolbar-stat">
-              <span class="toolbar-stat-label">{{ t('common.total') }}</span>
-              <strong class="toolbar-stat-value">{{ allRules.length }}</strong>
-            </div>
-            <div class="toolbar-stat">
-              <span class="toolbar-stat-label">{{ t('notifications.active') }}</span>
-              <strong class="toolbar-stat-value">{{ activeRulesCount }}</strong>
-            </div>
-            <div class="toolbar-stat">
-              <span class="toolbar-stat-label">{{ t('notifications.visible') }}</span>
-              <strong class="toolbar-stat-value">{{ filteredRules.length }}</strong>
-            </div>
-          </div>
-        </div>
+      <!-- Loading -->
+      <div v-if="storeLoading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
+        <span>{{ t('common.loading') }}</span>
+      </div>
 
-        <!-- Barra ricerca -->
-        <div class="search-bar" role="search">
-           <label class="sr-only" for="notification-rules-search">{{ t('notifications.searchPlaceholder') }}</label>
-          <i class="pi pi-search search-icon" aria-hidden="true" />
-          <input
-            id="notification-rules-search"
-            v-model="searchQuery"
-            type="text"
-            class="search-input"
-            :aria-label="t('notifications.searchPlaceholder')"
-            autocomplete="off"
-            :placeholder="t('common.search') + '…'"
-          />
-          <span v-if="searchQuery && filteredRules.length !== allRules.length" class="search-count">
-            {{ filteredRules.length }} / {{ allRules.length }}
-          </span>
-        </div>
+      <!-- Empty -->
+      <div v-else-if="filteredRules.length === 0" class="list-empty">
+        <i class="pi pi-bell" />
+        <p>{{ searchQuery ? t('common.noResults') : t('notifications.noRules') }}</p>
+      </div>
 
-        <!-- Stato caricamento -->
-        <div v-if="storeLoading" class="notif-loading">
-          <i class="pi pi-spin pi-spinner" />
-          <span>{{ t('common.loading') }}</span>
-        </div>
-
-        <!-- Stato vuoto -->
-        <div v-else-if="filteredRules.length === 0" class="notif-empty">
-          <div class="empty-icon-wrap">
-            <i class="pi pi-bell" />
-          </div>
-          <h3 class="empty-title">
-            {{ searchQuery ? t('common.noResults') : t('notifications.noRules') }}
-          </h3>
-          <p class="empty-desc">
-            {{ searchQuery ? t('notifications.noRulesSearch') : t('notifications.noRulesDesc') }}
-          </p>
-          <button v-if="!searchQuery" type="button" class="btn-new" style="margin-top:1rem;" @click="openCreateDialog">
-            <i class="pi pi-plus" aria-hidden="true" />
-            {{ t('notifications.createNew') }}
-          </button>
-        </div>
-
-        <!-- Card list -->
-        <div v-else class="notif-list" role="list" :aria-label="t('notifications.listAriaLabel')">
-          <article
-            v-for="rule in filteredRules"
-            :key="rule.id"
-            class="notif-card"
-            :class="{ 'card-inactive': !rule.isActive }"
-            role="listitem"
-            :aria-labelledby="`rule-title-${rule.id}`"
-            :aria-describedby="`rule-summary-${rule.id}`"
-          >
-            <!-- Trigger badge (colonna sinistra) -->
-            <div class="card-trigger" :data-trigger="rule.eventTrigger" aria-hidden="true">
-              <i :class="getTriggerIcon(rule.eventTrigger)" class="trigger-icon" />
-              <span class="trigger-label">{{ getTriggerLabel(rule.eventTrigger) }}</span>
-            </div>
-
-            <!-- Info centro -->
-            <div class="card-info">
-              <div class="card-info-top">
-                <div class="card-heading">
-                  <h3 :id="`rule-title-${rule.id}`" class="card-title">{{ getRuleHeadline(rule) }}</h3>
-                  <span class="status-badge status-inline" :class="rule.isActive ? 'status-on' : 'status-off'">
-                    <i :class="rule.isActive ? 'pi pi-check-circle' : 'pi pi-times-circle'" aria-hidden="true" />
-                    {{ rule.isActive ? t('common.active') : t('common.inactive') }}
-                  </span>
-                </div>
-                <div class="card-top-badges">
-                  <span class="channel-badge" :data-channel="rule.channel">
-                    <i :class="getChannelIcon(rule.channel)" aria-hidden="true" />
-                    {{ getChannelLabel(rule.channel) }}
-                  </span>
-                  <span v-if="rule.attachIcs" class="ics-badge">
-                    <i class="pi pi-calendar-plus" aria-hidden="true" /> {{ t('notifications.icsBadge') }}
-                  </span>
-                  <span v-if="rule.attachIcs && rule.createTeamsCallLink" class="ics-badge teams-call-badge">
-                    <i class="pi pi-phone" aria-hidden="true" /> {{ t('notifications.teamsCallBadge') }}
-                  </span>
-                </div>
-              </div>
-              <p :id="`rule-summary-${rule.id}`" class="card-summary-line">
-                {{ getRuleSummary(rule) }}
-              </p>
-              <div class="card-info-bottom">
-                <div class="card-meta-item">
-                  <span class="card-meta-label">
-                    <i class="pi pi-bolt" aria-hidden="true" />{{ t('notifications.triggerWhen') }}</span>
-                  <span class="card-meta-value">{{ getTriggerLabel(rule.eventTrigger) }}</span>
-                </div>
-                <div class="card-meta-item">
-                  <span class="card-meta-label">
-                    <i :class="rule.resourceTypeId ? 'pi pi-tag' : 'pi pi-box'" aria-hidden="true" />{{ t('notifications.scopeLabel') }}</span>
-                  <span class="card-meta-value" :class="{ 'no-scope': !getRuleScopeLabel(rule) }">
-                    {{ getRuleScopeLabel(rule) || t('notifications.noScope') }}
-                  </span>
-                </div>
-                <div class="card-meta-item">
-                  <span class="card-meta-label">
-                    <i :class="getRecipientTypeIcon(rule.recipientType)" aria-hidden="true" />{{ t('notifications.sendTo') }}</span>
-                  <span class="card-meta-value">{{ getRuleRecipientsSummary(rule) }}</span>
-                </div>
-                <div v-if="getRuleTemplateInfo(rule)" class="card-meta-item">
-                  <span class="card-meta-label">
-                    <i class="pi pi-file-edit" aria-hidden="true" />{{ t('notifications.templateLabel') }}</span>
-                  <span class="card-meta-value">{{ getRuleTemplateInfo(rule) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Azioni destra -->
-            <div class="card-right">
-              <span class="status-badge" :class="rule.isActive ? 'status-on' : 'status-off'">
-                <i :class="rule.isActive ? 'pi pi-check-circle' : 'pi pi-times-circle'" aria-hidden="true" />
-                {{ rule.isActive ? t('common.active') : t('common.inactive') }}
+      <!-- ── Tabella ──────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+        <DataTable :value="filteredRules" responsiveLayout="scroll" stripedRows class="list-table">
+          <Column field="eventTrigger" :header="t('notifications.triggerWhen')" :sortable="true" style="width: 18%">
+            <template #body="{ data }">
+              <span class="list-cell-strong">
+                <i :class="getTriggerIcon(data.eventTrigger)" style="margin-right: 0.4rem; color: #4f46e5;" />
+                {{ getTriggerLabel(data.eventTrigger) }}
               </span>
-              <div class="card-btns" role="group" :aria-label="t('notifications.actionsFor', { name: getRuleHeadline(rule) })">
-                <button
-                  type="button"
-                  class="btn-card-edit"
-                  :title="t('common.edit')"
-                  :aria-label="t('notifications.editRuleFor', { name: getRuleHeadline(rule) })"
-                  @click="editRule(rule)"
-                >
-                  <i class="pi pi-pencil" aria-hidden="true" />
+            </template>
+          </Column>
+
+          <Column :header="t('notifications.scopeLabel')" style="width: 22%">
+            <template #body="{ data }">
+              <span class="list-cell-muted">{{ getRuleScopeLabel(data) || t('notifications.noScope') }}</span>
+            </template>
+          </Column>
+
+          <Column field="channel" :header="t('notifications.channel')" :sortable="true" style="width: 14%">
+            <template #body="{ data }">
+              <Tag :value="getChannelLabel(data.channel)" severity="info" />
+            </template>
+          </Column>
+
+          <Column :header="t('notifications.sendTo')" style="width: 22%">
+            <template #body="{ data }">
+              <span class="list-cell-muted">{{ getRuleRecipientsSummary(data) }}</span>
+            </template>
+          </Column>
+
+          <Column field="isActive" :header="t('common.status')" :sortable="true" style="width: 12%">
+            <template #body="{ data }">
+              <Tag
+                :value="data.isActive ? t('common.active') : t('common.inactive')"
+                :severity="data.isActive ? 'success' : 'danger'"
+              />
+            </template>
+          </Column>
+
+          <Column :header="t('common.actions')" style="width: 90px" class="list-col-actions">
+            <template #body="{ data }">
+              <div class="list-row-actions">
+                <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="editRule(data)">
+                  <i class="pi pi-pencil" />
                 </button>
-                <button
-                  type="button"
-                  class="btn-card-delete"
-                  :title="t('common.delete')"
-                  :aria-label="t('notifications.deleteRuleFor', { name: getRuleHeadline(rule) })"
-                  @click="deleteRule(rule.id)"
-                >
-                  <i class="pi pi-trash" aria-hidden="true" />
+                <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteRule(data.id)">
+                  <i class="pi pi-trash" />
                 </button>
               </div>
-            </div>
-          </article>
-        </div>
+            </template>
+          </Column>
+        </DataTable>
+      </div>
 
-      </div><!-- /notif-body -->
+      <!-- ── Cards ────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article
+          v-for="rule in filteredRules"
+          :key="rule.id"
+          class="list-card"
+          :class="{ 'card-inactive': !rule.isActive }"
+        >
+          <div class="list-card-head">
+            <h3 class="list-card-title">{{ getRuleHeadline(rule) }}</h3>
+            <Tag
+              :value="rule.isActive ? t('common.active') : t('common.inactive')"
+              :severity="rule.isActive ? 'success' : 'danger'"
+            />
+          </div>
+          <p class="list-card-desc">{{ getRuleSummary(rule) }}</p>
+          <div class="list-card-info">
+            <div class="list-card-info-row">
+              <i :class="getTriggerIcon(rule.eventTrigger)" />
+              <span>{{ getTriggerLabel(rule.eventTrigger) }}</span>
+            </div>
+            <div class="list-card-info-row">
+              <i :class="rule.resourceTypeId ? 'pi pi-tag' : 'pi pi-box'" />
+              <span>{{ getRuleScopeLabel(rule) || t('notifications.noScope') }}</span>
+            </div>
+            <div class="list-card-info-row">
+              <i :class="getChannelIcon(rule.channel)" />
+              <Tag :value="getChannelLabel(rule.channel)" severity="info" />
+              <span v-if="rule.attachIcs" class="ics-badge">
+                <i class="pi pi-calendar-plus" /> {{ t('notifications.icsBadge') }}
+              </span>
+            </div>
+            <div class="list-card-info-row">
+              <i :class="getRecipientTypeIcon(rule.recipientType)" />
+              <span>{{ getRuleRecipientsSummary(rule) }}</span>
+            </div>
+          </div>
+          <div class="list-card-actions">
+            <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="editRule(rule)">
+              <i class="pi pi-pencil" />
+            </button>
+            <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteRule(rule.id)">
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
+      </div>
 
       <!-- --------- Dialog Crea / Modifica --------------------------------------------------------------------------------------------------------------------------------- -->
       <Dialog
@@ -235,7 +210,7 @@
               <PrimeMultiSelect
                 v-model="formData.resourceTypeIds"
                 :options="resourceTypes"
-                option-:label="t('views.notificationRules.name')"
+                option-label="name"
                 option-value="id"
                 :placeholder="t('notifications.selectResourceType')"
                 filter
@@ -253,7 +228,7 @@
               <PrimeMultiSelect
                 v-model="formData.resourceIds"
                 :options="resources"
-                option-:label="t('views.notificationRules.name')"
+                option-label="name"
                 option-value="id"
                 :placeholder="t('notifications.selectResource')"
                 filter
@@ -544,6 +519,9 @@ import { useResourcesStore } from '@/stores/resources.store'
 import MainLayout from '@/layouts/MainLayout.vue'
 import Dialog from 'primevue/dialog'
 import PrimeMultiSelect from 'primevue/multiselect'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Tag from 'primevue/tag'
 import type { NotificationRule } from '@/types/notification'
 
 const { t } = useI18n()
@@ -556,8 +534,22 @@ const showHelpModal = ref(false)
 const isEditing = ref(false)
 const editingId = ref<string | null>(null)
 const searchQuery = ref('')
+const statusFilter = ref<boolean[]>([])
 const saving = ref(false)
 const saveError = ref('')
+const viewMode = ref<'card' | 'table'>(
+  (localStorage.getItem('notification_rules_view_mode') as 'card' | 'table') ?? 'card'
+)
+
+const setViewMode = (mode: 'card' | 'table') => {
+  viewMode.value = mode
+  localStorage.setItem('notification_rules_view_mode', mode)
+}
+
+const statusOptions = computed(() => [
+  { label: t('common.active'),   value: true },
+  { label: t('common.inactive'), value: false },
+])
 
 // ------ Form ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -587,7 +579,6 @@ const formData = ref(defaultForm())
 // ------ Data ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const storeLoading = computed(() => notificationStore.loading)
 const allRules = computed(() => notificationStore.notificationRules)
-const activeRulesCount = computed(() => allRules.value.filter((rule) => rule.isActive).length)
 const resourceTypes = computed(() => resourcesStore.resourceTypes)
 const resources = computed(() => resourcesStore.resources)
 
@@ -653,14 +644,20 @@ const varDescriptions = computed(() => [
 
 // ------ Filtered list ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const filteredRules = computed(() => {
-  if (!searchQuery.value) return allRules.value
-  const q = searchQuery.value.toLowerCase()
-  return allRules.value.filter(r =>
-    r.eventTrigger.toLowerCase().includes(q) ||
-    r.channel.toLowerCase().includes(q) ||
-    (r.templateSubject ?? '').toLowerCase().includes(q) ||
-    (r.recipients ?? []).join(' ').toLowerCase().includes(q)
-  )
+  let list = allRules.value
+  if (statusFilter.value.length > 0) {
+    list = list.filter((r) => statusFilter.value.includes(r.isActive))
+  }
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter(r =>
+      r.eventTrigger.toLowerCase().includes(q) ||
+      r.channel.toLowerCase().includes(q) ||
+      (r.templateSubject ?? '').toLowerCase().includes(q) ||
+      (r.recipients ?? []).join(' ').toLowerCase().includes(q)
+    )
+  }
+  return list
 })
 
 // ------ Helpers ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -763,13 +760,6 @@ function getRuleRecipientsSummary(rule: NotificationRule): string {
   return base
 }
 
-
-function getRuleTemplateInfo(rule: NotificationRule): string {
-  if (rule.templateRef?.trim()) return t('notifications.templateWithRef', { ref: rule.templateRef })
-  if (rule.templateBody?.trim()) return t('notifications.customTemplate')
-  if (rule.templateSubject?.trim()) return t('notifications.customSubject')
-  return ''
-}
 
 function getRuleSummary(rule: NotificationRule): string {
   const trigger = getTriggerLabel(rule.eventTrigger)

@@ -100,20 +100,20 @@
                   <div class="kiosk-occupied-time">{{ formatSingleTime(display.currentBooking.endTime) }}</div>
                 </template>
                 <template v-else>
-                  <div class="kiosk-free-label">Sala libera</div>
+                  <div class="kiosk-free-label">{{ t('publicResource.kioskRoomFree') }}</div>
                   <template v-if="display.nextBooking">
-                    <div class="kiosk-free-until">Prossima prenotazione</div>
+                    <div class="kiosk-free-until">{{ t('publicResource.kioskNextBooking') }}</div>
                     <div class="kiosk-free-time">{{ formatSingleTime(display.nextBooking.startTime) }}</div>
                   </template>
                   <template v-else>
-                    <div class="kiosk-free-until">Nessuna prossima prenotazione</div>
+                    <div class="kiosk-free-until">{{ t('publicResource.kioskNoNextBooking') }}</div>
                   </template>
                 </template>
               </div>
             </div>
 
             <div class="kiosk-next-organizer" v-if="display.currentBooking || display.nextBooking">
-              <div class="kiosk-organizer-label">Organizzatore</div>
+              <div class="kiosk-organizer-label">{{ t('publicResource.kioskOrganizer') }}</div>
               <div class="kiosk-organizer-name">
                 {{ bookingOrganizer(display.currentBooking || display.nextBooking) || '—' }}
               </div>

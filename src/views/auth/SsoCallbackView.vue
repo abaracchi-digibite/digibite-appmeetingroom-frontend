@@ -10,15 +10,6 @@
         <p class="sso-message">{{ $t('sso.callback.processing') }}</p>
       </div>
 
-      <!-- Successo (brevissimo - poi redirect automatico) -->
-      <div v-else-if="state === 'success'" class="sso-state">
-        <div class="sso-icon sso-icon--success">
-          <i class="pi pi-check-circle" />
-        </div>
-        <p class="sso-message">{{ $t('sso.callback.success') }}</p>
-        <p class="sso-submessage">{{ $t('sso.callback.redirecting') }}</p>
-      </div>
-
       <!-- Errore -->
       <div v-else-if="state === 'error'" class="sso-state">
         <div class="sso-icon sso-icon--error">
@@ -91,17 +82,13 @@ onMounted(async () => {
       isSuperAdmin,
     })
 
-    state.value = 'success'
-
-    // Redirect al dashboard dopo 800ms (abbastanza per mostrare il feedback visivo)
-    setTimeout(() => {
-      const destination = returnUrl && isValidReturnUrl(returnUrl)
-        ? returnUrl
-        : isSuperAdmin
-          ? '/superadmin'
-          : '/dashboard'
-      router.push(destination)
-    }, 800)
+    // Redirect immediato alla destinazione finale, senza schermata di conferma.
+    const destination = returnUrl && isValidReturnUrl(returnUrl)
+      ? returnUrl
+      : isSuperAdmin
+        ? '/superadmin'
+        : '/dashboard'
+    await router.replace(destination)
 
   } catch (err) {
     state.value        = 'error'

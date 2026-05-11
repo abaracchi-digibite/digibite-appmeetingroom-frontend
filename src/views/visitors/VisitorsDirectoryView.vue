@@ -1,78 +1,130 @@
 <template>
   <MainLayout>
-    <div class="visitors-directory">
-      <PrimeButton
-          icon="pi pi-plus"
-          :label="t('visitors.create')"
-          severity="success"
-          size="small"
-          @click="openCreateDialog"
-      />
+    <div class="list-page">
 
-      <!-- Search bar -->
-      <div class="directory-search">
-        <PrimeIconField class="flex-1">
-          <PrimeInputIcon class="pi pi-search" />
-          <PrimeInputText v-model="searchQuery" :placeholder="t('common.search')" class="w-full" />
-        </PrimeIconField>
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
+          </div>
+          <button type="button" class="list-btn-primary" @click="openCreateDialog">
+            <i class="pi pi-plus" />
+            <span>{{ t('visitors.create') }}</span>
+          </button>
+        </div>
+
+        <div class="list-row-secondary">
+          <div class="list-filter-inline">
+            <span class="list-count-flat">{{ filteredVisitors.length }} {{ t('common.results') }}</span>
+          </div>
+          <div class="list-row-secondary-right">
+            <div class="list-view-flat">
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
+                <i class="pi pi-list" />
+              </button>
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'card' }" :title="t('common.viewCards')" @click="setViewMode('card')">
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Table -->
-      <PrimeDataTable
-        :value="filteredVisitors"
-        :loading="loading"
-        responsiveLayout="scroll"
-        stripedRows
-        showGridlines
-      >
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-inbox" />
-            <p>{{ t('common.noData') }}</p>
+      <!-- ── Empty / Loading ───────────────────────────────────────── -->
+      <div v-if="loading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
+        <span>{{ t('common.loading') }}</span>
+      </div>
+
+      <div v-else-if="filteredVisitors.length === 0" class="list-empty">
+        <i class="pi pi-inbox" />
+        <p>{{ t('common.noData') }}</p>
+      </div>
+
+      <!-- ── Tabella ──────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+        <PrimeDataTable :value="filteredVisitors" responsiveLayout="scroll" stripedRows class="list-table">
+          <PrimeColumn field="lastName" :header="t('visitors.fullName')" :sortable="true">
+            <template #body="{ data }">
+              <span class="list-cell-strong">{{ data.firstName }} {{ data.lastName }}</span>
+            </template>
+          </PrimeColumn>
+
+          <PrimeColumn field="email" :header="t('common.email')" :sortable="true">
+            <template #body="{ data }">
+              <span v-if="data.email" class="list-cell-muted">{{ data.email }}</span>
+              <span v-else class="list-cell-muted">—</span>
+            </template>
+          </PrimeColumn>
+
+          <PrimeColumn field="phone" :header="t('visitors.phone')" :sortable="true">
+            <template #body="{ data }">
+              <span v-if="data.phone" class="list-cell-muted">{{ data.phone }}</span>
+              <span v-else class="list-cell-muted">—</span>
+            </template>
+          </PrimeColumn>
+
+          <PrimeColumn field="lastUsedAt" :header="t('visitors.lastUsed')" :sortable="true">
+            <template #body="{ data }">
+              <span v-if="data.lastUsedAt" class="list-cell-muted">{{ formatDate(data.lastUsedAt) }}</span>
+              <span v-else class="list-cell-muted">—</span>
+            </template>
+          </PrimeColumn>
+
+          <PrimeColumn :header="t('common.actions')" :style="{ width: '110px' }" class="list-col-actions">
+            <template #body="{ data }">
+              <div class="list-row-actions">
+                <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="openEditDialog(data)">
+                  <i class="pi pi-pencil" />
+                </button>
+                <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="confirmDelete(data)">
+                  <i class="pi pi-trash" />
+                </button>
+              </div>
+            </template>
+          </PrimeColumn>
+        </PrimeDataTable>
+      </div>
+
+      <!-- ── Cards ────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article v-for="v in filteredVisitors" :key="v.id" class="list-card">
+          <div class="list-card-head">
+            <h3 class="list-card-title">{{ v.firstName }} {{ v.lastName }}</h3>
           </div>
-        </template>
-        <template #loading>
-          <div class="empty-state"><i class="pi pi-spin pi-spinner" /></div>
-        </template>
-
-        <PrimeColumn :header="t('visitors.fullName')" field="fullName">
-          <template #body="{ data }">
-            <strong>{{ data.firstName }} {{ data.lastName }}</strong>
-          </template>
-        </PrimeColumn>
-
-        <PrimeColumn field="email" :header="t('common.email')">
-          <template #body="{ data }">
-            <span v-if="data.email">{{ data.email }}</span>
-            <span v-else class="muted">—</span>
-          </template>
-        </PrimeColumn>
-
-        <PrimeColumn field="phone" :header="t('visitors.phone')">
-          <template #body="{ data }">
-            <span v-if="data.phone">{{ data.phone }}</span>
-            <span v-else class="muted">—</span>
-          </template>
-        </PrimeColumn>
-
-        <PrimeColumn field="lastUsedAt" :header="t('visitors.lastUsed')">
-          <template #body="{ data }">
-            <span v-if="data.lastUsedAt">{{ formatDate(data.lastUsedAt) }}</span>
-            <span v-else class="muted">—</span>
-          </template>
-        </PrimeColumn>
-
-        <PrimeColumn :header="t('common.actions')" :style="{ width: '140px' }">
-          <template #body="{ data }">
-            <div class="row-actions">
-              <PrimeButton icon="pi pi-pencil" outlined severity="warning" size="small" @click="openEditDialog(data)" />
-              <PrimeButton icon="pi pi-trash" outlined severity="danger" size="small" @click="confirmDelete(data)" />
+          <div class="list-card-info">
+            <div v-if="v.email" class="list-card-info-row">
+              <i class="pi pi-envelope" />
+              <span>{{ v.email }}</span>
             </div>
-          </template>
-        </PrimeColumn>
-      </PrimeDataTable>
+            <div v-if="v.phone" class="list-card-info-row">
+              <i class="pi pi-phone" />
+              <span>{{ v.phone }}</span>
+            </div>
+            <div v-if="v.lastUsedAt" class="list-card-info-row">
+              <i class="pi pi-clock" />
+              <span>{{ formatDate(v.lastUsedAt) }}</span>
+            </div>
+          </div>
+          <div class="list-card-actions">
+            <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="openEditDialog(v)">
+              <i class="pi pi-pencil" />
+            </button>
+            <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="confirmDelete(v)">
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
+      </div>
 
-      <!-- Create / Edit dialog -->
+      <!-- ── Create / Edit dialog ─────────────────────────────────── -->
       <PrimeDialog
         v-model:visible="showDialog"
         :header="isEditing ? t('visitors.edit') : t('visitors.create')"
@@ -134,8 +186,6 @@ import PrimeButton from 'primevue/button'
 import PrimeDataTable from 'primevue/datatable'
 import PrimeColumn from 'primevue/column'
 import PrimeInputText from 'primevue/inputtext'
-import PrimeIconField from 'primevue/iconfield'
-import PrimeInputIcon from 'primevue/inputicon'
 import PrimeDialog from 'primevue/dialog'
 import PrimeTextarea from 'primevue/textarea'
 import { useToast } from 'primevue/usetoast'
@@ -150,6 +200,9 @@ const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const searchQuery = ref('')
+const viewMode = ref<'card' | 'table'>(
+  (localStorage.getItem('visitors_view_mode') as 'card' | 'table') ?? 'table'
+)
 
 const showDialog = ref(false)
 const isEditing = ref(false)
@@ -171,6 +224,11 @@ const filteredVisitors = computed(() => {
     || (v.phone ?? '').toLowerCase().includes(q),
   )
 })
+
+const setViewMode = (mode: 'card' | 'table') => {
+  viewMode.value = mode
+  localStorage.setItem('visitors_view_mode', mode)
+}
 
 function formatDate(iso: string): string {
   try {
@@ -278,81 +336,7 @@ onMounted(() => { void fetchAll() })
 </script>
 
 <style scoped>
-.visitors-directory {
-  margin: 0 auto;
-  padding-bottom: 2rem;
-}
-
-.directory-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.directory-title {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.directory-title h1 {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary, #0f172a);
-}
-
-.directory-title p {
-  margin: 0.2rem 0 0;
-  color: var(--text-secondary, #64748b);
-  font-size: 0.875rem;
-}
-
-.icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(13,148,136,0.08));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  color: #2563eb;
-}
-
-.directory-search {
-  margin-bottom: 1rem;
-  display: flex;
-  gap: 0.75rem;
-}
-
-.flex-1 { flex: 1; }
-.w-full { width: 100%; }
-
-.row-actions {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 2.5rem 1rem;
-  color: var(--text-secondary, #64748b);
-}
-
-.empty-state i {
-  font-size: 2.5rem;
-  color: #cbd5e1;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.muted {
-  color: #94a3b8;
-}
+@import '@/assets/styles/list-page.css';
 
 .dlg-form {
   padding: 0.5rem 0;

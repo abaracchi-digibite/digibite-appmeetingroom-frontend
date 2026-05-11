@@ -16,7 +16,7 @@
             <PrimeSelect
               v-model="filters.plantId"
               :options="siteOptions"
-              option-:label="t('views.calendar.label')"
+              option-label="label"
               option-value="value"
               :placeholder="t('common.all')"
               show-clear
@@ -30,7 +30,7 @@
             <PrimeMultiSelect
               v-model="filters.resourceTypeIds"
               :options="resourceTypeOptions"
-              option-:label="t('views.calendar.label')"
+              option-label="label"
               option-value="value"
               :placeholder="t('common.all')"
               class="w-full"
@@ -42,7 +42,7 @@
             <PrimeMultiSelect
               v-model="filters.resourceIds"
               :options="resourceOptions"
-              option-:label="t('views.calendar.label')"
+              option-label="label"
               option-value="value"
               :placeholder="t('common.all')"
               class="w-full"
@@ -54,7 +54,7 @@
             <PrimeMultiSelect
               v-model="filters.statuses"
               :options="statusOptions"
-              option-:label="t('views.calendar.label')"
+              option-label="label"
               option-value="value"
               :placeholder="t('common.all')"
               class="w-full"
@@ -67,7 +67,7 @@
             <PrimeSelect
               v-model="filters.visitorTypeId"
               :options="visitorTypeOptions"
-              option-:label="t('views.calendar.label')"
+              option-label="label"
               option-value="value"
               :placeholder="t('common.all')"
               show-clear
@@ -94,7 +94,7 @@
               <PrimeSelect
                 v-model="slotStartHour"
                 :options="hourOptions"
-                option-:label="t('views.calendar.label')"
+                option-label="label"
                 option-value="value"
                 class="time-range-select"
               />
@@ -102,7 +102,7 @@
               <PrimeSelect
                 v-model="slotEndHour"
                 :options="hourOptionsEnd"
-                option-:label="t('views.calendar.label')"
+                option-label="label"
                 option-value="value"
                 class="time-range-select"
               />
@@ -232,7 +232,7 @@
             <PrimeSelect
               v-model="quickBook.resourceId"
               :options="resourceOptions"
-              option-:label="t('views.calendar.label')"
+              option-label="label"
               option-value="value"
               :placeholder="t('calendar.selectResource')"
               class="w-full"

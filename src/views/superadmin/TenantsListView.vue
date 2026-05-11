@@ -54,7 +54,7 @@
         <Dropdown
           v-model="statusFilter"
           :options="statusOptions"
-          option-:label="t('views.tenantsList.label')"
+          option-label="label"
           option-value="value"
           :placeholder="t('common.filter')"
           class="filter-dropdown"
@@ -210,8 +210,8 @@
               <InputNumber v-model="formData.piiRetentionDays" :min="1" :max="3650" class="w-full" />
             </div>
             <div class="form-field full">
-              <label>Logo URL</label>
-              <InputText v-model="formData.logoUrl" placeholder="https://example.com/logo.png" class="w-full" />
+              <label>{{ t('plants.logoUrl') }}</label>
+              <InputText v-model="formData.logoUrl" :placeholder="t('plants.logoUrlPlaceholder')" class="w-full" />
             </div>
           </div>
 
@@ -245,7 +245,7 @@
             <Select
               v-model="selectedImpersonateRole"
               :options="impersonateRoleOptions"
-              option-:label="t('views.tenantsList.label')"
+              option-label="label"
               option-value="value"
               class="w-full"
             >
@@ -273,7 +273,7 @@
             <Select
               v-model="selectedTargetId"
               :options="targetOptions"
-              option-:label="t('views.tenantsList.label')"
+              option-label="label"
               option-value="id"
               :loading="targetsLoading"
               :placeholder="targetsLoading

@@ -31,7 +31,7 @@
                 }"
                 role="button"
                 tabindex="0"
-                :aria-label="`Vai allo step ${idx + 1}`"
+                :aria-label="t('wizard.goToStep', { n: idx + 1 })"
                 @click="goToStep(idx)"
                 @keydown.enter.prevent="goToStep(idx)"
                 @keydown.space.prevent="goToStep(idx)"
@@ -295,7 +295,7 @@
                       min="1"
                       max="99"
                       class="recurrence-interval-input"
-                      aria-label="Intervallo ricorrenza"
+                      :aria-label="t('wizard.recurrenceIntervalAriaLabel')"
                   />
                   <div class="recurrence-period-tabs">
                     <button
@@ -327,6 +327,10 @@
                       {{ day.short }}
                     </button>
                   </div>
+                  <label class="weekend-toggle">
+                    <input type="checkbox" v-model="includeWeekends" />
+                    <span>{{ t('wizard.includeWeekends') }}</span>
+                  </label>
                 </div>
 
                 <!-- Data fine (Until) -->
@@ -388,12 +392,12 @@
                     @complete="onSearchUsers"
                     @item-select="onUserSelect"
                 >
-                  <template #item="{ item }">
+                  <template #option="{ option }">
                     <div class="participant-suggestion">
-                      <div class="ps-avatar">{{ item.initials }}</div>
+                      <div class="ps-avatar">{{ option.initials }}</div>
                       <div class="ps-info">
-                        <span class="ps-name">{{ item.fullName || item.email }}</span>
-                        <span v-if="item.fullName" class="ps-email">{{ item.email }}</span>
+                        <span class="ps-name">{{ option.fullName || option.email }}</span>
+                        <span v-if="option.fullName" class="ps-email">{{ option.email }}</span>
                       </div>
                     </div>
                   </template>
@@ -570,7 +574,7 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="field-label">Numero massimo accettazioni (opzionale)</label>
+                <label class="field-label">{{ t('wizard.maxVisitorsLabel') }}</label>
                 <PrimeInputNumber
                     v-model="formData.maxVisitors"
                     :min="0"
@@ -587,7 +591,7 @@
                 <i class="pi pi-user-plus" />
                 {{ t('wizard.nominativeCompleteBadge') }}
               </div>
-              <p class="field-sub" style="margin-bottom: 1.25rem;">{{ t('wizard.nominativeCompleteDesc') }}</p>
+              <p class="field-sub visitor-mode-desc">{{ t('wizard.nominativeCompleteDesc') }}</p>
               <div v-if="formData.visitors.length > 0" class="visitor-list">
                 <div
                     v-for="(visitor, idx) in formData.visitors"
@@ -595,89 +599,159 @@
                     class="visitor-row"
                 >
                   <div class="visitor-info">
-                    <strong>{{ `${visitor.firstName} ${visitor.lastName}`.trim() }}</strong>
-                    <span>{{ visitor.email }}</span>
-                    <!-- Badge "da rubrica" quando il visitatore è linkato a un contatto della rubrica -->
-                    <span v-if="visitor.contactId" class="visitor-directory-badge">
-                      <i class="pi pi-book" /> {{ t('wizard.fromDirectory') }}
-                    </span>
-                    <!-- DRF §4.3 — badge Capogruppo se designato -->
-                    <span v-if="visitor.isGroupLeader" class="visitor-leader-badge">
-                      <i class="pi pi-star-fill" /> {{ t('bookings.capogruppo') }}
-                    </span>
+                    <div class="visitor-name">
+                      {{ `${visitor.firstName} ${visitor.lastName}`.trim() }}
+                      <small v-if="visitor.isGroupLeader" class="visitor-flag">· {{ t('bookings.capogruppo') }}</small>
+                      <small v-if="visitor.contactId" class="visitor-flag">· {{ t('wizard.fromDirectory') }}</small>
+                    </div>
+                    <div class="visitor-meta">
+                      {{ visitor.email }}<template v-if="visitor.phone"> · {{ visitor.phone }}</template>
+                    </div>
                   </div>
-                  <button type="button" class="btn-icon-sm" @click="removeVisitor(idx)">
-                    <i class="pi pi-trash" />
-                  </button>
+                  <div class="visitor-row-actions">
+                    <button
+                      type="button"
+                      class="visitor-action-btn"
+                      :title="t('common.edit')"
+                      @click="openEditVisitor(idx)"
+                    >
+                      <i class="pi pi-pencil" />
+                    </button>
+                    <button
+                      type="button"
+                      class="visitor-action-btn"
+                      :title="t('common.delete')"
+                      @click="removeVisitor(idx)"
+                    >
+                      <i class="pi pi-trash" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <button type="button" class="btn-outline-primary" @click="showAddVisitorDialog = true">
-                <i class="pi pi-plus" />
-                {{ t('wizard.addVisitor') }}
-              </button>
+              <div class="visitor-add-actions">
+                <button type="button" class="btn-add-visitor" @click="openDirectoryDialog">
+                  <i class="pi pi-book" />
+                  {{ t('wizard.addFromDirectory') }}
+                </button>
+                <button type="button" class="btn-add-visitor" @click="openManualDialog">
+                  <i class="pi pi-plus" />
+                  {{ t('wizard.addManually') }}
+                </button>
+              </div>
 
-              <!-- Add visitor inline form -->
-              <div v-if="showAddVisitorDialog" class="add-visitor-form">
-                <h4>{{ t('wizard.newVisitor') }}</h4>
+              <!-- ── Dialog "Aggiungi da rubrica" ─────────────────── -->
+              <AppDialog
+                v-model:visible="showDirectoryDialog"
+                :header="t('wizard.addFromDirectoryHeader')"
+                :subtitle="t('wizard.searchDirectoryHint')"
+                icon="pi pi-book"
+                severity="info"
+                size="md"
+              >
+                <div class="dlg-form">
+                  <div class="dlg-section">
+                    <div class="dlg-fields-2">
+                      <div class="dlg-field dlg-field-full">
+                        <label class="dlg-label">{{ t('wizard.searchDirectoryLabel') }}</label>
+                        <PrimeAutoComplete
+                          v-model="directoryPicked"
+                          :suggestions="directorySuggestions"
+                          :placeholder="t('wizard.searchDirectoryPlaceholder')"
+                          option-label="firstName"
+                          :delay="300"
+                          :min-length="2"
+                          fluid
+                          class="directory-autocomplete"
+                          @complete="searchDirectory"
+                        >
+                          <template #option="slotProps">
+                            <div class="directory-option">
+                              <strong>{{ slotProps.option.firstName }} {{ slotProps.option.lastName }}</strong>
+                              <span v-if="slotProps.option.email">{{ slotProps.option.email }}</span>
+                            </div>
+                          </template>
+                        </PrimeAutoComplete>
+                      </div>
 
-                <!-- ── Autocomplete Rubrica visitatori ───────────────────────
-                     Permette di selezionare un contatto già censito senza
-                     re-inserire i dati. Quando si seleziona, i campi sotto
-                     vengono pre-popolati e collegati via contactId. -->
-                <div class="form-group directory-search-group">
-                  <label class="field-label">
-                    <i class="pi pi-book" />
-                    {{ t('wizard.searchDirectoryLabel') }}
-                  </label>
-                  <PrimeAutoComplete
-                    v-model="directorySelected"
-                    :suggestions="directorySuggestions"
-                    :placeholder="t('wizard.searchDirectoryPlaceholder')"
-                    option-label="firstName"
-                    :delay="300"
-                    :min-length="2"
-                    class="w-full"
-                    @complete="searchDirectory"
-                    @item-select="(e: any) => applyDirectorySelection(e.value)"
-                  >
-                    <template #option="slotProps">
-                      <span>{{ formatDirectoryOption(slotProps.option) }}</span>
-                    </template>
-                  </PrimeAutoComplete>
-                  <p class="field-help directory-search-hint">{{ t('wizard.searchDirectoryHint') }}</p>
+                      <!-- Preview del contatto selezionato -->
+                      <div v-if="directoryPicked && typeof directoryPicked !== 'string'" class="dlg-field dlg-field-full directory-selected">
+                        <div class="directory-selected-name">
+                          <strong>{{ directoryPicked.firstName }} {{ directoryPicked.lastName }}</strong>
+                        </div>
+                        <div v-if="directoryPicked.email" class="directory-selected-meta">{{ directoryPicked.email }}</div>
+                        <div v-if="directoryPicked.phone" class="directory-selected-meta">{{ directoryPicked.phone }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="dlg-section dlg-section-status">
+                    <div class="dlg-status-row">
+                      <div>
+                        <div class="dlg-status-title">{{ t('bookings.capogruppo') }}</div>
+                        <div class="dlg-status-desc">{{ t('bookings.capogruppoHelp') }}</div>
+                      </div>
+                      <PrimeCheckbox v-model="directoryIsGroupLeader" input-id="dirIsGroupLeader" binary />
+                    </div>
+                  </div>
                 </div>
 
-                <!-- System fields: nome e cognome separati (decisione utente) -->
-                <div class="visitor-form-grid">
-                  <div class="form-group">
-                    <label class="field-label required">{{ t('wizard.visitorFirstName') }}</label>
-                    <PrimeInputText v-model="newVisitor.firstName" :placeholder="t('wizard.visitorFirstNamePlaceholder')" class="w-full" />
+                <template #footer>
+                  <button type="button" class="dialog-btn dialog-btn-cancel" @click="cancelDirectoryAdd">
+                    <i class="pi pi-times" /> {{ t('common.cancel') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="dialog-btn dialog-btn-save"
+                    :disabled="!isDirectoryPickValid"
+                    @click="confirmDirectoryAdd"
+                  >
+                    <i class="pi pi-check" /> {{ t('common.add') }}
+                  </button>
+                </template>
+              </AppDialog>
+
+              <!-- ── Dialog "Aggiungi manualmente" / Modifica ─────────────── -->
+              <AppDialog
+                v-model:visible="showAddVisitorDialog"
+                :header="editingVisitorIndex !== null ? t('wizard.editVisitor') : t('wizard.newVisitor')"
+                :subtitle="(newVisitor.firstName || newVisitor.lastName) ? `${newVisitor.firstName} ${newVisitor.lastName}`.trim() : t('wizard.nominativeCompleteDesc')"
+                :icon="editingVisitorIndex !== null ? 'pi pi-pencil' : 'pi pi-user-plus'"
+                severity="primary"
+                size="lg"
+              >
+              <div class="dlg-form">
+                <!-- Sezione Anagrafica -->
+                <div class="dlg-section">
+                  <div class="dlg-section-title">
+                    <i class="pi pi-id-card" /> {{ t('wizard.visitorRequestedInfo') }}
                   </div>
-                  <div class="form-group">
-                    <label class="field-label required">{{ t('wizard.visitorLastName') }}</label>
-                    <PrimeInputText v-model="newVisitor.lastName" :placeholder="t('wizard.visitorLastNamePlaceholder')" class="w-full" />
-                  </div>
-                  <div class="form-group">
-                    <label class="field-label required">{{ t('common.email') }}</label>
-                    <PrimeInputText v-model="newVisitor.email" type="email" placeholder="email@esempio.com" class="w-full" />
-                  </div>
-                  <div class="form-group">
-                    <label class="field-label">{{ t('wizard.visitorPhone') }}</label>
-                    <PrimeInputText v-model="newVisitor.phone" type="tel" placeholder="+39 …" class="w-full" />
+                  <div class="dlg-fields-2">
+                    <div class="dlg-field">
+                      <label class="dlg-label">{{ t('wizard.visitorFirstName') }} <span class="req">*</span></label>
+                      <PrimeInputText v-model="newVisitor.firstName" :placeholder="t('wizard.visitorFirstNamePlaceholder')" class="w-full" />
+                    </div>
+                    <div class="dlg-field">
+                      <label class="dlg-label">{{ t('wizard.visitorLastName') }} <span class="req">*</span></label>
+                      <PrimeInputText v-model="newVisitor.lastName" :placeholder="t('wizard.visitorLastNamePlaceholder')" class="w-full" />
+                    </div>
+                    <div class="dlg-field">
+                      <label class="dlg-label">{{ t('common.email') }} <span class="req">*</span></label>
+                      <PrimeInputText v-model="newVisitor.email" type="email" placeholder="email@esempio.com" class="w-full" />
+                    </div>
+                    <div class="dlg-field">
+                      <label class="dlg-label">{{ t('wizard.visitorPhone') }}</label>
+                      <PrimeInputText v-model="newVisitor.phone" type="tel" placeholder="+39 …" class="w-full" />
+                    </div>
                   </div>
                 </div>
                 <!-- Custom fields from visitor type -->
-                <div v-if="visitorTypeCustomFields.length > 0" class="visitor-custom-fields">
-                  <div class="custom-fields-panel">
-                    <div class="custom-fields-panel-head">
-                      <div>
-                        <p class="panel-kicker">{{ t('wizard.customFieldsVisitorType') }}</p>
-                        <h5 class="panel-title">Informazioni richieste per il visitatore</h5>
-                      </div>
-                      <span class="panel-count">{{ visitorTypeCustomFields.length }}</span>
-                    </div>
-
-                    <div class="custom-fields-grid">
+                <div v-if="visitorTypeCustomFields.length > 0" class="dlg-section">
+                  <div class="dlg-section-title">
+                    <i class="pi pi-list-check" />
+                    {{ t('wizard.customFieldsVisitorType') }}
+                    <span class="dlg-section-count">{{ visitorTypeCustomFields.length }}</span>
+                  </div>
+                  <div class="dlg-fields-2">
                       <div
                           v-for="field in visitorTypeCustomFields"
                           :key="field.id"
@@ -686,12 +760,12 @@
                         <div class="custom-field-card-head">
                           <div class="field-card-title-wrap">
                             <label class="field-label field-label-card" :class="{ required: field.isRequired }">{{ field.label }}</label>
-                            <p class="field-card-caption">Compilazione richiesta per ogni visitatore registrato.</p>
+                            <p class="field-card-caption">{{ t('wizard.visitorFieldCaption') }}</p>
                           </div>
 
                         </div>
                         <div v-if="field.sourceTags.length > 0" class="field-origin-row">
-                          <span class="field-origin-label">Origine</span>
+                          <span class="field-origin-label">{{ t('wizard.fieldOrigin') }}</span>
                           <div class="field-origin-tags">
                             <span
                                 v-for="sourceTag in field.sourceTags"
@@ -727,7 +801,7 @@
                             :options="getFieldOptions(field)"
                             option-label="label"
                             option-value="value"
-                            :placeholder="'Seleziona un valore'"
+                            :placeholder="t('wizard.selectValuePlaceholder')"
                             class="w-full"
                         />
                         <div v-else-if="field.fieldType === 'MultipleChoice'" class="multi-choice-list multi-choice-card">
@@ -761,42 +835,38 @@
                       </div>
                     </div>
                   </div>
+                <!-- ── Capogruppo (status row) ── -->
+                <div class="dlg-section dlg-section-status">
+                  <div class="dlg-status-row">
+                    <div>
+                      <div class="dlg-status-title">{{ t('bookings.capogruppo') }}</div>
+                      <div class="dlg-status-desc">{{ t('bookings.capogruppoHelp') }}</div>
+                    </div>
+                    <PrimeCheckbox v-model="newVisitor.isGroupLeader" input-id="manualIsGroupLeader" binary />
+                  </div>
                 </div>
-                <!-- ── Capogruppo (DRF §4.3 + glossario) ──
-                     Il Capogruppo è "il visitatore designato a firmare i
-                     documenti di sicurezza/privacy all'arrivo". È una
-                     proprietà del singolo visitatore esterno (un solo
-                     capogruppo per prenotazione). -->
-                <label class="checkbox-inline visitor-leader-toggle">
-                  <input
-                    v-model="newVisitor.isGroupLeader"
-                    type="checkbox"
-                    class="checkbox-input"
-                  />
-                  <span>{{ t('bookings.capogruppo') }}</span>
-                </label>
-                <p class="field-help" style="margin-top: 0.25rem; font-size: 0.75rem; color: #64748b;">
-                  {{ t('bookings.capogruppoHelp') }}
-                </p>
 
-                <!-- Flag "Salva in rubrica" — solo se NON proviene già dalla rubrica -->
-                <label v-if="!newVisitor.contactId" class="checkbox-inline visitor-leader-toggle">
-                  <input
-                    v-model="newVisitor.saveToDirectory"
-                    type="checkbox"
-                    class="checkbox-input"
-                  />
-                  <span><i class="pi pi-bookmark" /> {{ t('wizard.saveToDirectory') }}</span>
-                </label>
-                <p v-if="!newVisitor.contactId" class="field-help" style="margin-top: 0.25rem; font-size: 0.75rem; color: #64748b;">
-                  {{ t('wizard.saveToDirectoryHelp') }}
-                </p>
-
-                <div class="visitor-form-actions">
-                  <button type="button" class="btn-sm btn-ghost" @click="cancelAddVisitor">{{ t('common.cancel') }}</button>
-                  <button type="button" class="btn-sm btn-primary" @click="confirmAddVisitor">{{ t('common.add') }}</button>
+                <!-- ── Salva in rubrica (status row, solo se non già da rubrica) ── -->
+                <div v-if="!newVisitor.contactId" class="dlg-section dlg-section-status">
+                  <div class="dlg-status-row">
+                    <div>
+                      <div class="dlg-status-title">{{ t('wizard.saveToDirectory') }}</div>
+                      <div class="dlg-status-desc">{{ t('wizard.saveToDirectoryHelp') }}</div>
+                    </div>
+                    <PrimeCheckbox v-model="newVisitor.saveToDirectory" input-id="manualSaveToDir" binary />
+                  </div>
                 </div>
               </div>
+
+              <template #footer>
+                <button type="button" class="dialog-btn dialog-btn-cancel" @click="cancelAddVisitor">
+                  <i class="pi pi-times" /> {{ t('common.cancel') }}
+                </button>
+                <button type="button" class="dialog-btn dialog-btn-save" @click="confirmAddVisitor">
+                  <i class="pi pi-check" /> {{ editingVisitorIndex !== null ? t('common.save') : t('common.add') }}
+                </button>
+              </template>
+              </AppDialog>
             </div>
           </div>
         </div>
@@ -815,16 +885,16 @@
             <!-- Alert campi obbligatori mancanti -->
             <div v-if="showFieldErrors && hasMissingRequiredFields(bookingCustomFields, formData.customFieldValues)" class="required-fields-alert">
               <i class="pi pi-exclamation-triangle" />
-              <span>Compila tutti i campi obbligatori prima di procedere.</span>
+              <span>{{ t('wizard.fillRequiredFirst') }}</span>
             </div>
 
             <div v-if="bookingCustomFields.length > 0" class="custom-fields-list">
               <div class="custom-fields-panel custom-fields-panel-booking">
                 <div class="custom-fields-panel-head">
                   <div>
-                    <p class="panel-kicker">Campi dinamici</p>
-                    <h5 class="panel-title">Dettagli richiesti per completare la prenotazione</h5>
-                    <p class="panel-subtitle">Mostriamo soltanto i campi associati alle risorse e alle tipologie risorsa selezionate.</p>
+                    <p class="panel-kicker">{{ t('bookings.customFieldsKicker') }}</p>
+                    <h5 class="panel-title">{{ t('wizard.bookingFieldsTitle') }}</h5>
+                    <p class="panel-subtitle">{{ t('wizard.bookingFieldsSubtitle') }}</p>
                   </div>
                   <span class="panel-count">{{ bookingCustomFields.length }}</span>
                 </div>
@@ -841,15 +911,15 @@
                         <label class="field-label field-label-card" :class="{ required: field.isRequired }">
                           {{ field.label }}
                         </label>
-                        <p class="field-card-caption">Dato raccolto una sola volta per questa prenotazione.</p>
+                        <p class="field-card-caption">{{ t('wizard.bookingFieldCaption') }}</p>
                       </div>
                       <div class="field-card-badges">
                         <span class="field-type-badge">{{ getFieldTypeLabel(field.fieldType) }}</span>
-                        <span v-if="field.isRequired" class="field-required-badge">Obbligatorio</span>
+                        <span v-if="field.isRequired" class="field-required-badge">{{ t('resourceTypes.required') }}</span>
                       </div>
                     </div>
                     <div v-if="field.sourceTags.length > 0" class="field-origin-row">
-                      <span class="field-origin-label">Origine</span>
+                      <span class="field-origin-label">{{ t('wizard.fieldOrigin') }}</span>
                       <div class="field-origin-tags">
                         <span
                             v-for="sourceTag in field.sourceTags"
@@ -864,7 +934,7 @@
                     <PrimeInputText
                         v-if="field.fieldType === 'Text'"
                         v-model="(formData.customFieldValues as Record<string, any>)[getFieldValueKey(field)]"
-                        :placeholder="field.placeholder || 'Inserisci un testo'"
+                        :placeholder="field.placeholder || t('wizard.enterTextPlaceholder')"
                         :class="['w-full', { 'field-missing-error': isBookingFieldMissing(field) }]"
                     />
                     <PrimeInputNumber
@@ -897,7 +967,7 @@
                         :options="getFieldOptions(field)"
                         option-label="label"
                         option-value="value"
-                        :placeholder="'Seleziona un valore'"
+                        :placeholder="t('wizard.selectValuePlaceholder')"
                         :class="['w-full', { 'field-missing-error': isBookingFieldMissing(field) }]"
                     />
                     <div
@@ -937,7 +1007,7 @@
                     </label>
                     <div v-if="isBookingFieldMissing(field)" class="field-error-msg">
                       <i class="pi pi-exclamation-circle" />
-                      <span>Campo obbligatorio da compilare prima di procedere.</span>
+                      <span>{{ t('wizard.requiredFieldMissing') }}</span>
                     </div>
                   </div>
                 </div>
@@ -1189,6 +1259,9 @@ import PrimeDatePicker from 'primevue/datepicker'
 import PrimeInputText from 'primevue/inputtext'
 import PrimeInputNumber from 'primevue/inputnumber'
 import PrimeAutoComplete from 'primevue/autocomplete'
+import PrimeDialog from 'primevue/dialog'
+import PrimeCheckbox from 'primevue/checkbox'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useToast } from 'primevue/usetoast'
 import { useBookingsStore } from '@/stores/bookings.store'
 import { useResourcesStore } from '@/stores/resources.store'
@@ -1242,6 +1315,14 @@ const filteredUsers = ref<{ label: string; value: string; fullName: string; emai
 const hasRecurrenceConflicts = ref(false)
 const conflictCount = ref(0)
 const showAddVisitorDialog = ref(false)
+const showDirectoryDialog = ref(false)
+const editingVisitorIndex = ref<number | null>(null)
+const directoryPicked = ref<VisitorSearchResult | string | null>(null)
+const directoryIsGroupLeader = ref(false)
+
+const isDirectoryPickValid = computed(() =>
+  directoryPicked.value !== null && typeof directoryPicked.value !== 'string'
+)
 
 // Tipo del singolo visitatore esterno gestito dal wizard.
 // firstName/lastName sostituiscono il vecchio campo "name" (decisione utente).
@@ -1288,20 +1369,6 @@ async function searchDirectory(event: { query: string }): Promise<void> {
   }
 }
 
-function applyDirectorySelection(visitor: VisitorSearchResult): void {
-  newVisitor.value.firstName = visitor.firstName
-  newVisitor.value.lastName = visitor.lastName
-  newVisitor.value.email = visitor.email ?? ''
-  newVisitor.value.phone = visitor.phone ?? ''
-  newVisitor.value.contactId = visitor.id
-  // Già in rubrica: nessun "save again" automatico, l'utente può forzarlo via flag.
-  newVisitor.value.saveToDirectory = false
-}
-
-function formatDirectoryOption(v: VisitorSearchResult): string {
-  const name = `${v.firstName} ${v.lastName}`.trim()
-  return v.email ? `${name} — ${v.email}` : name
-}
 // Maps userId --- display label for internal participants
 const internalParticipantLabels = ref<Record<string, string>>({})
 const plantResources = ref<Resource[]>([])
@@ -1549,7 +1616,7 @@ function sanitizeCustomFieldValues(
   )
 }
 
-function getFieldValueKey(field: WizardCustomField): string {
+function getFieldValueKey(field: { id: string }): string {
   return field.id
 }
 
@@ -1574,16 +1641,16 @@ function getFieldOptions(field: WizardCustomField): WizardFieldOption[] {
 
 function getFieldTypeLabel(fieldType: string): string {
   const map: Record<string, string> = {
-    Text: 'Testo',
-    Number: 'Numero',
-    Email: 'Email',
-    Phone: 'Telefono',
-    Date: 'Data',
-    Checkbox: 'Checkbox',
-    Boolean: 'Sì / No',
-    SingleChoice: 'Scelta singola',
-    MultipleChoice: 'Scelta multipla',
-    Dropdown: 'Selezione',
+    Text:           t('customFields.types.text'),
+    Number:         t('customFields.types.number'),
+    Email:          t('customFields.types.email'),
+    Phone:          t('customFields.types.phone'),
+    Date:           t('customFields.types.date'),
+    Checkbox:       t('customFields.types.checkbox'),
+    Boolean:        t('customFields.types.boolean'),
+    SingleChoice:   t('customFields.types.singleChoice'),
+    MultipleChoice: t('customFields.types.multipleChoice'),
+    Dropdown:       t('customFields.types.dropdown'),
   }
 
   return map[fieldType] ?? fieldType
@@ -1647,6 +1714,12 @@ async function loadVisitorTypeCustomFields(): Promise<void> {
     return
   }
 
+  // Filtro: i "campi di sistema" (isSystem=true) sono storicamente seminati dal backend
+  // ma corrispondono a info anagrafiche (nome, email, n. persone, data, capogruppo) che
+  // il wizard gestisce nativamente. NON vanno mostrati come custom fields.
+  const stripSystemFields = (fields: CustomField[]): CustomField[] =>
+      fields.filter((f) => !(f as { isSystem?: boolean }).isSystem)
+
   try {
     const links = await customFieldsApi.getVisitorTypeLinks(formData.value.visitorTypeId)
     if (links.length > 0) {
@@ -1654,12 +1727,14 @@ async function loadVisitorTypeCustomFields(): Promise<void> {
       visitorTypeCustomFields.value = mergeWizardFields(links.map((field) => normalizeLinkedField(field, visitorTypeName)))
     } else {
       const visitorType = visitorTypesStore.visitorTypeById(formData.value.visitorTypeId)
-      visitorTypeCustomFields.value = mergeWizardFields((visitorType?.customFields ?? []).map(normalizeLegacyField))
+      const legacy = stripSystemFields(visitorType?.customFields ?? [])
+      visitorTypeCustomFields.value = mergeWizardFields(legacy.map(normalizeLegacyField))
     }
   } catch (error) {
     console.error('Failed to load visitor type custom fields:', error)
     const visitorType = visitorTypesStore.visitorTypeById(formData.value.visitorTypeId)
-    visitorTypeCustomFields.value = mergeWizardFields((visitorType?.customFields ?? []).map(normalizeLegacyField))
+    const legacy = stripSystemFields(visitorType?.customFields ?? [])
+    visitorTypeCustomFields.value = mergeWizardFields(legacy.map(normalizeLegacyField))
   }
 
   newVisitor.value.customFields = sanitizeCustomFieldValues(
@@ -1693,18 +1768,23 @@ async function loadBookingCustomFields(): Promise<void> {
     const resource = resourcesStore.resourceById(resourceId)
     if (!resource) continue
 
+    // Stesso filtro applicato ai fields del tipo visitatore: i campi isSystem (anagrafici)
+    // non devono finire tra i custom field, sono già coperti da campi nativi del wizard.
+    const stripSystem = (arr: CustomField[]): CustomField[] =>
+        arr.filter((f) => !(f as { isSystem?: boolean }).isSystem)
+
     try {
       const resourceTypeLinks = await customFieldsApi.getResourceTypeLinks(resource.resourceTypeId)
       const resourceTypeName = resourcesStore.resourceTypeById(resource.resourceTypeId)?.name || 'Tipologia risorsa'
       if (resourceTypeLinks.length > 0) {
         collectedFields.push(...resourceTypeLinks.map((field) => normalizeLinkedField(field, resourceTypeName)))
       } else {
-        const legacyFields = resourcesStore.resourceTypeById(resource.resourceTypeId)?.customFields ?? []
+        const legacyFields = stripSystem(resourcesStore.resourceTypeById(resource.resourceTypeId)?.customFields ?? [])
         collectedFields.push(...legacyFields.map(normalizeLegacyField))
       }
     } catch (error) {
       console.error(`Failed to load custom fields for resource type ${resource.resourceTypeId}:`, error)
-      const legacyFields = resourcesStore.resourceTypeById(resource.resourceTypeId)?.customFields ?? []
+      const legacyFields = stripSystem(resourcesStore.resourceTypeById(resource.resourceTypeId)?.customFields ?? [])
       collectedFields.push(...legacyFields.map(normalizeLegacyField))
     }
   }
@@ -2059,6 +2139,23 @@ function toggleDay(day: string): void {
   else formData.value.recurringDays.push(day)
 }
 
+// Shortcut "Includi weekend" per la ricorrenza settimanale: aggiunge/rimuove SA+SU
+// dai giorni selezionati. Lo stato è derivato dall'array dei giorni.
+const includeWeekends = computed<boolean>({
+  get: () =>
+    formData.value.recurringDays.includes('SA') &&
+    formData.value.recurringDays.includes('SU'),
+  set: (value: boolean) => {
+    const days = formData.value.recurringDays
+    if (value) {
+      if (!days.includes('SA')) days.push('SA')
+      if (!days.includes('SU')) days.push('SU')
+    } else {
+      formData.value.recurringDays = days.filter((d) => d !== 'SA' && d !== 'SU')
+    }
+  },
+})
+
 // ------ Participants ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
@@ -2188,12 +2285,7 @@ async function confirmAddVisitor(): Promise<void> {
     }
   }
 
-  // DRF §4.3: solo un visitatore alla volta può essere Capogruppo.
-  if (newVisitor.value.isGroupLeader) {
-    formData.value.visitors = formData.value.visitors.map((v) => ({ ...v, isGroupLeader: false }))
-  }
-
-  formData.value.visitors.push({
+  const visitorPayload: WizardVisitor = {
     firstName: newVisitor.value.firstName.trim(),
     lastName:  newVisitor.value.lastName.trim(),
     email:     newVisitor.value.email.trim(),
@@ -2202,11 +2294,26 @@ async function confirmAddVisitor(): Promise<void> {
     isGroupLeader: newVisitor.value.isGroupLeader,
     contactId: newVisitor.value.contactId,
     saveToDirectory: newVisitor.value.saveToDirectory,
-  })
+  }
+
+  // DRF §4.3: solo un visitatore alla volta può essere Capogruppo.
+  if (visitorPayload.isGroupLeader) {
+    formData.value.visitors = formData.value.visitors.map((v, i) =>
+      // se siamo in edit mode, non azzerare il flag dell'item che stiamo editando
+      i === editingVisitorIndex.value ? v : { ...v, isGroupLeader: false }
+    )
+  }
+
+  if (editingVisitorIndex.value !== null) {
+    formData.value.visitors.splice(editingVisitorIndex.value, 1, visitorPayload)
+  } else {
+    formData.value.visitors.push(visitorPayload)
+  }
 
   newVisitor.value = emptyVisitor()
   directorySelected.value = null
   directorySearchInput.value = ''
+  editingVisitorIndex.value = null
   showAddVisitorDialog.value = false
 }
 
@@ -2214,11 +2321,107 @@ function cancelAddVisitor(): void {
   newVisitor.value = emptyVisitor()
   directorySelected.value = null
   directorySearchInput.value = ''
+  editingVisitorIndex.value = null
   showAddVisitorDialog.value = false
 }
 
 function removeVisitor(idx: number): void {
   formData.value.visitors.splice(idx, 1)
+}
+
+function openManualDialog(): void {
+  newVisitor.value = emptyVisitor()
+  directorySelected.value = null
+  directorySearchInput.value = ''
+  editingVisitorIndex.value = null
+  showAddVisitorDialog.value = true
+}
+
+function openDirectoryDialog(): void {
+  directoryPicked.value = null
+  directoryIsGroupLeader.value = false
+  directorySuggestions.value = []
+  showDirectoryDialog.value = true
+}
+
+function cancelDirectoryAdd(): void {
+  directoryPicked.value = null
+  directoryIsGroupLeader.value = false
+  showDirectoryDialog.value = false
+}
+
+function confirmDirectoryAdd(): void {
+  if (!directoryPicked.value || typeof directoryPicked.value === 'string') return
+
+  const contact = directoryPicked.value
+
+  // Custom fields salvati sul contatto (JSON serializzato lato BE).
+  // Copiamo SOLO i valori delle chiavi richieste dal visitor type della prenotazione corrente.
+  const savedFromContact = parseRecord(contact.customFieldValues)
+  const matchedCustomFields: Record<string, unknown> = {}
+  for (const field of visitorTypeCustomFields.value) {
+    const key = getFieldValueKey(field)
+    if (key in savedFromContact) {
+      matchedCustomFields[key] = savedFromContact[key]
+    }
+  }
+
+  // Se mancano campi obbligatori non presenti in rubrica, deleghiamo al modal manuale
+  // pre-popolato così l'utente compila solo le info mancanti.
+  const stillMissingRequired = hasMissingRequiredFields(visitorTypeCustomFields.value, matchedCustomFields)
+
+  const visitor: WizardVisitor = {
+    firstName: contact.firstName,
+    lastName: contact.lastName,
+    email: contact.email ?? '',
+    phone: contact.phone ?? '',
+    customFields: matchedCustomFields,
+    isGroupLeader: directoryIsGroupLeader.value,
+    contactId: contact.id,
+    saveToDirectory: false,
+  }
+
+  if (stillMissingRequired) {
+    // Apriamo il modal manuale come "completa i dati mancanti": il visitatore
+    // NON viene ancora aggiunto alla lista — lo aggiungerà confirmAddVisitor.
+    newVisitor.value = visitor
+    editingVisitorIndex.value = null
+    directoryPicked.value = null
+    directoryIsGroupLeader.value = false
+    showDirectoryDialog.value = false
+    showAddVisitorDialog.value = true
+    return
+  }
+
+  // DRF §4.3: solo un Capogruppo per prenotazione.
+  if (visitor.isGroupLeader) {
+    formData.value.visitors = formData.value.visitors.map((v) => ({ ...v, isGroupLeader: false }))
+  }
+
+  formData.value.visitors.push(visitor)
+
+  directoryPicked.value = null
+  directoryIsGroupLeader.value = false
+  showDirectoryDialog.value = false
+}
+
+function openEditVisitor(idx: number): void {
+  const v = formData.value.visitors[idx]
+  if (!v) return
+  newVisitor.value = {
+    firstName: v.firstName,
+    lastName: v.lastName,
+    email: v.email,
+    phone: v.phone ?? '',
+    customFields: { ...(v.customFields ?? {}) },
+    isGroupLeader: !!v.isGroupLeader,
+    contactId: v.contactId,
+    saveToDirectory: !!v.saveToDirectory,
+  }
+  directorySelected.value = null
+  directorySearchInput.value = ''
+  editingVisitorIndex.value = idx
+  showAddVisitorDialog.value = true
 }
 
 // ------ Navigation ------------------------------------------------------------------------------------------------------------------------------------------------------------------------

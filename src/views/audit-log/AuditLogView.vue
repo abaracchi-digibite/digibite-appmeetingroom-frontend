@@ -84,7 +84,7 @@
       <!-- Timeline Lista -->
       <div class="space-y-4">
         <div
-          v-for="(log, index) in paginatedLogs"
+          v-for="log in paginatedLogs"
           :key="log.id"
           class="relative"
         >
@@ -287,22 +287,6 @@ const formatJson = (value: string | Record<string, unknown> | null | undefined):
 
 const truncateId = (id: string): string => {
   return id.length > 16 ? `${id.substring(0, 13)}...` : id
-}
-
-const getActionColor = (action: string): string => {
-  switch (action.toLowerCase()) {
-    case 'create':
-    case 'created':
-      return '#0D9488'
-    case 'delete':
-    case 'deleted':
-      return '#DC2626'
-    case 'update':
-    case 'updated':
-      return '#2563EB'
-    default:
-      return '#8898b8'
-  }
 }
 
 const getActionBgLight = (action: string): string => {

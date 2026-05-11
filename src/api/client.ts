@@ -48,8 +48,11 @@ function getCsrfToken(): string | null {
  * Create and configure Axios instance for API requests
  */
 export function createApiClient(): AxiosInstance {
+  // VITE_API_BASE_URL può puntare a un host diverso (es. backend separato in deploy multi-dominio).
+  // Default '/api' per dev (proxy di vite) e prod single-host con sub-app /api.
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
   const client = axios.create({
-    baseURL: '/api',
+    baseURL: apiBase,
     headers: {
       'Content-Type': 'application/json',
     },

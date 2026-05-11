@@ -211,7 +211,7 @@
                     <input v-model="newSlotStart" type="time" class="slot-time-input" />
                     <span class="slot-separator">-</span>
                     <input v-model="newSlotEnd" type="time" class="slot-time-input" />
-                    <button type="button" class="slot-add-btn" @click="addTimeSlot"><i class="pi pi-check" /> Conferma</button>
+                    <button type="button" class="slot-add-btn" @click="addTimeSlot"><i class="pi pi-check" /> {{ t('resourceTypes.confirmSlot') }}</button>
                   </div>
                 </div>
                 <div v-if="parsedTimeSlots.length > 0" class="slot-list">
@@ -219,7 +219,7 @@
                     <div class="slot-row-left">
                       <div class="slot-row-icon"><i class="pi pi-clock" /></div>
                       <div class="slot-row-content">
-                        <div class="slot-row-title">Fascia oraria {{ index + 1 }}</div>
+                        <div class="slot-row-title">{{ t('resourceTypes.timeSlotIndex', { n: index + 1 }) }}</div>
                         <div class="slot-row-time">
                           <span class="slot-time-pill">{{ slot.split('-')[0] }}</span>
                           <i class="pi pi-arrow-right slot-time-arrow" />
@@ -227,7 +227,7 @@
                         </div>
                       </div>
                     </div>
-                    <button type="button" class="slot-row-remove" @click="removeTimeSlot(index)" title="Rimuovi fascia"><i class="pi pi-trash" /></button>
+                    <button type="button" class="slot-row-remove" @click="removeTimeSlot(index)" :title="t('resourceTypes.removeSlotTitle')"><i class="pi pi-trash" /></button>
                   </div>
                 </div>
                 <small class="dlg-help">{{ t('resourceTypes_timeSlotsHelp') }}</small>
@@ -330,7 +330,7 @@
           <div class="dlg-section">
             <div class="dlg-fields-2">
               <div class="dlg-field dlg-field-full">
-                <label class="dlg-label">Campo dal catalogo <span class="req">*</span></label>
+                <label class="dlg-label">{{ t('resourceTypes.catalogField') }} <span class="req">*</span></label>
                 <Select
                   v-model="fieldLinkData.customFieldId"
                   :options="availableCatalogFields"
@@ -338,17 +338,17 @@
                   option-value="id"
                   filter
                   :disabled="isEditingField"
-                  placeholder="Seleziona un campo personalizzato"
+                  :placeholder="t('resourceTypes.selectCustomFieldPlaceholder')"
                   class="w-full"
                 />
-                <small class="dlg-help">Mostra i campi creati nella pagina "Campi personalizzati"</small>
+                <small class="dlg-help">{{ t('resourceTypes.catalogFieldHint') }}</small>
               </div>
               <div class="dlg-field">
-                <label class="dlg-label">{{ t('resourceTypes.visibility') || 'Visibilità' }}</label>
+                <label class="dlg-label">{{ t('resourceTypes.visibility') }}</label>
                 <Select v-model="fieldLinkData.visibility" :options="visibilityOptions" option-label="label" option-value="value" class="w-full" />
               </div>
               <div class="dlg-field">
-                <label class="dlg-label">{{ t('resourceTypes.sortOrder') || 'Ordinamento' }}</label>
+                <label class="dlg-label">{{ t('resourceTypes.sortOrder') }}</label>
                 <InputNumber v-model="fieldLinkData.sortOrder" class="w-full" :min="0" />
               </div>
             </div>
@@ -446,8 +446,8 @@ const defaultFieldLinkData = () => ({
 const fieldLinkData = ref(defaultFieldLinkData())
 
 const visibilityOptions = computed(() => [
-  { label: t('visitorTypes.visibilityInternal') || 'Interno', value: FieldVisibility.Internal },
-  { label: t('visitorTypes.visibilityPublic') || 'Pubblico', value: FieldVisibility.Public },
+  { label: t('visitorTypes.visibilityInternal'), value: FieldVisibility.Internal },
+  { label: t('visitorTypes.visibilityPublic'), value: FieldVisibility.Public },
 ])
 
 // ------ Computed ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

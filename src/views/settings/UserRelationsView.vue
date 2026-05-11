@@ -1,139 +1,160 @@
 <template>
   <MainLayout>
-    <div class="relations-shell">
-      <section class="relations-hero">
-        <div>
-          <p class="relations-eyebrow">{{ t('permissions.eyebrow') }}</p>
-          <!-- <h1 class="relations-title">{{ t('permissions.title') }}</h1> -->
-          <p class="relations-subtitle">{{ t('permissions.subtitle') }}</p>
-        </div>
-        <PrimeButton
-          v-if="canManageRelations"
-          icon="pi pi-plus"
-          :label="t('permissions.assign')"
-          class="relations-primary-btn"
-          @click="openAssignDialog"
-        />
-      </section>
+    <div class="list-page">
 
-      <section class="relations-guidance">
-        <div class="guidance-icon">
-          <i class="pi pi-info-circle" />
-        </div>
-        <div>
-          <h2>{{ t('permissions.guidanceTitle') }}</h2>
-          <p>{{ t('permissions.guidanceBody') }}</p>
-        </div>
-      </section>
-
-      <section class="relations-model-grid">
-        <article class="relations-model-card">
-          <div class="model-card-icon">
-            <i class="pi pi-sitemap" />
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
           </div>
-          <div>
-            <h2>{{ t('permissions.groupsTitle') }}</h2>
-            <p>{{ t('permissions.groupsBody') }}</p>
-          </div>
-        </article>
-
-        <article class="relations-model-card relations-model-card-accent">
-          <div class="model-card-icon">
-            <i class="pi pi-user-edit" />
-          </div>
-          <div>
-            <h2>{{ t('permissions.directTitle') }}</h2>
-            <p>{{ t('permissions.directBody') }}</p>
-          </div>
-        </article>
-      </section>
-
-      <section class="relations-toolbar">
-        <label class="relations-search">
-          <i class="pi pi-search" />
-          <input v-model="searchQuery" type="search" :placeholder="t('permissions.searchPlaceholder')" />
-        </label>
-
-        <div class="relations-summary">
-          <span class="summary-chip">
-            <strong>{{ relations.length }}</strong>
-            {{ t('permissions.totalRelations') }}
-          </span>
-          <span class="summary-chip summary-chip-muted">
-            {{ t('permissions.scopeTenant') }}
-          </span>
-        </div>
-      </section>
-
-      <section class="relations-card">
-        <div class="relations-card-header">
-          <div>
-            <h2>{{ t('permissions.allRelations') }}</h2>
-            <p>{{ t('permissions.tableHelp') }}</p>
-          </div>
+          <button
+            v-if="canManageRelations"
+            type="button"
+            class="list-btn-primary"
+            @click="openAssignDialog"
+          >
+            <i class="pi pi-plus" />
+            <span>{{ t('permissions.assign') }}</span>
+          </button>
         </div>
 
+        <div class="list-row-secondary">
+          <div class="list-filter-inline">
+            <label class="list-filter-label-inline">{{ t('permissions.objectType') }}</label>
+            <MultiSelect
+              v-model="objectTypeFilter"
+              :options="objectTypeOptions"
+              option-label="label"
+              option-value="value"
+              :placeholder="t('common.all')"
+              display="chip"
+              :max-selected-labels="1"
+              :selected-items-label="`{0} ${t('common.selected')}`"
+              class="list-filter-select"
+            />
+          </div>
+
+          <div class="list-row-secondary-right">
+            <span class="list-count-flat">{{ filteredRelations.length }} {{ t('common.results') }}</span>
+            <div class="list-view-flat">
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
+                <i class="pi pi-list" />
+              </button>
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'card' }" :title="t('common.viewCards')" @click="setViewMode('card')">
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="loading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
+        <span>{{ t('common.loading') }}</span>
+      </div>
+
+      <!-- Empty -->
+      <div v-else-if="filteredRelations.length === 0" class="list-empty">
+        <i class="pi pi-inbox" />
+        <p>{{ t('permissions.emptyState') }}</p>
+      </div>
+
+      <!-- ── Tabella ──────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
         <DataTable
           :value="filteredRelations"
-          :loading="loading"
           dataKey="id"
           responsiveLayout="scroll"
           stripedRows
           paginator
-          :rows="10"
-          class="relations-table"
+          :rows="15"
+          class="list-table"
         >
-          <template #empty>
-            <div class="table-empty">
-              <i class="pi pi-inbox" />
-              <span>{{ t('permissions.emptyState') }}</span>
-            </div>
-          </template>
-
-          <Column :header="t('permissions.user')" style="width: 24%">
+          <Column field="userLabel" :header="t('permissions.user')" :sortable="true" style="width: 26%">
             <template #body="{ data }">
-              <div class="entity-stack">
-                <strong>{{ getUserLabel(data.userId) }}</strong>
-                <span>{{ data.userId }}</span>
+              <span class="list-cell-strong">{{ getUserLabel(data.userId) }}</span>
+            </template>
+          </Column>
+
+          <Column field="relationLabel" :header="t('permissions.relation')" :sortable="true" style="width: 20%">
+            <template #body="{ data }">
+              <Tag :value="getRelationLabel(data.objectType, data.relation)" severity="info" />
+            </template>
+          </Column>
+
+          <Column field="objectLabel" :header="t('permissions.object')" :sortable="true" style="width: 26%">
+            <template #body="{ data }">
+              <div>
+                <span class="list-cell-strong">{{ getObjectLabel(data.objectType, data.objectId) }}</span>
+                <small style="display:block; color: var(--text-muted, #94a3b8);">{{ getObjectTypeLabel(data.objectType) }}</small>
               </div>
             </template>
           </Column>
 
-          <Column :header="t('permissions.relation')" style="width: 20%">
+          <Column field="createdAt" :header="t('common.createdAt')" :sortable="true" style="width: 16%">
             <template #body="{ data }">
-              <span class="relation-pill">{{ getRelationLabel(data.objectType, data.relation) }}</span>
+              <span class="list-cell-muted">{{ formatDate(data.createdAt) }}</span>
             </template>
           </Column>
 
-          <Column :header="t('permissions.object')" style="width: 24%">
+          <Column v-if="canManageRelations" :header="t('common.actions')" style="width: 90px" class="list-col-actions">
             <template #body="{ data }">
-              <div class="entity-stack">
-                <strong>{{ getObjectLabel(data.objectType, data.objectId) }}</strong>
-                <span>{{ getObjectTypeLabel(data.objectType) }}</span>
+              <div class="list-row-actions">
+                <button
+                  type="button"
+                  class="list-action-btn list-action-delete"
+                  :title="t('permissions.removeRelation')"
+                  @click="removeRelation(data)"
+                >
+                  <i class="pi pi-trash" />
+                </button>
               </div>
-            </template>
-          </Column>
-
-          <Column :header="t('common.createdAt')" style="width: 18%">
-            <template #body="{ data }">
-              <span class="timestamp-label">{{ formatDate(data.createdAt) }}</span>
-            </template>
-          </Column>
-
-          <Column v-if="canManageRelations" :header="t('common.actions')" style="width: 14%">
-            <template #body="{ data }">
-              <PrimeButton
-                icon="pi pi-trash"
-                severity="danger"
-                outlined
-                size="small"
-                :aria-label="t('permissions.removeRelation')"
-                @click="removeRelation(data)"
-              />
             </template>
           </Column>
         </DataTable>
-      </section>
+      </div>
+
+      <!-- ── Cards ────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article v-for="rel in filteredRelations" :key="rel.id" class="list-card">
+          <div class="list-card-head">
+            <h3 class="list-card-title">{{ getUserLabel(rel.userId) }}</h3>
+            <Tag :value="getRelationLabel(rel.objectType, rel.relation)" severity="info" />
+          </div>
+          <div class="list-card-info">
+            <div class="list-card-info-row">
+              <i class="pi pi-tag" />
+              <span>{{ getObjectTypeLabel(rel.objectType) }}</span>
+            </div>
+            <div class="list-card-info-row">
+              <i class="pi pi-box" />
+              <span>{{ getObjectLabel(rel.objectType, rel.objectId) }}</span>
+            </div>
+            <div class="list-card-info-row">
+              <i class="pi pi-calendar" />
+              <span>{{ formatDate(rel.createdAt) }}</span>
+            </div>
+          </div>
+          <div v-if="canManageRelations" class="list-card-actions">
+            <button
+              type="button"
+              class="list-action-btn list-action-delete"
+              :title="t('permissions.removeRelation')"
+              @click="removeRelation(rel)"
+            >
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
+      </div>
 
       <PrimeDialog
         v-model:visible="showAssignDialog"
@@ -239,6 +260,8 @@ import PrimeDialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import PrimeDropdown from 'primevue/dropdown'
+import MultiSelect from 'primevue/multiselect'
+import Tag from 'primevue/tag'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { permissionsApi, type UserRelationResponse } from '@/api/permissions.api'
 import { useAuthStore } from '@/stores/auth.store'
@@ -265,8 +288,17 @@ const loading = ref(false)
 const saving = ref(false)
 const loadingObjects = ref(false)
 const searchQuery = ref('')
+const objectTypeFilter = ref<string[]>([])
 const showAssignDialog = ref(false)
 const formError = ref<string | null>(null)
+const viewMode = ref<'card' | 'table'>(
+  (localStorage.getItem('user_relations_view_mode') as 'card' | 'table') ?? 'table'
+)
+
+const setViewMode = (mode: 'card' | 'table') => {
+  viewMode.value = mode
+  localStorage.setItem('user_relations_view_mode', mode)
+}
 
 const assignForm = ref({
   userId: '',
@@ -308,23 +340,30 @@ const canSubmitAssign = computed(() => {
 })
 
 const filteredRelations = computed(() => {
+  let list = relations.value
+
+  if (objectTypeFilter.value.length > 0) {
+    list = list.filter((r) => objectTypeFilter.value.includes(r.objectType))
+  }
+
   const query = searchQuery.value.trim().toLowerCase()
-  if (!query) return relations.value
+  if (query) {
+    list = list.filter((relation) => {
+      const userLabel = getUserLabel(relation.userId).toLowerCase()
+      const relationLabel = getRelationLabel(relation.objectType, relation.relation).toLowerCase()
+      const objectLabel = getObjectLabel(relation.objectType, relation.objectId).toLowerCase()
+      const objectTypeLabel = getObjectTypeLabel(relation.objectType).toLowerCase()
+      const rawObjectId = (relation.objectId ?? '').toLowerCase()
 
-  return relations.value.filter((relation) => {
-    const userLabel = getUserLabel(relation.userId).toLowerCase()
-    const relationLabel = getRelationLabel(relation.objectType, relation.relation).toLowerCase()
-    const objectLabel = getObjectLabel(relation.objectType, relation.objectId).toLowerCase()
-    const objectTypeLabel = getObjectTypeLabel(relation.objectType).toLowerCase()
-    const rawObjectId = (relation.objectId ?? '').toLowerCase()
-
-    return userLabel.includes(query)
-      || relation.userId.toLowerCase().includes(query)
-      || relationLabel.includes(query)
-      || objectLabel.includes(query)
-      || objectTypeLabel.includes(query)
-      || rawObjectId.includes(query)
-  })
+      return userLabel.includes(query)
+        || relation.userId.toLowerCase().includes(query)
+        || relationLabel.includes(query)
+        || objectLabel.includes(query)
+        || objectTypeLabel.includes(query)
+        || rawObjectId.includes(query)
+    })
+  }
+  return list
 })
 
 function getUserLabel(userId: string): string {

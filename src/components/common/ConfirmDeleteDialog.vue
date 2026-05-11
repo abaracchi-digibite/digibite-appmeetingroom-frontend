@@ -3,7 +3,7 @@
     :visible="visible"
     modal
     header-icon="pi pi-exclamation-triangle"
-    header="Confirm Delete"
+    :header="$t('common.confirmDeleteHeader')"
     :style="{ width: '90%', maxWidth: '400px' }"
     @update:visible="$emit('cancel')"
   >
@@ -15,7 +15,7 @@
         {{ $t('common.confirm') }}: {{ confirmMessage }}
       </p>
       <p class="warning-text">
-        {{ $t('common.warning') || 'This action cannot be undone.' }}
+        {{ $t('common.cannotBeUndone') }}
       </p>
     </div>
 

@@ -89,11 +89,11 @@
 
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">
-                  Logo URL
+                  {{ t('plants.logoUrl') }}
                 </label>
                 <InputText
                   v-model="formData.logoUrl"
-                  placeholder="https://example.com/logo.png"
+                  :placeholder="t('plants.logoUrlPlaceholder')"
                   class="w-full"
                 />
               </div>
@@ -104,7 +104,7 @@
                 </label>
                 <InputText
                   v-model="formData.defaultOperatingHours"
-                  placeholder="09:00-18:00"
+                  :placeholder="t('plants.operatingHoursPlaceholder')"
                   class="w-full"
                 />
               </div>

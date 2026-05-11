@@ -1,345 +1,50 @@
-﻿/* ------ Page --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.bookings-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  min-height: 100%;
-}
+@import '@/assets/styles/list-page.css';
 
-/* ------ Error --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.error-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1.25rem;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 10px;
-  color: #ef4444;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.error-banner i { font-size: 1.125rem; flex-shrink: 0; }
-
-/* ------ Filters Card --------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.filters-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
-  border-radius: 12px;
-  padding: 1.25rem;
-}
-
-.filters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.filter-field-search {
-  grid-column: span 2;
-}
-
-.filter-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  margin-bottom: 0.375rem;
-}
-
-/* Allinea altezza PrimeVue MultiSelect agli input standard */
-:deep(.p-multiselect) {
-  height: 38px;
-  min-height: 38px;
-  box-sizing: border-box;
+/* ── Date input nei filtri ───────────────────────────────────────── */
+.list-filter-date {
+  height: 32px;
+  border: 1px solid var(--border-default, #e5e7eb);
   border-radius: 8px;
+  background: var(--bg-card, #ffffff);
+  padding: 0 0.6rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #0f172a);
+  width: 150px;
 }
 
-:deep(.p-multiselect .p-multiselect-label) {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-:deep(.p-multiselect .p-multiselect-label-container) {
-  overflow: hidden;
-}
-
-:deep(.p-multiselect-chip-item .p-chip) {
-  padding: 0 0.375rem;
-  font-size: 0.75rem;
-  height: 22px;
-}
-
-.input-icon-wrapper {
-  position: relative;
-}
-
-.input-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  pointer-events: none;
-}
-
-.form-input {
-  width: 100%;
-  height: 38px;
-  padding: 0 0.75rem;
-  background: var(--bg-input, var(--bg-page));
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+.list-filter-date:focus {
   outline: none;
-}
-
-.form-input:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.input-with-icon {
-  padding-left: 2.25rem;
-}
-
-.filters-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-default);
-}
-
-.results-count {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  color: #4f46e5;
-  font-weight: 600;
-  font-size: 0.875rem;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.btn-text:hover { color: #4338ca; }
-
-.btn-text-small {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  transition: all 0.15s;
-}
-
-.btn-text-small:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-}
-
-.mr-1 { margin-right: 0.375rem; }
-
-/* ------ Table ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
-.table-wrapper {
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.bookings-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.bookings-table thead {
-  background: var(--bg-page);
-}
-
-.bookings-table th {
-  padding: 0.75rem 1rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  text-align: left;
-  border-bottom: 1px solid var(--border-default);
-  white-space: nowrap;
-}
-
-.bookings-table td {
-  padding: 0.875rem 1rem;
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-default);
-  vertical-align: middle;
-}
-
-.booking-row {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.booking-row:hover {
-  background: var(--bg-card-hover);
-}
-
-.booking-row:last-child td {
-  border-bottom: none;
-}
-
-/* Column widths */
-.th-status { width: 160px; }
-.th-title { width: 22%; }
-.th-datetime { width: 160px; }
-.th-plant { width: 13%; }
-.th-resources { width: 15%; }
-.th-organizer { width: 14%; }
-.th-actions { width: 120px; text-align: center; }
-
-/* ------ Sortable Headers --------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.th-sortable {
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.15s;
-}
-
-.th-sortable:hover {
-  color: var(--text-primary);
-}
-
-.th-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.sort-icon {
-  font-size: 0.65rem;
-  opacity: 0.4;
-  transition: opacity 0.15s;
-}
-
-.th-sortable:hover .sort-icon {
-  opacity: 0.7;
-}
-
-.sort-icon.pi-sort-amount-up,
-.sort-icon.pi-sort-amount-down {
-  opacity: 1;
-  color: #4f46e5;
-}
-
-/* ------ Status Chip ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+/* ── Status chip (pillola colorata) ──────────────────────────────── */
 .status-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 16px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: capitalize;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .status-chip i {
-  font-size: 0.875rem;
-  line-height: 1;
+  font-size: 0.85rem;
 }
 
-.pi-file-edit { color: #6b7280; }
-.pi-clock { color: #d97706; }
-.pi-check-circle { color: #059669; }
-.pi-spin.pi-spinner { color: #2563eb; }
-.pi-check-square { color: #7c3aed; }
-.pi-times-circle, .pi-ban { color: #dc2626; }
-
-/* ------ Title Cell --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.booking-name {
-  display: block;
-  font-weight: 600;
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.booking-notes {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  margin-top: 0.125rem;
-}
-
-/* ------ Date Cell ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
-.td-datetime {
-  white-space: nowrap;
-}
-
-.date-primary {
-  display: block;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  color: var(--text-primary);
-}
-
-.date-secondary {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-top: 0.125rem;
-}
-
-/* ------ Plant Cell --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.plant-name {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-}
-
-/* ------ Resource Tags ------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
+/* ── Resource tags (pill list) ───────────────────────────────────── */
 .resource-tags {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
+  gap: 0.3rem;
+  align-items: center;
 }
 
 .resource-tag {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
+  padding: 0.15rem 0.5rem;
   background: rgba(79, 70, 229, 0.08);
   color: #4f46e5;
   border-radius: 5px;
@@ -349,163 +54,76 @@
 }
 
 .resource-tag-more {
-  background: var(--bg-page);
-  color: var(--text-muted);
+  background: var(--bg-page, #f1f5f9);
+  color: var(--text-muted, #64748b);
 }
 
-/* ------ Organizer Cell --------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+/* ── Organizer cell ──────────────────────────────────────────────── */
 .organizer-cell {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .organizer-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 700;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.organizer-name {
+/* ── Date primary/secondary nelle celle ──────────────────────────── */
+.date-primary {
+  display: block;
+  font-weight: 600;
   font-size: 0.8125rem;
-  color: var(--text-primary);
-  font-weight: 500;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.2;
+}
+
+.date-secondary {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+  margin-top: 0.1rem;
+}
+
+.booking-notes {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 0.15rem;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* ------ Action Buttons --------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.td-actions { text-align: center; }
-
-.action-btns {
-  display: flex;
-  gap: 0.375rem;
-  justify-content: center;
+/* ── Card cliccabile (cursor pointer) ────────────────────────────── */
+.list-card-clickable {
+  cursor: pointer;
 }
 
-.action-btn {
-  width: 30px;
-  height: 30px;
+/* ── Btn text retry ──────────────────────────────────────────────── */
+.btn-text {
+  appearance: none;
+  background: none;
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  transition: all 0.15s;
-  background: transparent;
-  color: var(--text-secondary);
-}
-
-.action-btn:hover { transform: translateY(-1px); }
-
-.action-btn-view:hover { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
-.action-btn-edit:hover { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.action-btn-delete:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-
-/* ------ Pagination --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.pagination-info {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.pagination-btns {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.pagination-btn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border-default);
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  font-size: 0.875rem;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #4f46e5;
-  color: #ffffff;
-  border-color: #4f46e5;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pagination-current {
-  font-size: 0.8125rem;
+  color: #4f46e5;
   font-weight: 600;
-  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: auto;
 }
 
-.text-muted { color: var(--text-muted); }
-
-/* ------ Responsive --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-@media (max-width: 1200px) {
-  .th-plant,
-  .td-plant {
-    display: none;
-  }
-
-  .filter-field-search {
-    grid-column: span 1;
-  }
+.btn-text:hover {
+  color: #4338ca;
 }
-
-@media (max-width: 1024px) {
-  .bookings-page { padding: 1.5rem; }
-
-  .filters-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-
-  .th-resources,
-  .td-resources,
-  .th-organizer,
-  .td-organizer {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .bookings-page { padding: 1rem; }
-
-  .filters-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .filter-field-search {
-    grid-column: span 1;
-  }
-
-  .table-wrapper { overflow-x: auto; }
-
-  .bookings-table { min-width: 600px; }
-}
-.action-btn-continue:hover { background: rgba(37, 99, 235, 0.1); color: #2563eb; }

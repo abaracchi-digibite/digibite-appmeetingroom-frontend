@@ -41,10 +41,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useTenantBranding } from '@/composables/useTenantBranding'
 
-const { t } = useI18n()
 const { logoUrl, tenantName, applyPublicBranding } = useTenantBranding()
 
 // Sfondo login page - pu- essere un'immagine custom o il gradiente di default

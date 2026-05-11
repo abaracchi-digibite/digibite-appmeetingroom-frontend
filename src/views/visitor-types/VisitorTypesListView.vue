@@ -1,109 +1,182 @@
-﻿<template>
+<template>
   <MainLayout>
-    <div class="visitor-types-container">
+    <div class="list-page">
 
-      <Button icon="pi pi-plus" :label="t('visitorTypes.createNew')" @click="openCreateDialog" severity="success" size="small" />
+      <!-- ── Toolbar flat, senza frame ──────────────────────────────── -->
+      <div class="list-toolbar-flat">
 
-      <!-- Search bar -->
-      <div class="mb-4 flex gap-3 flex-wrap items-center">
-        <IconField class="flex-1 min-w-64">
-          <InputIcon class="pi pi-search" />
-          <InputText v-model="searchQuery" :placeholder="t('common.search')" />
-        </IconField>
+        <!-- Riga 1: search (espande) + nuovo a destra -->
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
+          </div>
 
-        <!-- View toggle -->
-        <div class="flex gap-1 p-1 rounded-lg" style="background: var(--bg-page, #f0f4ff); border: 1px solid var(--border-default, #e5e7eb);">
-          <button
-            class="px-2 py-1 rounded-md text-sm transition-all"
-            :class="viewMode === 'table' ? 'bg-white shadow text-indigo-600 font-medium' : 'text-slate-500 hover:text-slate-700'"
-            :style="viewMode === 'table' ? 'background: var(--bg-card, #ffffff);' : ''"
-            @click="setViewMode('table')"
-            :title="t('common.viewTable')"
-          >
-            <i class="pi pi-list text-sm" />
+          <button type="button" class="list-btn-primary" @click="openCreateDialog">
+            <i class="pi pi-plus" />
+            <span>{{ t('visitorTypes.createNew') }}</span>
           </button>
-          <button
-            class="px-2 py-1 rounded-md text-sm transition-all"
-            :class="viewMode === 'card' ? 'bg-white shadow text-indigo-600 font-medium' : 'text-slate-500 hover:text-slate-700'"
-            :style="viewMode === 'card' ? 'background: var(--bg-card, #ffffff);' : ''"
-            @click="setViewMode('card')"
-            :title="t('common.viewCards')"
-          >
-            <i class="pi pi-th-large text-sm" />
-          </button>
+        </div>
+
+        <!-- Riga 2: dropdown filtro + count + view toggle -->
+        <div class="list-row-secondary">
+          <div class="list-filter-inline">
+            <label class="list-filter-label-inline">{{ t('common.status') }}</label>
+            <MultiSelect
+              v-model="statusFilter"
+              :options="statusOptions"
+              option-label="label"
+              option-value="value"
+              :placeholder="t('common.all')"
+              display="chip"
+              :max-selected-labels="1"
+              :selected-items-label="`{0} ${t('common.selected')}`"
+              class="list-filter-select"
+            />
+          </div>
+
+          <div class="list-row-secondary-right">
+            <span class="list-count-flat">
+              {{ filteredVisitorTypes.length }} {{ t('common.results') }}
+            </span>
+
+            <div class="list-view-flat" role="group" :aria-label="t('common.viewTable')">
+              <button
+                type="button"
+                class="list-view-icon"
+                :class="{ active: viewMode === 'table' }"
+                :aria-pressed="viewMode === 'table'"
+                :title="t('common.viewTable')"
+                @click="setViewMode('table')"
+              >
+                <i class="pi pi-list" />
+              </button>
+              <button
+                type="button"
+                class="list-view-icon"
+                :class="{ active: viewMode === 'card' }"
+                :aria-pressed="viewMode === 'card'"
+                :title="t('common.viewCards')"
+                @click="setViewMode('card')"
+              >
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Table View -->
-      <div v-if="viewMode === 'table'">
-        <DataTable :value="filteredVisitorTypes" responsiveLayout="scroll" stripedRows showGridlines>
-          <template #empty>
-            <div class="text-center py-8">
-              <i class="pi pi-inbox text-4xl mb-3" style="color: #cbd5e1;"></i>
-              <p style="color: #64748b;">{{ t('common.noData') }}</p>
-            </div>
-          </template>
+      <!-- ── Empty (nessun dato) ─────────────────────────────────────── -->
+      <div v-if="filteredVisitorTypes.length === 0" class="list-empty">
+        <i class="pi pi-inbox" />
+        <p>{{ t('common.noData') }}</p>
+      </div>
 
-          <Column field="name" :header="t('visitorTypes.name')" style="width: 20%">
+      <!-- ── Tabella ──────────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+        <DataTable :value="filteredVisitorTypes" responsiveLayout="scroll" stripedRows class="list-table">
+          <Column field="name" :header="t('visitorTypes.name')" :sortable="true" style="width: 22%">
             <template #body="{ data }">
-              <span style="color: #0f172a; font-weight: 500;">{{ data.name }}</span>
+              <span class="list-cell-strong">{{ data.name }}</span>
             </template>
           </Column>
 
-          <Column field="description" :header="t('visitorTypes.description')" style="width: 30%">
+          <Column field="description" :header="t('visitorTypes.description')" :sortable="true" style="width: 35%">
             <template #body="{ data }">
-              <span class="line-clamp-1 text-sm" style="color: #0f172a;">{{ data.description || '-' }}</span>
+              <span class="list-cell-muted">{{ data.description || '—' }}</span>
             </template>
           </Column>
 
-                    <Column :header="t('visitorTypes.customFields')" style="width: 15%">
-                      <template #body="{ data }">
-                        <Tag :value="`${customFieldsCountByVisitorTypeId[data.id] || 0}`" severity="info" />
-                      </template>
-                    </Column>
-
-          <Column field="isActive" :header="t('common.status')" style="width: 15%">
+          <Column field="customFieldsCount" :header="t('visitorTypes.customFields')" :sortable="true" style="width: 13%">
             <template #body="{ data }">
-              <Tag :value="data.isActive ? t('common.active') : t('common.inactive')" :severity="data.isActive ? 'success' : 'danger'" />
+              <Tag :value="`${data.customFieldsCount}`" severity="info" />
             </template>
           </Column>
 
-          <Column :header="t('common.actions')" style="width: 20%">
+          <Column field="isActive" :header="t('common.status')" :sortable="true" style="width: 13%">
             <template #body="{ data }">
-              <div class="table-actions">
-                <Button icon="pi pi-pencil" @click="editVisitorType(data)" outlined severity="warning" size="small" />
-                <Button icon="pi pi-trash" @click="deleteVisitorType(data.id)" outlined severity="danger" size="small" />
+              <Tag
+                :value="data.isActive ? t('common.active') : t('common.inactive')"
+                :severity="data.isActive ? 'success' : 'danger'"
+              />
+            </template>
+          </Column>
+
+          <Column :header="t('common.actions')" style="width: 110px" class="list-col-actions">
+            <template #body="{ data }">
+              <div class="list-row-actions">
+                <button
+                  type="button"
+                  class="list-action-btn list-action-edit"
+                  :title="t('common.edit')"
+                  :aria-label="t('common.edit')"
+                  @click="editVisitorType(data)"
+                >
+                  <i class="pi pi-pencil" />
+                </button>
+                <button
+                  type="button"
+                  class="list-action-btn list-action-delete"
+                  :title="t('common.delete')"
+                  :aria-label="t('common.delete')"
+                  @click="deleteVisitorType(data.id)"
+                >
+                  <i class="pi pi-trash" />
+                </button>
               </div>
             </template>
           </Column>
         </DataTable>
       </div>
 
-      <!-- Card View -->
-      <div v-else>
-        <div v-if="filteredVisitorTypes.length === 0" class="text-center py-8">
-          <i class="pi pi-inbox text-4xl mb-3" style="color: #cbd5e1;"></i>
-          <p style="color: #64748b;">{{ t('common.noData') }}</p>
-        </div>
-        <div v-else class="cards-grid">
-          <div v-for="vt in filteredVisitorTypes" :key="vt.id" class="item-card">
-            <h3 class="card-title">{{ vt.name }}</h3>
-            <p v-if="vt.description" class="card-desc">{{ vt.description }}</p>
-
-            <div class="card-meta mt-2">
-                            <Tag :value="`${customFieldsCountByVisitorTypeId[vt.id] || 0} ${t('visitorTypes.customFields')}`" severity="info" />
-              <Tag :value="vt.isActive ? t('common.active') : t('common.inactive')" :severity="vt.isActive ? 'success' : 'danger'" />
-            </div>
-
-            <div class="card-actions">
-              <Button icon="pi pi-pencil" @click="editVisitorType(vt)" outlined severity="warning" size="small" />
-              <Button icon="pi pi-trash" @click="deleteVisitorType(vt.id)" outlined severity="danger" size="small" />
-            </div>
+      <!-- ── Cards ────────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article v-for="vt in filteredVisitorTypes" :key="vt.id" class="list-card">
+          <div class="list-card-head">
+            <h3 class="list-card-title">{{ vt.name }}</h3>
+            <Tag
+              :value="vt.isActive ? t('common.active') : t('common.inactive')"
+              :severity="vt.isActive ? 'success' : 'danger'"
+            />
           </div>
-        </div>
+          <p v-if="vt.description" class="list-card-desc">{{ vt.description }}</p>
+
+          <div class="list-card-meta">
+            <Tag
+              :value="`${customFieldsCountByVisitorTypeId[vt.id] || 0} ${t('visitorTypes.customFields')}`"
+              severity="info"
+            />
+          </div>
+
+          <div class="list-card-actions">
+            <button
+              type="button"
+              class="list-action-btn list-action-edit"
+              :title="t('common.edit')"
+              :aria-label="t('common.edit')"
+              @click="editVisitorType(vt)"
+            >
+              <i class="pi pi-pencil" />
+            </button>
+            <button
+              type="button"
+              class="list-action-btn list-action-delete"
+              :title="t('common.delete')"
+              :aria-label="t('common.delete')"
+              @click="deleteVisitorType(vt.id)"
+            >
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
       </div>
 
-      <!-- ------ Create / Edit Dialog --------------------------------------------------------------------------------------------------------------------------------- -->
+      <!-- ── Create / Edit Dialog ─────────────────────────────────────── -->
       <AppDialog
         v-model:visible="showCreateDialog"
         :header="isEditing ? t('common.edit') : t('visitorTypes.createNew')"
@@ -113,7 +186,6 @@
         size="lg"
       >
         <div class="dlg-form">
-          <!-- Sezione: Informazioni generali -->
           <div class="dlg-section">
             <div class="dlg-section-title">
               <i class="pi pi-info-circle" />
@@ -121,13 +193,11 @@
             </div>
 
             <div class="dlg-fields-2">
-              <!-- Nome -->
               <div class="dlg-field dlg-field-full">
                 <label class="dlg-label">{{ t('visitorTypes.name') }} <span class="req">*</span></label>
                 <InputText v-model="formData.name" :placeholder="t('visitorTypes.name')" class="w-full" />
               </div>
 
-              <!-- Descrizione -->
               <div class="dlg-field dlg-field-full">
                 <label class="dlg-label">{{ t('visitorTypes.description') }}</label>
                 <Textarea v-model="formData.description" :placeholder="t('visitorTypes.description')" rows="3" class="w-full" />
@@ -135,7 +205,6 @@
             </div>
           </div>
 
-          <!-- Sezione: Stato -->
           <div class="dlg-section dlg-section-status">
             <div class="dlg-status-row">
               <div>
@@ -148,13 +217,11 @@
             </div>
           </div>
 
-          <!-- Sezione: Nota creazione -->
           <div v-if="!isEditing" class="dlg-hint-box">
             <i class="pi pi-lightbulb" />
             {{ t('visitorTypes.createHint') }}
           </div>
 
-          <!-- Sezione: Campi personalizzati (solo in modifica) -->
           <div v-if="isEditing" class="dlg-section">
             <div class="dlg-section-title" style="justify-content: space-between;">
               <span class="flex items-center gap-2">
@@ -166,13 +233,11 @@
               </button>
             </div>
 
-            <!-- Empty state -->
             <div v-if="!currentCustomFields.length" class="fields-empty">
               <i class="pi pi-inbox" />
               <span>{{ t('visitorTypes.noFields') }}</span>
             </div>
 
-            <!-- Fields list -->
             <div v-else class="fields-list">
               <div v-for="field in currentCustomFields" :key="field.id" class="field-row">
                 <div class="field-row-info">
@@ -208,7 +273,7 @@
         </template>
       </AppDialog>
 
-      <!-- ------ Field Add / Edit Dialog ------------------------------------------------------------------------------------------------------------------ -->
+      <!-- ── Field Add / Edit Dialog ─────────────────────────────────── -->
       <AppDialog
         v-model:visible="showFieldDialog"
         :header="isEditingField ? t('visitorTypes.editFieldAssociation') : t('visitorTypes.addField')"
@@ -220,7 +285,6 @@
         <div class="dlg-form">
           <div class="dlg-section">
             <div class="dlg-fields-2">
-              <!-- Etichetta -->
               <div class="dlg-field dlg-field-full">
                 <label class="dlg-label">{{ t('visitorTypes.catalogFieldLabel') }} <span class="req">*</span></label>
                 <Select
@@ -230,13 +294,12 @@
                   option-value="id"
                   filter
                   :disabled="isEditingField"
-                    :placeholder="t('visitorTypes.selectCustomFieldPlaceholder')"
+                  :placeholder="t('visitorTypes.selectCustomFieldPlaceholder')"
                   class="w-full"
                 />
                 <small class="dlg-help">{{ t('visitorTypes.catalogHelp') }}</small>
               </div>
 
-              <!-- Visibilit- -->
               <div class="dlg-field">
                 <label class="dlg-label">{{ t('visitorTypes.visibility') }}</label>
                 <Select
@@ -248,7 +311,6 @@
                 />
               </div>
 
-              <!-- Ordinamento -->
               <div class="dlg-field">
                 <label class="dlg-label">{{ t('visitorTypes.sortOrder') }}</label>
                 <InputNumber v-model="fieldLinkData.sortOrder" class="w-full" :min="0" />
@@ -262,10 +324,10 @@
                 <div class="dlg-status-title">{{ selectedCatalogField.label }}</div>
                 <div class="dlg-status-desc">{{ selectedCatalogField.name }}</div>
               </div>
-                <div class="selected-field-chips">
-                  <span class="meta-chip">{{ selectedCatalogField.fieldType }}</span>
-                  <span v-if="selectedCatalogField.options?.length" class="meta-chip">{{ selectedCatalogField.options.length }} {{ t('visitorTypes.options') }}</span>
-                </div>
+              <div class="selected-field-chips">
+                <span class="meta-chip">{{ selectedCatalogField.fieldType }}</span>
+                <span v-if="selectedCatalogField.options?.length" class="meta-chip">{{ selectedCatalogField.options.length }} {{ t('visitorTypes.options') }}</span>
+              </div>
             </div>
           </div>
 
@@ -303,16 +365,14 @@ import { useCustomFieldsStore } from '@/stores/custom-fields.store'
 import { customFieldsApi } from '@/api/custom-fields.api'
 import MainLayout from '@/layouts/MainLayout.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
-import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
-import InputIcon from 'primevue/inputicon'
-import IconField from 'primevue/iconfield'
 import Checkbox from 'primevue/checkbox'
 import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
 import InputNumber from 'primevue/inputnumber'
 import { FieldVisibility } from '@/types/enums'
 import type { CreateVisitorTypeDto, UpdateVisitorTypeDto } from '@/types/visitor-type'
@@ -322,13 +382,19 @@ const { t } = useI18n()
 const visitorTypesStore = useVisitorTypesStore()
 const customFieldsStore = useCustomFieldsStore()
 
-// ------ View state ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------ View state ------
 const searchQuery = ref('')
+const statusFilter = ref<boolean[]>([])
 const viewMode = ref<'card' | 'table'>(
   (localStorage.getItem('visitor_types_view_mode') as 'card' | 'table') ?? 'table'
 )
 
-// ------ Main dialog ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+const statusOptions = computed(() => [
+  { label: t('common.active'),   value: true },
+  { label: t('common.inactive'), value: false },
+])
+
+// ------ Main dialog ------
 const showCreateDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref<string | null>(null)
@@ -339,7 +405,7 @@ const formData = ref<CreateVisitorTypeDto>({
   isActive: true,
 })
 
-// ------ Field dialog ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------ Field dialog ------
 const showFieldDialog = ref(false)
 const isEditingField = ref(false)
 const editingFieldId = ref<string | null>(null)
@@ -357,19 +423,30 @@ const visibilityOptions = computed(() => [
   { label: t('visitorTypes.visibilityPublic'), value: FieldVisibility.Public },
 ])
 
-// ------ Computed ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------ Computed ------
 const filteredVisitorTypes = computed(() => {
-  if (!searchQuery.value) return visitorTypesStore.visitorTypes
-  const query = searchQuery.value.toLowerCase()
-  return visitorTypesStore.visitorTypes.filter(
-    (vt) =>
-      vt.name.toLowerCase().includes(query) ||
-      vt.description?.toLowerCase().includes(query)
-  )
+  let list = visitorTypesStore.visitorTypes.map((vt) => ({
+    ...vt,
+    customFieldsCount: customFieldsCountByVisitorTypeId[vt.id] ?? 0,
+  }))
+
+  if (statusFilter.value.length > 0) {
+    list = list.filter((vt) => statusFilter.value.includes(vt.isActive))
+  }
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    list = list.filter(
+      (vt) =>
+        vt.name.toLowerCase().includes(query) ||
+        vt.description?.toLowerCase().includes(query)
+    )
+  }
+
+  return list
 })
 
 const currentCustomFields = ref<FieldLinkResponse[]>([])
-// Stato reattivo per il conteggio dei campi personalizzati per ogni tipologia
 const customFieldsCountByVisitorTypeId = reactive<Record<string, number>>({})
 
 const availableCatalogFields = computed(() => {
@@ -377,7 +454,6 @@ const availableCatalogFields = computed(() => {
     if (isEditingField.value && field.id === fieldLinkData.value.customFieldId) {
       return true
     }
-
     return !currentCustomFields.value.some((link) => link.customFieldId === field.id)
   })
 })
@@ -386,7 +462,7 @@ const selectedCatalogField = computed<CustomFieldDef | undefined>(() =>
   customFieldsStore.fields.find((field) => field.id === fieldLinkData.value.customFieldId)
 )
 
-// ------ Main dialog methods ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------ Main dialog methods ------
 const openCreateDialog = () => {
   isEditing.value = false
   editingId.value = null
@@ -422,7 +498,6 @@ const saveVisitorType = async () => {
     } else {
       const created = await visitorTypesStore.createVisitorType(formData.value)
       if (created?.id) {
-        // Switch to edit mode inline - l'utente pu- subito aggiungere i campi personalizzati
         isEditing.value = true
         editingId.value = created.id
         currentCustomFields.value = []
@@ -456,7 +531,7 @@ const closeDialog = () => {
   formData.value = { name: '', description: '', isActive: true }
 }
 
-// ------ Field dialog methods ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ------ Field dialog methods ------
 const openAddFieldDialog = () => {
   isEditingField.value = false
   editingFieldId.value = null
@@ -496,7 +571,6 @@ const saveField = async () => {
     }
     await loadVisitorTypeLinks(editingId.value)
     await visitorTypesStore.fetchAllVisitorTypes()
-    // Aggiorna il conteggio dopo la modifica
     customFieldsCountByVisitorTypeId[editingId.value] = currentCustomFields.value.length
     closeFieldDialog()
   } catch (error) {
@@ -510,7 +584,6 @@ const deleteField = async (fieldId: string) => {
       await customFieldsApi.removeVisitorTypeLink(fieldId)
       if (editingId.value) {
         await loadVisitorTypeLinks(editingId.value)
-        // Aggiorna il conteggio dopo la modifica
         customFieldsCountByVisitorTypeId[editingId.value] = currentCustomFields.value.length
       }
       await visitorTypesStore.fetchAllVisitorTypes()
@@ -536,7 +609,6 @@ onMounted(async () => {
   try {
     await customFieldsStore.fetchAll()
     await visitorTypesStore.fetchAllVisitorTypes()
-    // Carica il conteggio dei campi personalizzati per ogni tipologia
     for (const vt of visitorTypesStore.visitorTypes) {
       const links = await customFieldsApi.getVisitorTypeLinks(vt.id)
       customFieldsCountByVisitorTypeId[vt.id] = links.length
@@ -548,4 +620,3 @@ onMounted(async () => {
 </script>
 
 <style scoped src="./VisitorTypesListView.css"></style>
-

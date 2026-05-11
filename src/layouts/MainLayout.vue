@@ -23,7 +23,7 @@
               <img
                 v-if="tenantCompactLogoUrl"
                 :src="tenantCompactLogoUrl"
-                alt="Logo compatto Azienda"
+                :alt="t('settings.compactLogoAlt')"
                 class="tenant-logo tenant-logo-compact"
               />
               <div v-else class="logo-icon-default logo-icon-compact">
@@ -226,7 +226,6 @@ const sidebarExpanded = ref<boolean>(true)
 const mobileSidebarOpen = ref<boolean>(false)
 const showUserMenu = ref<boolean>(false)
 const userMenuRef = ref<HTMLElement | null>(null)
-const unreadCount = ref<number>(0)
 const stoppingImpersonation = ref<boolean>(false)
 
 // ------ Computed ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -365,10 +364,6 @@ function toggleUserMenu() {
   showUserMenu.value = !showUserMenu.value
 }
 
-function toggleNotifications() {
-  // TODO: pannello notifiche
-}
-
 function cycleLocale() {
   const next = locale.value === 'it' ? 'en' : 'it'
   locale.value = next
@@ -385,10 +380,13 @@ function handleCycleLocale() {
   showUserMenu.value = false
 }
 
-async function handleLogout() {
+function handleLogout(): void {
   showUserMenu.value = false
-  await authStore.logout()
-  router.push('/login')
+  // Fire-and-forget: pulizia dello store senza bloccare la navigazione.
+  authStore.logout().catch(() => { /* ignore */ })
+  // Hard reload alla LoginView: il router guard parte fresco e, se il tenant
+  // ha requireSsoOnly = true, ridirige direttamente all'IdP.
+  window.location.href = '/login'
 }
 
 async function handleStopImpersonation() {

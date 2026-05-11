@@ -43,6 +43,8 @@ export interface VisitorSearchResult {
   email?: string | null
   phone?: string | null
   visitorTypeId?: string | null
+  /** JSON serializzato dei custom field values salvati sul contatto. */
+  customFieldValues?: string | null
 }
 
 /** Risposta del controllo duplicato email (per popup di conferma). */

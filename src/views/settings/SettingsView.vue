@@ -579,7 +579,7 @@
                         <div class="email-form-section-title email-form-section-title-compact">
                           <div>
                             <span>{{ t('settings.sendGridSection') }}</span>
-                            <p>Usa una API key SendGrid per inviare email transazionali.</p>
+                            <p>{{ t('settings.sendGridSectionDesc') }}</p>
                           </div>
                           <span class="email-section-badge"><i class="pi pi-key" /> API</span>
                         </div>
@@ -592,7 +592,7 @@
                                 type="password"
                                 class="email-native-input"
                                 autocomplete="new-password"
-                                placeholder="SG.xxxxxxxxxxxx"
+                                :placeholder="t('settings.sendGridApiKeyPlaceholder')"
                             />
                           </div>
                         </div>
@@ -615,7 +615,7 @@
                       <div class="email-form-section-title email-form-section-title-compact">
                         <div>
                           <span>{{ t('settings.retrySection') }}</span>
-                          <p>Gestisci tentativi automatici in caso di errore temporaneo.</p>
+                          <p>{{ t('settings.retrySectionDesc') }}</p>
                         </div>
                         <span class="email-section-badge"><i class="pi pi-refresh" /> Retry</span>
                       </div>
@@ -637,7 +637,7 @@
                               type="number"
                               class="email-native-input"
                               min="100"
-                              placeholder="1000"
+                              :placeholder="t('settings.retryDelayPlaceholder')"
                           />
                         </div>
                       </div>
@@ -699,29 +699,29 @@
                         <div class="email-help-step">
                           <span class="email-help-step-number">1</span>
                           <div class="email-help-step-copy">
-                            <strong>Identità mittente</strong>
-                            <span>Usa un dominio verificato e riconoscibile dai destinatari.</span>
+                            <strong>{{ t('settings.emailSetupSteps.identityTitle') }}</strong>
+                            <span>{{ t('settings.emailSetupSteps.identityDesc') }}</span>
                           </div>
                         </div>
                         <div class="email-help-step">
                           <span class="email-help-step-number">2</span>
                           <div class="email-help-step-copy">
-                            <strong>Server e porta</strong>
-                            <span>Per SMTP di solito 587 con TLS, oppure 465 con SSL.</span>
+                            <strong>{{ t('settings.emailSetupSteps.serverTitle') }}</strong>
+                            <span>{{ t('settings.emailSetupSteps.serverDesc') }}</span>
                           </div>
                         </div>
                         <div class="email-help-step">
                           <span class="email-help-step-number">3</span>
                           <div class="email-help-step-copy">
-                            <strong>Credenziali</strong>
-                            <span>Preferisci app password o credenziali dedicate al relay.</span>
+                            <strong>{{ t('settings.emailSetupSteps.credentialsTitle') }}</strong>
+                            <span>{{ t('settings.emailSetupSteps.credentialsDesc') }}</span>
                           </div>
                         </div>
                         <div class="email-help-step">
                           <span class="email-help-step-number">4</span>
                           <div class="email-help-step-copy">
-                            <strong>Invia un test</strong>
-                            <span>Verifica recapito, mittente visualizzato e possibili errori.</span>
+                            <strong>{{ t('settings.emailSetupSteps.testTitle') }}</strong>
+                            <span>{{ t('settings.emailSetupSteps.testDesc') }}</span>
                           </div>
                         </div>
                       </div>
@@ -735,9 +735,9 @@
                           <i class="pi pi-send" />
                         </div>
                         <div>
-                          <span class="email-card-eyebrow">Verifica recapito</span>
+                          <span class="email-card-eyebrow">{{ t('settings.testSectionEyebrow') }}</span>
                           <h3>{{ t('settings.testSection') }}</h3>
-                          <p>Invia una mail di prova per controllare subito la configurazione.</p>
+                          <p>{{ t('settings.testSectionDesc') }}</p>
                         </div>
                       </div>
 
@@ -881,7 +881,7 @@
                   <i class="pi pi-shield" />
                 </div>
                 <div class="sso-auth-chip sso-auth-chip-top"><i class="pi pi-check-circle" /> OIDC</div>
-                <div class="sso-auth-chip sso-auth-chip-bottom"><i class="pi pi-lock" /> Secure</div>
+                <div class="sso-auth-chip sso-auth-chip-bottom"><i class="pi pi-lock" /> {{ t('sso.settings.secureBadge') }}</div>
               </div>
             </div>
 
@@ -911,6 +911,7 @@
                           <span class="sso-native-switch-track"><span class="sso-native-switch-thumb" /></span>
                         </label>
                         <Button :label="t('sso.settings.testConnection')" icon="pi pi-bolt" outlined :loading="ssoTesting" :disabled="!ssoForm.authority" @click="testSsoConnection" />
+                        <Button :label="t('common.save')" icon="pi pi-check" :loading="ssoSaving" severity="primary" @click="onSsoSaveClick" />
                       </div>
                     </div>
                   </div>
@@ -962,13 +963,26 @@
                         </div>
                       </div>
 
+                      <div class="sso-mini-grid">
+                        <div class="sso-switch-card">
+                          <div class="sso-switch-copy">
+                            <div class="form-label">{{ t('sso.settings.publicClient') }}</div>
+                            <small class="form-hint">{{ t('sso.settings.publicClientHint') }}</small>
+                          </div>
+                          <label class="sso-native-switch" :aria-label="t('sso.settings.publicClient')">
+                            <input v-model="ssoForm.isPublicClient" type="checkbox" />
+                            <span class="sso-native-switch-track"><span class="sso-native-switch-thumb" /></span>
+                          </label>
+                        </div>
+                      </div>
+
                       <div class="sso-field-grid">
                         <div class="sso-field-card">
                           <label class="form-label">{{ t('sso.settings.clientId') }} <span class="required-star">*</span></label>
                           <input v-model="ssoForm.clientId" type="text" class="form-input sso-native-input" :class="[errors.clientId && touched.clientId ? 'input-error' : '']" placeholder="client-id-generato-dal-provider" autocomplete="off" spellcheck="false" @blur="touched.clientId = true" />
                           <small v-if="errors.clientId && touched.clientId" class="error-text">{{ t('sso.settings.errors.clientIdRequired', 'Inserisci il Client ID.') }}</small>
                         </div>
-                        <div class="sso-field-card">
+                        <div v-if="!ssoForm.isPublicClient" class="sso-field-card">
                           <label class="form-label">{{ t('sso.settings.clientSecret') }}</label>
                           <input v-model="ssoForm.clientSecret" type="password" class="form-input sso-native-input" :class="[errors.clientSecret && touched.clientSecret ? 'input-error' : '']" :placeholder="ssoHasSecret ? 'Secret già salvato: scrivi per sostituirlo' : t('sso.settings.clientSecretPlaceholder')" autocomplete="new-password" spellcheck="false" @blur="touched.clientSecret = true" />
                           <small class="form-hint">{{ ssoHasSecret ? t('sso.settings.clientSecretKeepHint') : '' }}</small>
@@ -988,7 +1002,7 @@
                       <div class="sso-mini-grid">
                         <div class="sso-field-card">
                           <label class="form-label">{{ t('sso.settings.buttonLabel') }}</label>
-                          <input v-model="ssoForm.buttonLabel" type="text" class="form-input-full sso-native-input" placeholder="Accedi con SSO" autocomplete="off" />
+                          <input v-model="ssoForm.buttonLabel" type="text" class="form-input-full sso-native-input" :placeholder="t('sso.settings.buttonLabelPlaceholder')" autocomplete="off" />
                           <small class="form-hint">{{ t('sso.settings.buttonLabelHint') }}</small>
                         </div>
                         <div class="sso-switch-card">
@@ -1046,7 +1060,7 @@
                       </div>
 
                       <div class="sso-actions-bar">
-                        <Button :label="t('common.save')" icon="pi pi-check" :loading="ssoSaving" :disabled="!isFormValid || ssoSaving" @click="() => { touched.authority = true; touched.clientId = true; touched.clientSecret = true; saveSsoConfig() }" class="btn-save-sso" :style="{ background: brandingForm.primaryColor || '#2563eb' }" />
+                        <Button :label="t('common.save')" icon="pi pi-check" @click="onSsoSaveClick" />
                         <Button v-if="ssoHasSecret" :label="t('sso.settings.deleteConfig')" icon="pi pi-trash" severity="danger" outlined @click="deleteSsoConfig" />
                       </div>
                     </div>
@@ -1058,39 +1072,39 @@
                     <div class="card-content">
                       <div class="sso-help-hero">
                         <div class="sso-help-title-block">
-                          <span class="sso-card-eyebrow">Setup assistito</span>
-                          <h3>{{ t('sso.settings.helpTitle', 'Guida rapida') }}</h3>
-                          <p>{{ t('sso.settings.helpDesc', "Tre passaggi ordinati per configurare l'accesso SSO senza perdere il contesto del form.") }}</p>
+                          <span class="sso-card-eyebrow">{{ t('sso.settings.helpEyebrow') }}</span>
+                          <h3>{{ t('sso.settings.helpTitle') }}</h3>
+                          <p>{{ t('sso.settings.helpDesc') }}</p>
                         </div>
                         <span class="sso-help-badge"><i class="pi pi-sparkles" /> 3 step</span>
                       </div>
 
-                      <div class="sso-help-steps" aria-label="SSO setup checklist">
+                      <div class="sso-help-steps" :aria-label="t('sso.settings.helpChecklistAriaLabel')">
                         <div class="sso-help-step">
                           <span class="sso-help-step-number">1</span>
                           <div class="sso-help-step-copy">
-                            <strong>Provider</strong>
-                            <span>Scegli un preset oppure incolla l'Authority URL del tuo Identity Provider.</span>
+                            <strong>{{ t('sso.settings.helpProviderTitle') }}</strong>
+                            <span>{{ t('sso.settings.helpProviderDesc') }}</span>
                           </div>
                         </div>
                         <div class="sso-help-step">
                           <span class="sso-help-step-number">2</span>
                           <div class="sso-help-step-copy">
-                            <strong>Credenziali</strong>
-                            <span>Compila Client ID, Client Secret e scope OIDC richiesti.</span>
+                            <strong>{{ t('sso.settings.helpCredentialsTitle') }}</strong>
+                            <span>{{ t('sso.settings.helpCredentialsDesc') }}</span>
                           </div>
                         </div>
                         <div class="sso-help-step">
                           <span class="sso-help-step-number">3</span>
                           <div class="sso-help-step-copy">
-                            <strong>Verifica</strong>
-                            <span>Esegui il test connessione, poi salva solo la configurazione validata.</span>
+                            <strong>{{ t('sso.settings.helpVerifyTitle') }}</strong>
+                            <span>{{ t('sso.settings.helpVerifyDesc') }}</span>
                           </div>
                         </div>
                       </div>
 
                       <div class="sso-provider-reference">
-                        <div class="sso-provider-reference-title"><i class="pi pi-link" /> Authority URL comuni</div>
+                        <div class="sso-provider-reference-title"><i class="pi pi-link" /> {{ t('sso.settings.commonAuthorityUrls') }}</div>
                         <div class="sso-provider-reference-list">
                           <div class="sso-provider-reference-item">
                             <span><i class="pi pi-building" /> Azure AD</span>
@@ -1249,6 +1263,7 @@ import { appReceptionApi } from '@/api/app-reception.api'
 import type { AppReceptionConfigInput, AppReceptionConfigResponse } from '@/types/app-reception'
 // Divider import removed (unused)
 import ProgressSpinner from 'primevue/progressspinner'
+import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 
@@ -1272,6 +1287,7 @@ const ssoForm = ref({
   authority:       '',
   clientId:        '',
   clientSecret:    '',
+  isPublicClient:  false,
   scopes:          'openid profile email',
   jitProvisioning: false,
   jitDefaultRole:  'Tenant.Member',
@@ -1304,7 +1320,10 @@ const errors = computed(() => {
   const c = (ssoForm.value.clientId ?? '').toString().trim() === ''
   const sc = (ssoForm.value.scopes ?? '').toString().trim() === ''
   // clientSecret required only when there's no saved secret
-  const csRequired = !ssoHasSecret.value && (ssoForm.value.clientSecret ?? '').toString().trim() === ''
+  // clientSecret non richiesto se è un client pubblico (PKCE-only)
+  const csRequired = !ssoForm.value.isPublicClient
+                     && !ssoHasSecret.value
+                     && (ssoForm.value.clientSecret ?? '').toString().trim() === ''
   return {
     authority: a,
     clientId: c,
@@ -1330,6 +1349,7 @@ async function loadSsoConfig(): Promise<void> {
       authority:       data.authority,
       clientId:        data.clientId,
       clientSecret:    '',
+      isPublicClient:  data.isPublicClient ?? false,
       scopes:          data.scopes,
       jitProvisioning: data.jitProvisioning,
       jitDefaultRole:  data.jitDefaultRole,
@@ -1365,6 +1385,31 @@ async function testSsoConnection(): Promise<void> {
   }
 }
 
+function onSsoSaveClick(): void {
+  // Marca tutti i campi come touched per mostrare gli errori inline
+  touched.value.authority    = true
+  touched.value.clientId     = true
+  touched.value.clientSecret = true
+  touched.value.scopes       = true
+
+  if (!isFormValid.value) {
+    const missing: string[] = []
+    if (errors.value.authority)    missing.push(t('sso.settings.authority'))
+    if (errors.value.clientId)     missing.push(t('sso.settings.clientId'))
+    if (errors.value.clientSecret) missing.push(t('sso.settings.clientSecret'))
+    if (errors.value.scopes)       missing.push(t('sso.settings.scopes'))
+    toast.add({
+      severity: 'warn',
+      summary:  t('common.error'),
+      detail:   `${t('sso.settings.fillRequired', 'Compila i campi obbligatori')}: ${missing.join(', ')}`,
+      life:     4000,
+    })
+    return
+  }
+
+  saveSsoConfig()
+}
+
 async function saveSsoConfig(): Promise<void> {
   ssoSaving.value = true
   try {
@@ -1373,6 +1418,7 @@ async function saveSsoConfig(): Promise<void> {
       authority:       ssoForm.value.authority,
       clientId:        ssoForm.value.clientId,
       clientSecret:    ssoForm.value.clientSecret || null,
+      isPublicClient:  ssoForm.value.isPublicClient,
       scopes:          ssoForm.value.scopes,
       jitProvisioning: ssoForm.value.jitProvisioning,
       jitDefaultRole:  ssoForm.value.jitDefaultRole,

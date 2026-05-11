@@ -140,7 +140,7 @@
               optionValue="value"
               :placeholder="t('userGroups.selectUserPlaceholder')"
               :filter="true"
-              filterPlaceholder="Cerca per nome o email..."
+              :filterPlaceholder="t('userGroups.selectUserPlaceholder')"
               class="w-full"
               :emptyFilterMessage="t('common.noResults')"
               :emptyMessage="t('userGroups.noUsersAvailable')"

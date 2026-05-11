@@ -49,12 +49,12 @@
             role="listitem"
           >
             <div class="kpi-left">
-              <div class="kpi-icon" :aria-:label="t('views.dashboard.kpilabel')">
+              <div class="kpi-icon" :aria-label="kpi.label">
                 <i :class="`pi ${kpi.icon}`" aria-hidden="true" />
               </div>
             </div>
             <div class="kpi-right">
-              <p :class="t('views.dashboard.kpilabel')">{{ kpi.label }}</p>
+              <p class="kpi-label">{{ kpi.label }}</p>
               <p class="kpi-value" :aria-label="`${kpi.label}: ${kpi.value}`">{{ kpi.value }}</p>
               <p class="kpi-delta" :class="kpi.deltaType">
                 <i :class="`pi ${kpi.deltaIcon}`" aria-hidden="true" />
@@ -146,6 +146,76 @@
           </div>
         </div>
 
+        <!-- ------ Upcoming Bookings (timeline) ----------------------------------------------------------------------------------------------------------- -->
+        <div class="dash-card upcoming-card">
+          <div class="dash-card-header">
+            <div>
+              <h2 class="dash-card-title">{{ t('dashboard.upcomingBookings') }}</h2>
+              <p class="dash-card-sub">{{ t('dashboard.upcomingSubtitle') }}</p>
+            </div>
+            <div class="period-tabs" role="tablist" :aria-label="t('dashboard.upcomingPeriod')">
+              <button
+                v-for="p in upcomingPeriods"
+                :key="p.key"
+                class="period-tab"
+                :class="{ active: upcomingPeriod === p.key }"
+                role="tab"
+                :aria-selected="upcomingPeriod === p.key"
+                @click="onUpcomingPeriodChange(p.key)"
+              >{{ p.label }}</button>
+            </div>
+          </div>
+
+          <div v-if="upcomingLoading" class="chart-loading" aria-live="polite">
+            <div class="spinner-sm" />
+          </div>
+
+          <div v-else-if="upcomingSchedule.length === 0" class="today-empty" role="status">
+            <i class="pi pi-calendar-times" aria-hidden="true" />
+            <span>{{ t('dashboard.noUpcomingBookings') }}</span>
+          </div>
+
+          <div v-else class="upcoming-timeline">
+            <div
+              v-for="group in upcomingSchedule"
+              :key="group.dayIso"
+              class="upcoming-day"
+            >
+              <div class="upcoming-day-header">
+                <i class="pi pi-calendar" aria-hidden="true" />
+                <span>{{ group.dayLabel }}</span>
+                <span class="upcoming-day-count">{{ group.items.length }}</span>
+              </div>
+              <div class="upcoming-day-items" role="list">
+                <router-link
+                  v-for="item in group.items"
+                  :key="item.id"
+                  :to="{ name: 'BookingDetail', params: { id: item.bookingId } }"
+                  class="upcoming-item"
+                  role="listitem"
+                  :aria-label="t('dashboard.openBookingDetail', { title: item.title })"
+                >
+                  <div class="upcoming-time">
+                    <span class="t-start">{{ item.start }}</span>
+                    <span class="t-end">{{ item.end }}</span>
+                  </div>
+                  <div class="upcoming-bar" :style="{ background: item.statusColor }" aria-hidden="true" />
+                  <div class="upcoming-info">
+                    <p class="t-title">{{ item.title }}</p>
+                    <p class="t-room">
+                      <i class="pi pi-map-marker" aria-hidden="true" />{{ item.room }}
+                    </p>
+                  </div>
+                  <span class="b-status" :class="item.statusClass">
+                    {{ item.statusLabel }}
+                  </span>
+                  <i class="pi pi-arrow-right upcoming-arrow" aria-hidden="true" />
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ------ Bottom Row ------------------------------------------------------------------------------------------------------------------------------------------------ -->
         <div class="bottom-grid">
 
@@ -227,7 +297,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PrimeChart from 'primevue/chart'
 import MainLayout from '@/layouts/MainLayout.vue'
-import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useBookingsStore } from '@/stores/bookings.store'
 import { useResourcesStore } from '@/stores/resources.store'
@@ -239,7 +308,6 @@ import type { Resource } from '@/types/resource'
 const { t } = useI18n()
 const translateCount = (key: string, count: number) =>
   (t as unknown as (path: string, plural: number, options: { count: number }) => string)(key, count, { count })
-const authStore = useAuthStore()
 const uiStore = useUiStore()
 const bookingsStore = useBookingsStore()
 const resourcesStore = useResourcesStore()
@@ -252,20 +320,12 @@ const loadError = ref<string | null>(null)
 const myBookings = ref<Booking[]>([])
 const todayBookings = ref<Booking[]>([])
 const periodBookings = ref<Booking[]>([])
+const upcomingBookings = ref<Booking[]>([])
+const upcomingLoading = ref(false)
 const allResources = ref<Resource[]>([])
 
 // ------ Computed ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const isDarkMode = computed(() => uiStore.isDarkMode)
-
-const userName = computed(() =>
-  authStore.user?.email?.split('@')[0] ?? 'Utente'
-)
-
-const todayLabel = computed(() =>
-  new Date().toLocaleDateString('it-IT', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
-)
 
 // ------ Periods ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const selectedPeriod = ref('30d')
@@ -274,6 +334,17 @@ const periods = [
   { key: '30d', label: '30g' },
   { key: '90d', label: '90g' },
 ]
+
+// Periodi della sezione "Prossime prenotazioni"
+const upcomingPeriod = ref('14d')
+const upcomingPeriods = [
+  { key: '7d', label: '7g' },
+  { key: '14d', label: '14g' },
+  { key: '30d', label: '30g' },
+]
+function upcomingDays(key: string): number {
+  return key === '7d' ? 7 : key === '14d' ? 14 : 30
+}
 
 // ------ Helpers ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 function periodDays(key: string): number {
@@ -294,6 +365,17 @@ function tomorrowIso(): string {
   const d = new Date()
   d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
+}
+
+function isoDateInDays(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+function formatDayHeader(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`)
+  return d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' })
 }
 
 function getResourceName(resourceId: string): string {
@@ -357,13 +439,6 @@ const kpiCards = computed(() => {
   const totalRes = allResources.value.length
   const todayCount = todayBookings.value.filter(b => b.status !== BookingStatus.Draft).length
 
-  // Utilization: unique resources used today / total active resources
-  const usedTodayIds = new Set(
-    todayBookings.value.flatMap(b => b.resources.map(r => r.resourceId))
-  )
-
-  const utilizationPct = totalRes > 0 ? Math.round((usedTodayIds.size / totalRes) * 100) : 0
-
   // Next upcoming booking today
   const now = new Date()
   const nextToday = todayBookings.value
@@ -425,6 +500,58 @@ const todaySchedule = computed(() => {
     )
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 5)
+})
+
+// ------ Upcoming Schedule ----------------------------------------------------------------------------------------------------------------------------------------------------
+type UpcomingItem = {
+  id: string
+  start: string
+  end: string
+  title: string
+  room: string
+  bookingId: string
+  status: BookingStatus
+  statusLabel: string
+  statusIcon: string
+  statusColor: string
+  statusClass: string
+  startTime: string
+}
+
+const upcomingSchedule = computed<{ dayIso: string; dayLabel: string; items: UpcomingItem[] }[]>(() => {
+  const groups = new Map<string, UpcomingItem[]>()
+
+  for (const b of upcomingBookings.value) {
+    if (b.status === BookingStatus.Draft) continue
+    for (const r of b.resources) {
+      const dayIso = r.startTime.split('T')[0]
+      const item: UpcomingItem = {
+        id: `${b.id}-${r.resourceId}-${r.startTime}`,
+        start: formatTime(r.startTime),
+        end: formatTime(r.endTime),
+        title: b.title,
+        room: getResourceName(r.resourceId),
+        bookingId: b.id,
+        status: b.status,
+        statusLabel: getStatusLabel(b.status),
+        statusIcon: getStatusIcon(b.status),
+        statusColor: getStatusColorHex(b.status),
+        statusClass: `status-${b.status.toLowerCase()}`,
+        startTime: r.startTime,
+      }
+      const arr = groups.get(dayIso) ?? []
+      arr.push(item)
+      groups.set(dayIso, arr)
+    }
+  }
+
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([dayIso, items]) => ({
+      dayIso,
+      dayLabel: formatDayHeader(dayIso),
+      items: items.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()),
+    }))
 })
 
 // ------ Top Resources ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -653,6 +780,27 @@ async function onPeriodChange(period: string) {
   await loadPeriodData(period)
 }
 
+async function loadUpcomingData(period: string) {
+  upcomingLoading.value = true
+  try {
+    const fetched = await bookingsApi.getCalendar({
+      startDate: tomorrowIso(),
+      endDate: isoDateInDays(upcomingDays(period) + 1),
+    })
+    upcomingBookings.value = fetched ?? []
+  } catch {
+    // soft-fail: la sezione mostra empty state
+    upcomingBookings.value = []
+  } finally {
+    upcomingLoading.value = false
+  }
+}
+
+async function onUpcomingPeriodChange(period: string) {
+  upcomingPeriod.value = period
+  await loadUpcomingData(period)
+}
+
 async function loadData() {
   isLoading.value = true
   loadError.value = null
@@ -672,8 +820,11 @@ async function loadData() {
     todayBookings.value = todayB ?? []
     allResources.value = resourcesStore.resources
 
-    // Load period data for chart (30d default)
-    await loadPeriodData(selectedPeriod.value)
+    // Load period data for chart (30d default) e prossime prenotazioni (14d default)
+    await Promise.all([
+      loadPeriodData(selectedPeriod.value),
+      loadUpcomingData(upcomingPeriod.value),
+    ])
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : t('dashboard.loadError')
     loadError.value = msg

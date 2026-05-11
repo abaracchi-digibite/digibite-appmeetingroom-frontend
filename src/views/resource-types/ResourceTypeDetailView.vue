@@ -25,7 +25,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ t('resourceTypes.icon') }}</label>
-                <InputText v-model="formData.icon" placeholder="pi-home" class="w-full" />
+                <InputText v-model="formData.icon" :placeholder="t('resourceTypes.iconPlaceholder')" class="w-full" />
               </div>
               <div class="col-span-2">
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ t('resourceTypes.description') }}</label>
@@ -34,14 +34,14 @@
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ t('resourceTypes.color') }}</label>
                 <div class="flex gap-2">
-                  <InputText v-model="formData.color" placeholder="#FF5733" class="flex-1" />
+                  <InputText v-model="formData.color" :placeholder="t('resourceTypes.colorPlaceholder')" class="flex-1" />
                   <div v-if="formData.color" :style="{ backgroundColor: formData.color }" class="w-10 h-10 rounded border border-slate-300" />
                 </div>
-                <p class="mt-1 text-xs text-slate-500">Questo colore viene usato per riconoscere la tipologia in calendario, badge ed elementi di supporto.</p>
+                <p class="mt-1 text-xs text-slate-500">{{ t('resourceTypes.colorHelp') }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ t('resourceTypes.timeSlots') }}</label>
-                <InputText v-model="formData.defaultTimeSlots" placeholder="08:00-09:00,09:00-10:00" class="w-full" />
+                <InputText v-model="formData.defaultTimeSlots" :placeholder="t('resourceTypes.timeSlotsPlaceholder')" class="w-full" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ t('resourceTypes.multiBooking') }}</label>
@@ -66,7 +66,7 @@
               <i class="pi pi-list text-purple-500"></i>
               {{ t('resourceTypes.customFields') }}
             </div>
-            <Button icon="pi pi-plus" :label="t('resourceTypes.addField') || 'Aggiungi campo'" severity="success" size="small" @click="openAddFieldDialog" />
+            <Button icon="pi pi-plus" :label="t('resourceTypes.addField')" severity="success" size="small" @click="openAddFieldDialog" />
           </div>
         </template>
         <template #content>
@@ -74,7 +74,7 @@
             <template #empty>
               <div class="text-center py-6 text-slate-500">
                 <i class="pi pi-inbox text-3xl mb-2" />
-                <p class="text-sm">{{ t('resourceTypes.noFields') || 'Nessun campo personalizzato' }}</p>
+                <p class="text-sm">{{ t('resourceTypes.noFields') }}</p>
               </div>
             </template>
             <Column field="label" :header="t('resourceTypes.fieldLabel')" />
@@ -115,8 +115,8 @@
 
       <AppDialog
         v-model:visible="showCustomFieldDialog"
-        :header="isEditingField ? 'Modifica associazione campo' : (t('resourceTypes.addField') || 'Aggiungi campo')"
-        :subtitle="selectedCatalogField?.label || 'Seleziona un campo dal catalogo'"
+        :header="isEditingField ? t('resourceTypes.editFieldLink') : t('resourceTypes.addField')"
+        :subtitle="selectedCatalogField?.label || t('resourceTypes.selectFieldFromCatalog')"
         icon="pi pi-list"
         severity="primary"
         size="md"
@@ -125,7 +125,7 @@
           <div class="dlg-section">
             <div class="dlg-fields-2">
               <div class="dlg-field dlg-field-full">
-                <label class="dlg-label">Campo dal catalogo <span class="req">*</span></label>
+                <label class="dlg-label">{{ t('resourceTypes.catalogField') }} <span class="req">*</span></label>
                 <Select
                   v-model="fieldLinkData.customFieldId"
                   :options="availableCatalogFields"
@@ -133,17 +133,17 @@
                   option-value="id"
                   filter
                   :disabled="isEditingField"
-                  placeholder="Seleziona un campo personalizzato"
+                  :placeholder="t('resourceTypes.selectCustomFieldPlaceholder')"
                   class="w-full"
                 />
-                <small class="dlg-help">Mostra i campi creati nella pagina "Campi personalizzati"</small>
+                <small class="dlg-help">{{ t('resourceTypes.catalogFieldHint') }}</small>
               </div>
               <div class="dlg-field">
-                <label class="dlg-label">{{ t('resourceTypes.sortOrder') || 'Ordinamento' }}</label>
+                <label class="dlg-label">{{ t('resourceTypes.sortOrder') }}</label>
                 <InputNumber v-model="fieldLinkData.sortOrder" class="w-full" :min="0" />
               </div>
               <div class="dlg-field">
-                <label class="dlg-label">{{ t('resourceTypes.visibility') || 'Visibilità' }}</label>
+                <label class="dlg-label">{{ t('resourceTypes.visibility') }}</label>
                 <Select v-model="fieldLinkData.visibility" :options="visibilityOptions" option-label="label" option-value="value" class="w-full" />
               </div>
             </div>
@@ -157,7 +157,7 @@
               </div>
               <div class="selected-field-chips">
                 <span class="meta-chip">{{ selectedCatalogField.fieldType }}</span>
-                <span v-if="selectedCatalogField.options?.length" class="meta-chip">{{ selectedCatalogField.options.length }} opzioni</span>
+                <span v-if="selectedCatalogField.options?.length" class="meta-chip">{{ t('customFields.optionsCount', { count: selectedCatalogField.options.length }) }}</span>
               </div>
             </div>
           </div>
@@ -165,8 +165,8 @@
           <div class="dlg-section dlg-section-status">
             <div class="dlg-status-row">
               <div>
-                <div class="dlg-status-title">{{ t('resourceTypes.required') || 'Obbligatorio' }}</div>
-                <div class="dlg-status-desc">Il campo sarà obbligatorio per questa tipologia risorsa</div>
+                <div class="dlg-status-title">{{ t('resourceTypes.required') }}</div>
+                <div class="dlg-status-desc">{{ t('resourceTypes.requiredForResourceType') }}</div>
               </div>
               <Checkbox v-model="fieldLinkData.isRequired" input-id="isRequired" binary />
             </div>
@@ -260,8 +260,8 @@ const resourcesStore = useResourcesStore()
 const customFieldsStore = useCustomFieldsStore()
 
 const visibilityOptions = computed(() => [
-  { label: t('visitorTypes.visibilityInternal') || 'Interno', value: FieldVisibility.Internal },
-  { label: t('visitorTypes.visibilityPublic') || 'Pubblico', value: FieldVisibility.Public },
+  { label: t('visitorTypes.visibilityInternal'), value: FieldVisibility.Internal },
+  { label: t('visitorTypes.visibilityPublic'),   value: FieldVisibility.Public },
 ])
 
 const formData = ref<UpdateResourceTypeDto>({

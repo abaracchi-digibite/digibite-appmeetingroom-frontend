@@ -1,19 +1,18 @@
 ﻿<template>
   <AuthLayout>
     <div class="login-container">
-      <div class="login-header">
-        <h2 class="login-title">
-          {{ ssoInfo?.tenantName ? ssoInfo.tenantName : $t('auth.welcomeBack') }}
-        </h2>
-        <p class="login-subtitle">{{ $t('auth.signInToContinue') }}</p>
-      </div>
-
-      <!-- Loader SSO check iniziale -->
+      <!-- Loader iniziale: durante il check SSO o mentre redirigiamo all'IdP non mostriamo nulla. -->
       <div v-if="checkingSso" class="sso-checking">
         <ProgressSpinner style="width:32px;height:32px" strokeWidth="4" />
       </div>
 
       <template v-else>
+        <div class="login-header">
+          <h2 class="login-title">
+            {{ ssoInfo?.tenantName ? ssoInfo.tenantName : $t('auth.welcomeBack') }}
+          </h2>
+          <p class="login-subtitle">{{ $t('auth.signInToContinue') }}</p>
+        </div>
 
         <!-- ------ Pulsante SSO (se configurato per il tenant/platform) ------ -->
         <div v-if="ssoInfo?.hasSso" class="sso-section">
@@ -182,13 +181,16 @@ async function checkSso(): Promise<void> {
   } catch {
     // Se l'endpoint non risponde, fallback al form normale
     ssoInfo.value = null
-  } finally {
-    checkingSso.value = false
   }
 
+  // Se SSO è obbligatorio, redirigi prima di sbloccare la UI: la pagina sta per
+  // essere sostituita da quella dell'IdP, lo spinner resta a video fino al redirect.
   if (ssoInfo.value?.hasSso && ssoInfo.value.requireSsoOnly) {
     await handleSsoLogin()
+    return
   }
+
+  checkingSso.value = false
 }
 
 // ------ SSO login ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

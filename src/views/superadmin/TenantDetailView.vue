@@ -146,7 +146,7 @@
                 <Select
                   v-model="selectedPlanId"
                   :options="planOptions"
-                  option-:label="t('views.tenantDetail.label')"
+                  option-label="label"
                   option-value="value"
                   :placeholder="t('superadmin.plans.selectPlan')"
                   :loading="plansLoading"
@@ -226,7 +226,7 @@
             <Select
                 v-model="selectedImpersonateRole"
                 :options="impersonateRoleOptions"
-                option-:label="t('views.tenantDetail.label')"
+                option-label="label"
                 option-value="value"
                 class="w-full"
             >
@@ -254,7 +254,7 @@
             <Select
                 v-model="selectedTargetId"
                 :options="targetOptions"
-                option-:label="t('views.tenantDetail.label')"
+                option-label="label"
                 option-value="id"
                 :loading="targetsLoading"
                 :placeholder="targetsLoading

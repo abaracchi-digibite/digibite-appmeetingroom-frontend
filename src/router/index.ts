@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw, type NavigationGuardNext, type RouteLocationNormalized } from 'vue-router'
 import i18n from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
+import { ssoApi } from '@/api/sso.api'
 
 // Lazy-loaded views
 const LoginView = () => import('@/views/auth/LoginView.vue')
@@ -81,10 +82,12 @@ const routes: RouteRecordRaw[] = [
       layout: 'auth',
     },
   },
-  // -- SSO callback - route pubblica, riceve il token dal backend dopo il login SSO
+  // -- SSO complete - route pubblica, riceve il token dal backend dopo il login SSO
+  // Nota: il path "/auth/sso/callback" è riservato all'endpoint backend chiamato dall'IdP
+  // (registrato come Redirect URI). Dopo aver processato code+state, il backend redirige qui.
   {
-    path: '/auth/sso/callback',
-    name: 'SsoCallback',
+    path: '/auth/sso/complete',
+    name: 'SsoComplete',
     component: SsoCallbackView,
     meta: {
       title: 'auth.login',
@@ -545,6 +548,21 @@ const router = createRouter({
 // Track whether we already attempted init (loadFromStorage or dev auto-login)
 let authInitialized = false
 
+// Evita loop infiniti se l'IdP rimanda indietro l'utente sulla LoginView
+// (es. errore di login). Una volta tentato il redirect SSO non lo ripetiamo
+// nello stesso ciclo di vita della SPA finché l'utente non ricarica
+// oppure non si esegue il logout (vedi resetSsoForceRedirect()).
+let ssoForceRedirectAttempted = false
+
+/**
+ * Resetta il flag che blocca i tentativi di redirect SSO automatico.
+ * Da chiamare al logout così la prossima visita alla LoginView può ridirigere
+ * di nuovo all'IdP se il tenant ha requireSsoOnly = true.
+ */
+export function resetSsoForceRedirect(): void {
+  ssoForceRedirectAttempted = false
+}
+
 // Navigation guards
 router.beforeEach(
   async (
@@ -661,6 +679,33 @@ router.beforeEach(
         next({ name: 'Dashboard' })
       }
       return
+    }
+
+    // ------------------------------------------------------------------
+    // SSO obbligatorio: se il tenant corrente ha requireSsoOnly = true,
+    // saltiamo del tutto la LoginView e ridirigiamo subito all'IdP.
+    // Il check viene fatto qui (prima del rendering del componente) perché
+    // farlo dentro la LoginView fa comparire brevemente layout/shell.
+    // ------------------------------------------------------------------
+    if (to.name === 'Login' && !isAuthenticated && !ssoForceRedirectAttempted) {
+      ssoForceRedirectAttempted = true
+      try {
+        const info = await ssoApi.getPublicInfo()
+        if (info?.hasSso && info.requireSsoOnly) {
+          const returnUrl = typeof to.query.redirect === 'string' ? to.query.redirect : undefined
+          if (info.scope === 'Platform') {
+            ssoApi.initiatePlatformLogin(returnUrl)
+          } else {
+            ssoApi.initiateLogin(returnUrl)
+          }
+          // window.location.href è già stato cambiato: blocchiamo la navigazione
+          // dentro Vue Router così il componente LoginView non viene montato.
+          next(false)
+          return
+        }
+      } catch {
+        // Endpoint SSO non raggiungibile: fallback alla LoginView normale.
+      }
     }
 
     next()

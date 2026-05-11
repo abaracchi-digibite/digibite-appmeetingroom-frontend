@@ -1,272 +1,252 @@
 <template>
   <MainLayout>
-    <div class="bookings-page">
+    <div class="list-page">
 
-      <!-- ------ Header ------------------------------------------------------------------------------------------------------------------------------------------------ -->
-      <div class="page-header">
-        <router-link :to="{ name: 'BookingWizard' }" class="btn-primary">
-          <i class="pi pi-plus mr-1" />
-          {{ t('bookings.new') }}
-        </router-link>
-      </div>
-
-      <!-- ------ Error Banner ------------------------------------------------------------------------------------------------------------------------------ -->
-      <div v-if="bookingsStore.error" class="error-banner">
+      <!-- Error banner -->
+      <div v-if="bookingsStore.error" class="list-error">
         <i class="pi pi-exclamation-circle" />
-        <span>{{ t('errors.loadFailed') }}</span>
+        <span>{{ t('common.loadFailed') }}</span>
         <button class="btn-text" @click="loadData">{{ t('common.retry') }}</button>
       </div>
 
-      <!-- ------ Filters --------------------------------------------------------------------------------------------------------------------------------------------- -->
-      <div class="filters-card">
-        <div class="filters-grid">
-          <!-- Search -->
-          <div class="filter-field filter-field-search">
-            <label class="filter-label">{{ t('common.search') }}</label>
-            <div class="input-icon-wrapper">
-              <i class="pi pi-search input-icon" />
-              <input
-                v-model="searchQuery"
-                type="text"
-                :placeholder="t('common.search') + '...'"
-                class="form-input input-with-icon"
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
+          </div>
+          <router-link :to="{ name: 'BookingWizard' }" class="list-btn-primary">
+            <i class="pi pi-plus" />
+            <span>{{ t('bookings.new') }}</span>
+          </router-link>
+        </div>
+
+        <div class="list-row-secondary">
+          <div class="list-filters-group">
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('common.status') }}</label>
+              <PrimeMultiSelect
+                v-model="filterStatuses"
+                :options="statusOptions"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('common.all')"
+                display="chip"
+                :max-selected-labels="1"
+                :selected-items-label="`{0} ${t('common.selected')}`"
+                class="list-filter-select"
               />
+            </div>
+
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('bookings.plant') }}</label>
+              <PrimeMultiSelect
+                v-model="filterPlantIds"
+                :options="plantOptions"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('common.all')"
+                display="chip"
+                :max-selected-labels="1"
+                :selected-items-label="`{0} ${t('common.selected')}`"
+                class="list-filter-select"
+              />
+            </div>
+
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('bookings.resource') }}</label>
+              <PrimeMultiSelect
+                v-model="filterResourceIds"
+                :options="resourceOptions"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('common.all')"
+                display="chip"
+                :max-selected-labels="1"
+                :selected-items-label="`{0} ${t('common.selected')}`"
+                class="list-filter-select"
+              />
+            </div>
+
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('bookings.dateFrom') }}</label>
+              <input v-model="filterDateFrom" type="date" class="list-filter-date" />
+            </div>
+
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('bookings.dateTo') }}</label>
+              <input v-model="filterDateTo" type="date" class="list-filter-date" />
             </div>
           </div>
 
-          <!-- Status -->
-          <div class="filter-field">
-            <label class="filter-label">{{ t('common.status') }}</label>
-            <PrimeMultiSelect
-              v-model="filterStatuses"
-              :options="statusOptions"
-              option-:label="t('views.bookingsList.label')"
-              option-value="value"
-              :placeholder="t('bookings.allStatuses')"
-              class="w-full"
-              display="chip"
-            />
+          <div class="list-row-secondary-right">
+            <span class="list-count-flat">{{ filteredBookings.length }} {{ t('common.results') }}</span>
+            <div class="list-view-flat">
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
+                <i class="pi pi-list" />
+              </button>
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'card' }" :title="t('common.viewCards')" @click="setViewMode('card')">
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
           </div>
-
-          <!-- Plant -->
-          <div class="filter-field">
-            <label class="filter-label">{{ t('bookings.plant') }}</label>
-            <PrimeMultiSelect
-              v-model="filterPlantIds"
-              :options="plantOptions"
-              option-:label="t('views.bookingsList.label')"
-              option-value="value"
-              :placeholder="t('bookings.allPlants')"
-              class="w-full"
-              display="chip"
-            />
-          </div>
-
-          <!-- Resource -->
-          <div class="filter-field">
-            <label class="filter-label">{{ t('bookings.resource') }}</label>
-            <PrimeMultiSelect
-              v-model="filterResourceIds"
-              :options="resourceOptions"
-              option-:label="t('views.bookingsList.label')"
-              option-value="value"
-              :placeholder="t('bookings.allResources')"
-              class="w-full"
-              display="chip"
-            />
-          </div>
-
-          <!-- Date From -->
-          <div class="filter-field">
-            <label class="filter-label">{{ t('bookings.dateFrom') }}</label>
-            <input v-model="filterDateFrom" type="date" class="form-input" />
-          </div>
-
-          <!-- Date To -->
-          <div class="filter-field">
-            <label class="filter-label">{{ t('bookings.dateTo') }}</label>
-            <input v-model="filterDateTo" type="date" class="form-input" />
-          </div>
-        </div>
-
-        <!-- Filter footer -->
-        <div class="filters-footer">
-          <span class="results-count">
-            <i class="pi pi-list" />
-            {{ translateCount('common.bookingsCount', filteredBookings.length) }}
-          </span>
-          <button v-if="hasActiveFilters" class="btn-text-small" @click="resetFilters">
-            <i class="pi pi-filter-slash mr-1" />
-            {{ t('bookings.resetFilters') }}
-          </button>
         </div>
       </div>
 
-      <!-- ------ Loading --------------------------------------------------------------------------------------------------------------------------------------------------- -->
-      <div v-if="loading" class="loading-state">
-        <div class="spinner" />
+      <!-- ── Loading / Empty ──────────────────────────────────────── -->
+      <div v-if="loading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
         <span>{{ t('common.loading') }}</span>
       </div>
 
-      <!-- ------ Empty State --------------------------------------------------------------------------------------------------------------------------------- -->
-      <div v-else-if="filteredBookings.length === 0" class="empty-state">
-        <div class="empty-icon"><i class="pi pi-inbox" /></div>
-        <h3 v-if="hasActiveFilters" class="empty-title">{{ t('bookings.noResultsWithFilters') }}</h3>
-        <h3 v-else class="empty-title">{{ t('bookings.noBookings') }}</h3>
-        <p v-if="hasActiveFilters" class="empty-desc">{{ t('bookings.tryDifferentFilters') }}</p>
-        <div class="empty-actions">
-          <button v-if="hasActiveFilters" class="btn-secondary" @click="resetFilters">
-            <i class="pi pi-filter-slash mr-1" />
-            {{ t('bookings.resetFilters') }}
-          </button>
-          <router-link v-else :to="{ name: 'BookingWizard' }" class="btn-primary">
-            <i class="pi pi-plus mr-1" />
-            {{ t('bookings.new') }}
-          </router-link>
-        </div>
+      <div v-else-if="filteredBookings.length === 0" class="list-empty">
+        <i class="pi pi-inbox" />
+        <p v-if="hasActiveFilters">{{ t('bookings.noResultsWithFilters') }}</p>
+        <p v-else>{{ t('bookings.noBookings') }}</p>
       </div>
 
-      <!-- ------ Bookings Table ------------------------------------------------------------------------------------------------------------------------ -->
-      <div v-else class="table-wrapper">
-        <table class="bookings-table">
-          <thead>
-            <tr>
-              <th class="th-status th-sortable" @click="toggleSort('status')">
-                <span class="th-content">
-                  {{ t('common.status') }}
-                  <i :class="getSortIcon('status')" class="sort-icon" />
-                </span>
-              </th>
-              <th class="th-title th-sortable" @click="toggleSort('title')">
-                <span class="th-content">
-                  {{ t('common.name') }}
-                  <i :class="getSortIcon('title')" class="sort-icon" />
-                </span>
-              </th>
-              <th class="th-datetime th-sortable" @click="toggleSort('datetime')">
-                <span class="th-content">
-                  {{ t('common.dateTime') }}
-                  <i :class="getSortIcon('datetime')" class="sort-icon" />
-                </span>
-              </th>
-              <th class="th-plant th-sortable" @click="toggleSort('plant')">
-                <span class="th-content">
-                  {{ t('bookings.plant') }}
-                  <i :class="getSortIcon('plant')" class="sort-icon" />
-                </span>
-              </th>
-              <th class="th-resources">{{ t('resources.title') }}</th>
-              <th class="th-organizer th-sortable" @click="toggleSort('organizer')">
-                <span class="th-content">
-                  {{ t('bookings.organizer') }}
-                  <i :class="getSortIcon('organizer')" class="sort-icon" />
-                </span>
-              </th>
-              <th class="th-actions">{{ t('common.actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="booking in paginatedBookings"
-              :key="booking.id"
-              class="booking-row"
-              @click="viewBooking(booking.id)"
-            >
-              <!-- Status -->
-              <td class="td-status">
-                <span class="status-chip" :style="getStatusStyle(booking.status)">
-                  <i :class="`pi ${getStatusIcon(booking.status)}`" />
-                  <span class="status-chip-label">{{ getStatusLabel(booking.status) }}</span>
-                </span>
-              </td>
+      <!-- ── Tabella ──────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+        <DataTable
+          :value="filteredBookings"
+          :paginator="filteredBookings.length > 15"
+          :rows="15"
+          responsiveLayout="scroll"
+          stripedRows
+          class="list-table"
+          @row-click="onRowClick"
+        >
+          <Column field="status" :header="t('common.status')" :sortable="true" style="width: 160px">
+            <template #body="{ data }">
+              <span class="status-chip" :style="getStatusStyle(data.status)">
+                <i :class="`pi ${getStatusIcon(data.status)}`" />
+                {{ getStatusLabel(data.status) }}
+              </span>
+            </template>
+          </Column>
 
-              <!-- Title + Notes -->
-              <td class="td-title">
-                <span class="booking-name">{{ booking.title }}</span>
-                <span v-if="booking.notes" class="booking-notes">{{ booking.notes }}</span>
-              </td>
+          <Column field="title" :header="t('common.name')" :sortable="true" style="width: 22%">
+            <template #body="{ data }">
+              <span class="list-cell-strong">{{ data.title }}</span>
+              <small v-if="data.notes" class="booking-notes">{{ data.notes }}</small>
+            </template>
+          </Column>
 
-              <!-- Date/Time -->
-              <td class="td-datetime">
-                <template v-if="booking.resources[0]">
-                  <span class="date-primary">{{ formatDateShort(booking.resources[0].startTime) }}</span>
-                  <span class="date-secondary">{{ formatTimeRange(booking.resources[0].startTime, booking.resources[0].endTime) }}</span>
-                </template>
-                <span v-else class="text-muted">–</span>
-              </td>
+          <Column field="firstStartTime" :header="t('common.dateTime')" :sortable="true" style="width: 170px">
+            <template #body="{ data }">
+              <template v-if="data.resources[0]">
+                <div class="date-primary">{{ formatDateShort(data.resources[0].startTime) }}</div>
+                <small class="date-secondary">{{ formatTimeRange(data.resources[0].startTime, data.resources[0].endTime) }}</small>
+              </template>
+              <span v-else class="list-cell-muted">—</span>
+            </template>
+          </Column>
 
-              <!-- Plant -->
-              <td class="td-plant">
-                <span class="plant-name">{{ getPlantName(booking.resources[0]?.plantId) }}</span>
-              </td>
+          <Column field="plantName" :header="t('bookings.plant')" :sortable="true" style="width: 14%">
+            <template #body="{ data }">
+              <span class="list-cell-muted">{{ getPlantName(data.resources[0]?.plantId) }}</span>
+            </template>
+          </Column>
 
-              <!-- Resources -->
-              <td class="td-resources">
-                <div class="resource-tags">
-                  <span
-                    v-for="resource in booking.resources.slice(0, 2)"
-                    :key="resource.id"
-                    class="resource-tag"
-                  >
-                    {{ getResourceName(resource.resourceId) }}
-                  </span>
-                  <span v-if="booking.resources.length > 2" class="resource-tag resource-tag-more">
-                    +{{ booking.resources.length - 2 }}
-                  </span>
-                </div>
-              </td>
+          <Column :header="t('resources.title')" style="width: 18%">
+            <template #body="{ data }">
+              <div class="resource-tags">
+                <span v-for="resource in data.resources.slice(0, 2)" :key="resource.id" class="resource-tag">
+                  {{ getResourceName(resource.resourceId) }}
+                </span>
+                <span v-if="data.resources.length > 2" class="resource-tag resource-tag-more">
+                  +{{ data.resources.length - 2 }}
+                </span>
+              </div>
+            </template>
+          </Column>
 
-              <!-- Organizer -->
-              <td class="td-organizer">
-                <div class="organizer-cell">
-                  <span class="organizer-avatar">{{ getOrganizerInitials(booking.organizerId) }}</span>
-                  <span class="organizer-name">{{ getOrganizerDisplayName(booking.organizerId) }}</span>
-                </div>
-              </td>
+          <Column field="organizerName" :header="t('bookings.organizer')" :sortable="true" style="width: 14%">
+            <template #body="{ data }">
+              <div class="organizer-cell">
+                <span class="organizer-avatar">{{ getOrganizerInitials(data.organizerId) }}</span>
+                <span class="list-cell-muted">{{ getOrganizerDisplayName(data.organizerId) }}</span>
+              </div>
+            </template>
+          </Column>
 
-              <!-- Actions -->
-              <td class="td-actions" @click.stop>
-                <div class="action-btns">
-                  <button class="action-btn action-btn-view" @click="viewBooking(booking.id)" :title="t('common.details')">
-                    <i class="pi pi-eye" />
-                  </button>
-                  <button
-                    v-if="booking.status === 'Draft'"
-                    class="action-btn action-btn-continue"
-                    @click="editBooking(booking.id)"
-                    :title="t('bookings.continueDraft')"
-                  >
-                    <i class="pi pi-arrow-right" />
-                  </button>
-                  <button
-                    class="action-btn action-btn-delete"
-                    @click="confirmCancel(booking.id)"
-                    :title="t('common.delete')"
-                  >
-                    <i class="pi pi-trash" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <Column :header="t('common.actions')" style="width: 130px" class="list-col-actions">
+            <template #body="{ data }">
+              <div class="list-row-actions" @click.stop>
+                <button type="button" class="list-action-btn list-action-view" :title="t('common.details')" @click="viewBooking(data.id)">
+                  <i class="pi pi-eye" />
+                </button>
+                <button v-if="data.status === 'Draft'" type="button" class="list-action-btn list-action-edit" :title="t('bookings.continueDraft')" @click="editBooking(data.id)">
+                  <i class="pi pi-arrow-right" />
+                </button>
+                <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="confirmCancel(data.id)">
+                  <i class="pi pi-trash" />
+                </button>
+              </div>
+            </template>
+          </Column>
+        </DataTable>
       </div>
 
-      <!-- ------ Pagination ------------------------------------------------------------------------------------------------------------------------------------ -->
-      <div v-if="!loading && totalPages > 1" class="pagination">
-        <span class="pagination-info">
-          {{ (currentPage - 1) * itemsPerPage + 1 }}—{{ Math.min(currentPage * itemsPerPage, filteredBookings.length) }}
-          di {{ filteredBookings.length }}
-        </span>
-        <div class="pagination-btns">
-          <button class="pagination-btn" :disabled="currentPage === 1" @click="currentPage--">
-            <i class="pi pi-chevron-left" />
-          </button>
-          <span class="pagination-current">{{ currentPage }} / {{ totalPages }}</span>
-          <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage++">
-            <i class="pi pi-chevron-right" />
-          </button>
-        </div>
+      <!-- ── Cards ────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article
+          v-for="booking in filteredBookings"
+          :key="booking.id"
+          class="list-card list-card-clickable"
+          @click="viewBooking(booking.id)"
+        >
+          <div class="list-card-head">
+            <h3 class="list-card-title">{{ booking.title }}</h3>
+            <span class="status-chip" :style="getStatusStyle(booking.status)">
+              <i :class="`pi ${getStatusIcon(booking.status)}`" />
+              {{ getStatusLabel(booking.status) }}
+            </span>
+          </div>
+          <p v-if="booking.notes" class="list-card-desc">{{ booking.notes }}</p>
+          <div class="list-card-info">
+            <div v-if="booking.resources[0]" class="list-card-info-row">
+              <i class="pi pi-calendar" />
+              <span>{{ formatDateShort(booking.resources[0].startTime) }} · {{ formatTimeRange(booking.resources[0].startTime, booking.resources[0].endTime) }}</span>
+            </div>
+            <div class="list-card-info-row">
+              <i class="pi pi-building" />
+              <span>{{ getPlantName(booking.resources[0]?.plantId) }}</span>
+            </div>
+            <div class="list-card-info-row">
+              <i class="pi pi-box" />
+              <div class="resource-tags">
+                <span v-for="resource in booking.resources.slice(0, 3)" :key="resource.id" class="resource-tag">
+                  {{ getResourceName(resource.resourceId) }}
+                </span>
+                <span v-if="booking.resources.length > 3" class="resource-tag resource-tag-more">
+                  +{{ booking.resources.length - 3 }}
+                </span>
+              </div>
+            </div>
+            <div class="list-card-info-row">
+              <i class="pi pi-user" />
+              <span>{{ getOrganizerDisplayName(booking.organizerId) }}</span>
+            </div>
+          </div>
+          <div class="list-card-actions" @click.stop>
+            <button type="button" class="list-action-btn list-action-view" :title="t('common.details')" @click="viewBooking(booking.id)">
+              <i class="pi pi-eye" />
+            </button>
+            <button v-if="booking.status === 'Draft'" type="button" class="list-action-btn list-action-edit" :title="t('bookings.continueDraft')" @click="editBooking(booking.id)">
+              <i class="pi pi-arrow-right" />
+            </button>
+            <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="confirmCancel(booking.id)">
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
       </div>
 
       <PrimeConfirmDialog />
@@ -282,6 +262,8 @@ import { useConfirm } from 'primevue/useconfirm'
 import MainLayout from '@/layouts/MainLayout.vue'
 import PrimeConfirmDialog from 'primevue/confirmdialog'
 import PrimeMultiSelect from 'primevue/multiselect'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import { useBookingsStore } from '@/stores/bookings.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useResourcesStore } from '@/stores/resources.store'
@@ -292,8 +274,6 @@ import type { BookingStatus } from '@/types/enums'
 import { BookingStatus as BookingStatusEnum } from '@/types/enums'
 
 const { t } = useI18n()
-const translateCount = (key: string, count: number) =>
-  (t as unknown as (path: string, plural: number, options: { count: number }) => string)(key, count, { count })
 const router = useRouter()
 const confirm = useConfirm()
 const bookingsStore = useBookingsStore()
@@ -302,24 +282,14 @@ const resourcesStore = useResourcesStore()
 const plantsStore = usePlantsStore()
 const usersStore = useUsersStore()
 
-// ------ Helpers per date default ---------------------------------------------------------------------------------------------------------------------------------------------
-function toDateInputValue(date: Date): string {
-  return date.toISOString().slice(0, 10)
-}
-
+function toDateInputValue(date: Date): string { return date.toISOString().slice(0, 10) }
 function getDefaultDateFrom(): string {
-  const d = new Date()
-  d.setMonth(d.getMonth() - 6)
-  return toDateInputValue(d)
+  const d = new Date(); d.setMonth(d.getMonth() - 6); return toDateInputValue(d)
 }
-
 function getDefaultDateTo(): string {
-  const d = new Date()
-  d.setMonth(d.getMonth() + 6)
-  return toDateInputValue(d)
+  const d = new Date(); d.setMonth(d.getMonth() + 6); return toDateInputValue(d)
 }
 
-// ------ State ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const loading = ref(false)
 const localBookings = ref<Booking[]>([])
 const searchQuery = ref('')
@@ -328,15 +298,15 @@ const filterPlantIds = ref<string[]>([])
 const filterResourceIds = ref<string[]>([])
 const filterDateFrom = ref(getDefaultDateFrom())
 const filterDateTo = ref(getDefaultDateTo())
-const currentPage = ref(1)
-const itemsPerPage = 15
+const viewMode = ref<'card' | 'table'>(
+  (localStorage.getItem('bookings_view_mode') as 'card' | 'table') ?? 'table'
+)
 
-type SortColumn = 'status' | 'title' | 'datetime' | 'plant' | 'organizer'
-type SortOrder = 'asc' | 'desc'
-const sortColumn = ref<SortColumn>('datetime')
-const sortOrder = ref<SortOrder>('desc')
+const setViewMode = (mode: 'card' | 'table') => {
+  viewMode.value = mode
+  localStorage.setItem('bookings_view_mode', mode)
+}
 
-// ------ Options ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const statusOptions = computed(() => [
   { label: t('bookings.status.draft'), value: BookingStatusEnum.Draft },
   { label: t('bookings.status.pendingApproval'), value: BookingStatusEnum.PendingApproval },
@@ -347,9 +317,7 @@ const statusOptions = computed(() => [
   { label: t('bookings.status.rejected'), value: BookingStatusEnum.Rejected },
 ])
 
-const plantOptions = computed(() =>
-  plantsStore.activePlants.map((p) => ({ label: p.name, value: p.id }))
-)
+const plantOptions = computed(() => plantsStore.activePlants.map((p) => ({ label: p.name, value: p.id })))
 
 const resourceOptions = computed(() => {
   let resources = resourcesStore.resources
@@ -372,50 +340,37 @@ const canViewTenantWideBookings = computed(() =>
   authStore.hasRole('Platform.Owner.Impersonating')
 )
 
-// ------ Filtered + Paginated ---------------------------------------------------------------------------------------------------------------------------------------------------------
 const filteredBookings = computed(() => {
-  let list = localBookings.value
+  let list = localBookings.value.map((b) => ({
+    ...b,
+    firstStartTime: b.resources[0]?.startTime ? new Date(b.resources[0].startTime).getTime() : 0,
+    plantName: getPlantName(b.resources[0]?.plantId),
+    organizerName: getOrganizerDisplayName(b.organizerId),
+  }))
 
-  // Status (multi)
   if (filterStatuses.value.length > 0) {
     list = list.filter((b) => filterStatuses.value.includes(b.status))
   }
-
-  // Plant (multi)
   if (filterPlantIds.value.length > 0) {
-    list = list.filter((b) =>
-      b.resources.some((r) => filterPlantIds.value.includes(r.plantId))
-    )
+    list = list.filter((b) => b.resources.some((r) => filterPlantIds.value.includes(r.plantId)))
   }
-
-  // Resource (multi)
   if (filterResourceIds.value.length > 0) {
-    list = list.filter((b) =>
-      b.resources.some((r) => filterResourceIds.value.includes(r.resourceId))
-    )
+    list = list.filter((b) => b.resources.some((r) => filterResourceIds.value.includes(r.resourceId)))
   }
-
-  // Date from
   if (filterDateFrom.value) {
-    const from = new Date(filterDateFrom.value)
-    from.setHours(0, 0, 0, 0)
+    const from = new Date(filterDateFrom.value); from.setHours(0, 0, 0, 0)
     list = list.filter((b) => {
       const start = b.resources[0]?.startTime
       return start && new Date(start) >= from
     })
   }
-
-  // Date to
   if (filterDateTo.value) {
-    const to = new Date(filterDateTo.value)
-    to.setHours(23, 59, 59, 999)
+    const to = new Date(filterDateTo.value); to.setHours(23, 59, 59, 999)
     list = list.filter((b) => {
       const start = b.resources[0]?.startTime
       return start && new Date(start) <= to
     })
   }
-
-  // Search text
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter((b) =>
@@ -424,97 +379,36 @@ const filteredBookings = computed(() => {
       (b.notes?.toLowerCase().includes(q) ?? false)
     )
   }
-
-  // Sort
-  const col = sortColumn.value
-  const mod = sortOrder.value === 'asc' ? 1 : -1
-
-  list = [...list].sort((a, b) => {
-    let valA: string | number = ''
-    let valB: string | number = ''
-
-    switch (col) {
-      case 'status':
-        valA = a.status
-        valB = b.status
-        break
-      case 'title':
-        valA = a.title.toLowerCase()
-        valB = b.title.toLowerCase()
-        break
-      case 'datetime':
-        valA = a.resources[0]?.startTime ? new Date(a.resources[0].startTime).getTime() : 0
-        valB = b.resources[0]?.startTime ? new Date(b.resources[0].startTime).getTime() : 0
-        break
-      case 'plant':
-        valA = getPlantName(a.resources[0]?.plantId).toLowerCase()
-        valB = getPlantName(b.resources[0]?.plantId).toLowerCase()
-        break
-      case 'organizer':
-        valA = getOrganizerDisplayName(a.organizerId).toLowerCase()
-        valB = getOrganizerDisplayName(b.organizerId).toLowerCase()
-        break
-    }
-
-    if (valA < valB) return -1 * mod
-    if (valA > valB) return 1 * mod
-    return 0
-  })
-
   return list
 })
 
-const totalPages = computed(() => Math.ceil(filteredBookings.value.length / itemsPerPage))
-
-const paginatedBookings = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredBookings.value.slice(start, start + itemsPerPage)
-})
-
-// Reset page when filters change
-watch([searchQuery, filterStatuses, filterPlantIds, filterResourceIds, filterDateFrom, filterDateTo], () => {
-  currentPage.value = 1
-})
-
-// ------ Helpers ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 function getPlantName(plantId: string | undefined): string {
-  if (!plantId) return '–'
-  return plantsStore.plantById(plantId)?.name || '–'
+  if (!plantId) return '—'
+  return plantsStore.plantById(plantId)?.name || '—'
 }
 
 function getResourceName(resourceId: string): string {
-  return resourcesStore.resourceById(resourceId)?.name || '–'
+  return resourcesStore.resourceById(resourceId)?.name || '—'
 }
 
 function getOrganizerDisplayName(organizerId: string): string {
-  if (!organizerId) return '–'
-
-  // Lookup primario: utente del tenant (organizerId è un UUID).
-  // fullName → email → fallback al valore originale.
+  if (!organizerId) return '—'
   const user = usersStore.users.find((u) => u.id === organizerId)
   if (user) {
     if (user.fullName && user.fullName.trim()) return user.fullName.trim()
     if (user.email) return user.email
   }
-
-  // Fallback per dati legacy in cui organizerId è un'email
-  // (es. seed o import vecchi).
   if (organizerId.includes('@')) {
     const name = organizerId.split('@')[0]
-    return name
-      .replace(/[._-]/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase())
+    return name.replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   }
-
   return organizerId
 }
 
 function getOrganizerInitials(organizerId: string): string {
   const name = getOrganizerDisplayName(organizerId)
   const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase()
-  }
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return name.slice(0, 2).toUpperCase()
 }
 
@@ -560,9 +454,7 @@ function getStatusLabel(status: BookingStatus): string {
 
 function formatDateShort(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('it-IT', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+    day: '2-digit', month: 'short', year: 'numeric',
   })
 }
 
@@ -571,13 +463,16 @@ function formatTimeRange(startStr: string, endStr: string): string {
   return `${fmt(startStr)} — ${fmt(endStr)}`
 }
 
-// ------ Actions ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 function viewBooking(id: string) {
   router.push({ name: 'BookingDetail', params: { id } })
 }
 
 function editBooking(id: string) {
   router.push({ name: 'BookingWizard', query: { draftId: id } })
+}
+
+function onRowClick(event: { data: Booking }) {
+  viewBooking(event.data.id)
 }
 
 function confirmCancel(id: string) {
@@ -598,37 +493,22 @@ function confirmCancel(id: string) {
   })
 }
 
-function resetFilters() {
-  searchQuery.value = ''
-  filterStatuses.value = []
-  filterPlantIds.value = []
-  filterResourceIds.value = []
-  filterDateFrom.value = getDefaultDateFrom()
-  filterDateTo.value = getDefaultDateTo()
-}
-
 async function loadData() {
   try {
     loading.value = true
-
     const query: CalendarQuery = {
       startDate: filterDateFrom.value || getDefaultDateFrom(),
       endDate: filterDateTo.value || getDefaultDateTo(),
     }
-
     if (!canViewTenantWideBookings.value && authStore.user?.userId) {
       query.userId = authStore.user.userId
     }
-
     const [cal] = await Promise.all([
       bookingsStore.fetchCalendarBookings(query),
       plantsStore.fetchAll(),
       resourcesStore.fetchAllResources(),
-      // Carica gli utenti per risolvere organizerId → nome (DRF: organizer
-      // visualizzato come label leggibile, non come UUID).
       usersStore.users.length === 0 ? usersStore.fetchAll() : Promise.resolve(),
     ])
-
     localBookings.value = cal ?? []
   } catch (e) {
     console.error('[BookingsListView] loadData error:', e)
@@ -636,20 +516,6 @@ async function loadData() {
   } finally {
     loading.value = false
   }
-}
-
-function toggleSort(key: SortColumn) {
-  if (sortColumn.value === key) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortColumn.value = key
-    sortOrder.value = 'asc'
-  }
-}
-
-function getSortIcon(key: string) {
-  if (sortColumn.value !== key) return 'pi pi-sort-alt'
-  return sortOrder.value === 'asc' ? 'pi pi-sort-up' : 'pi pi-sort-down'
 }
 
 watch(
@@ -663,6 +529,5 @@ watch(
 
 onMounted(loadData)
 </script>
-
 
 <style scoped src="./BookingsListView.css"></style>

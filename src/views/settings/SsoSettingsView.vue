@@ -58,7 +58,7 @@
             <Button
               v-for="preset in providerPresets"
               :key="preset.id"
-              ::label="t('views.ssoSettings.presetname')"
+              :label="preset.name"
               :icon="preset.icon"
               size="small"
               outlined
@@ -120,7 +120,7 @@
             <label class="app-form-label">{{ $t('sso.settings.scopes') }}</label>
             <InputText
               v-model="form.scopes"
-              :placeholder="t('views.ssoSettings.openid_profile_email')"
+              :placeholder="$t('sso.settings.scopesDefaultPlaceholder')"
               class="app-sso-config__field-input"
             />
             <small class="app-form-hint">{{ $t('sso.settings.scopesHint') }}</small>
@@ -187,7 +187,7 @@
             <Select
               v-model="form.jitDefaultRole"
               :options="availableRoles"
-              option-:label="t('views.ssoSettings.label')"
+              option-label="label"
               option-value="value"
               class="app-sso-config__field-input"
             />
@@ -203,11 +203,11 @@
         <div class="app-sso-config__form-grid">
           <div class="app-sso-config__form-field">
             <label class="app-form-label">{{ $t('sso.settings.claimEmail') }}</label>
-            <InputText v-model="form.claimEmail" :placeholder="t('views.ssoSettings.email')" class="app-sso-config__field-input" />
+            <InputText v-model="form.claimEmail" :placeholder="$t('sso.settings.claimEmailPlaceholder')" class="app-sso-config__field-input" />
           </div>
           <div class="app-sso-config__form-field">
             <label class="app-form-label">{{ $t('sso.settings.claimName') }}</label>
-            <InputText v-model="form.claimName" :placeholder="t('views.ssoSettings.name')" class="app-sso-config__field-input" />
+            <InputText v-model="form.claimName" :placeholder="$t('sso.settings.claimNamePlaceholder')" class="app-sso-config__field-input" />
           </div>
         </div>
 
@@ -273,6 +273,7 @@ const config = ref<TenantSsoConfig>({
   authority:       '',
   clientId:        '',
   hasClientSecret: false,
+  isPublicClient:  false,
   scopes:          'openid profile email',
   jitProvisioning: false,
   jitDefaultRole:  'Tenant.Member',
@@ -427,6 +428,7 @@ async function save(): Promise<void> {
       authority:       form.authority,
       clientId:        form.clientId,
       clientSecret:    form.clientSecret || null,
+      isPublicClient:  config.value.isPublicClient ?? false,
       scopes:          form.scopes,
       jitProvisioning: form.jitProvisioning,
       jitDefaultRole:  form.jitDefaultRole,

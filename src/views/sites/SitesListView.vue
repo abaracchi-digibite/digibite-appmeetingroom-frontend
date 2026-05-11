@@ -53,7 +53,7 @@
               <Dropdown
                 v-model="statusFilter"
                 :options="statusOptions"
-                option-:label="t('views.sitesList.label')"
+                option-label="label"
                 option-value="value"
                 :placeholder="t('common.filter')"
                 class="filter-dropdown"

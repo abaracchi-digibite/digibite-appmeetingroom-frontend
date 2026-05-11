@@ -1,9 +1,11 @@
 import axios from 'axios'
 import type { ApiResponse } from '@/types/api'
 
-// Client axios separato senza auth header per endpoint pubblici
+// Client axios separato senza auth header per endpoint pubblici.
+// Onora VITE_API_BASE_URL per deploy multi-dominio (api su host separato).
+const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
 const publicClient = axios.create({
-  baseURL: '/api/public',
+  baseURL: `${apiBase}/public`,
   headers: { 'Content-Type': 'application/json' },
 })
 

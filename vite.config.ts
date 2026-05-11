@@ -26,6 +26,10 @@ export default defineConfig({
         target: 'http://localhost:5121',
         changeOrigin: false,
       },
+      '/auth/sso/callback': {
+        target: 'http://localhost:5121',
+        changeOrigin: false,
+      },
     },
   },
   preview: {

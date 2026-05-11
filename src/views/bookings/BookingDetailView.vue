@@ -232,7 +232,7 @@
                               class="participant-custom-item"
                           >
                             <span class="participant-custom-label">{{ entry.label }}</span>
-                            <span class="participant-custom-text">{{ entry.display || 'Non compilato' }}</span>
+                            <span class="participant-custom-text">{{ entry.display || t('bookings.notFilled') }}</span>
                           </div>
                         </div>
                       </div>
@@ -287,9 +287,9 @@
               <div class="card-body">
                 <div class="custom-fields-hero">
                   <div class="custom-fields-hero-copy">
-                    <p class="custom-fields-kicker">Campi dinamici</p>
-                    <h3 class="custom-fields-title">Dati raccolti durante la prenotazione</h3>
-                    <p class="custom-fields-description">Qui trovi i valori salvati dai campi personalizzati associati a risorse e tipologie collegate.</p>
+                    <p class="custom-fields-kicker">{{ t('bookings.customFieldsKicker') }}</p>
+                    <h3 class="custom-fields-title">{{ t('bookings.customFieldsHeroTitle') }}</h3>
+                    <p class="custom-fields-description">{{ t('bookings.customFieldsHeroDesc') }}</p>
                   </div>
                   <span class="custom-fields-count">{{ bookingCustomFieldEntries.length }}</span>
                 </div>
@@ -300,13 +300,13 @@
                       :key="entry.key"
                       class="field-card"
                   >
-                    <span class="field-card-eyebrow">Campo personalizzato</span>
+                    <span class="field-card-eyebrow">{{ t('bookings.customFieldEyebrow') }}</span>
                     <div class="field-card-head">
                       <span class="field-key">{{ entry.label }}</span>
                       <span class="field-type">{{ entry.typeLabel }}</span>
                     </div>
                     <div v-if="entry.displayItems.length > 1" class="field-value-list">
-                      <span class="field-value-label">Valori selezionati</span>
+                      <span class="field-value-label">{{ t('bookings.selectedValues') }}</span>
                       <div class="field-value-wrap">
                         <span
                             v-for="item in entry.displayItems"
@@ -318,8 +318,8 @@
                       </div>
                     </div>
                     <div v-else class="field-value-block" :class="{ empty: entry.displayItems.length === 0 }">
-                      <span class="field-value-label">Valore</span>
-                      <span class="field-value">{{ entry.displayItems[0] || 'Non compilato' }}</span>
+                      <span class="field-value-label">{{ t('bookings.valueLabel') }}</span>
+                      <span class="field-value">{{ entry.displayItems[0] || t('bookings.notFilled') }}</span>
                     </div>
                   </article>
                 </div>
@@ -619,16 +619,16 @@
 
       <PrimeDialog
           v-model:visible="showAddParticipantDialog"
-          header="Aggiungi partecipante"
+          :header="t('bookings.addParticipant.header')"
           modal
           :style="{ width: 'min(560px, 94vw)' }"
       >
         <div class="dialog-body dialog-body-form">
           <p class="dialog-intro">
-            Aggiungi un partecipante senza modificare quelli già presenti nella prenotazione.
+            {{ t('bookings.addParticipant.intro') }}
           </p>
 
-          <div class="participant-type-toggle" role="tablist" aria-label="Tipo partecipante">
+          <div class="participant-type-toggle" role="tablist" :aria-label="t('bookings.addParticipant.participantTypeAriaLabel')">
             <button
                 type="button"
                 class="participant-type-btn"
@@ -637,7 +637,7 @@
                 @click="addParticipantForm.kind = 'internal'"
             >
               <i class="pi pi-users" />
-              Interno
+              {{ t('bookings.addParticipant.internal') }}
             </button>
             <button
                 type="button"
@@ -647,18 +647,18 @@
                 @click="addParticipantForm.kind = 'external'"
             >
               <i class="pi pi-user" />
-              Visitatore
+              {{ t('bookings.addParticipant.visitor') }}
             </button>
           </div>
 
           <div v-if="addParticipantForm.kind === 'internal'" class="form-field">
-            <label for="booking-participant-user">Utente interno</label>
+            <label for="booking-participant-user">{{ t('bookings.addParticipant.internalUserLabel') }}</label>
             <select
                 id="booking-participant-user"
                 v-model="addParticipantForm.userId"
                 class="participant-select"
             >
-              <option value="">Seleziona un utente</option>
+              <option value="">{{ t('bookings.addParticipant.selectInternalUser') }}</option>
               <option
                   v-for="user in availableInternalUsers"
                   :key="user.id"
@@ -668,41 +668,41 @@
               </option>
             </select>
             <p v-if="availableInternalUsers.length === 0" class="field-help">
-              Tutti gli utenti interni risultano gia associati a questa prenotazione.
+              {{ t('bookings.addParticipant.allInternalAlreadyParticipating') }}
             </p>
           </div>
 
           <template v-else>
             <div class="form-field">
-              <label for="booking-participant-firstname">Nome visitatore</label>
+              <label for="booking-participant-firstname">{{ t('bookings.addParticipant.visitorFirstName') }}</label>
               <input
                   id="booking-participant-firstname"
                   v-model="addParticipantForm.visitorFirstName"
                   type="text"
                   class="participant-input"
-                  placeholder="Mario"
+                  :placeholder="t('bookings.addParticipant.visitorFirstNamePlaceholder')"
                   autocomplete="given-name"
               />
             </div>
             <div class="form-field">
-              <label for="booking-participant-lastname">Cognome visitatore</label>
+              <label for="booking-participant-lastname">{{ t('bookings.addParticipant.visitorLastName') }}</label>
               <input
                   id="booking-participant-lastname"
                   v-model="addParticipantForm.visitorLastName"
                   type="text"
                   class="participant-input"
-                  placeholder="Rossi"
+                  :placeholder="t('bookings.addParticipant.visitorLastNamePlaceholder')"
                   autocomplete="family-name"
               />
             </div>
             <div class="form-field">
-              <label for="booking-participant-email">Email visitatore</label>
+              <label for="booking-participant-email">{{ t('bookings.addParticipant.visitorEmail') }}</label>
               <input
                   id="booking-participant-email"
                   v-model="addParticipantForm.visitorEmail"
                   type="email"
                   class="participant-input"
-                  placeholder="nome@azienda.it"
+                  :placeholder="t('bookings.addParticipant.visitorEmailPlaceholder')"
                   autocomplete="email"
               />
             </div>
@@ -744,7 +744,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
@@ -760,7 +760,7 @@ import { useResourcesStore } from '@/stores/resources.store'
 import { usePlantsStore } from '@/stores/plants.store'
 import { useUsersStore } from '@/stores/users.store'
 import { customFieldsApi } from '@/api/custom-fields.api'
-import {type BookingStatus, BookingStatus as BookingStatusEnum, InviteStatus as InviteStatusEnum} from '@/types/enums'
+import { BookingStatus as BookingStatusEnum, InviteStatus as InviteStatusEnum } from '@/types/enums'
 import type { InviteStatus } from '@/types/enums'
 import { RecurringScope } from '@/types/booking'
 import type { AddBookingParticipantDto, BookingParticipant } from '@/types/booking'
@@ -951,19 +951,19 @@ function parseCustomFieldRecord(value: unknown): Record<string, unknown> {
 
 function getFieldTypeLabel(type?: string): string {
   const map: Record<string, string> = {
-    Text: 'Testo',
-    Number: 'Numero',
-    Email: 'Email',
-    Phone: 'Telefono',
-    Date: 'Data',
-    Checkbox: 'Checkbox',
-    Boolean: 'Sì / No',
-    SingleChoice: 'Scelta singola',
-    MultipleChoice: 'Scelta multipla',
-    Dropdown: 'Selezione',
+    Text:           t('customFields.types.text'),
+    Number:         t('customFields.types.number'),
+    Email:          t('customFields.types.email'),
+    Phone:          t('customFields.types.phone'),
+    Date:           t('customFields.types.date'),
+    Checkbox:       t('customFields.types.checkbox'),
+    Boolean:        t('customFields.types.boolean'),
+    SingleChoice:   t('customFields.types.singleChoice'),
+    MultipleChoice: t('customFields.types.multipleChoice'),
+    Dropdown:       t('customFields.types.dropdown'),
   }
 
-  return map[type ?? ''] ?? (type || 'Campo')
+  return map[type ?? ''] ?? (type || t('customFields.fallbackFieldName'))
 }
 
 function formatFieldItems(value: unknown): string[] {

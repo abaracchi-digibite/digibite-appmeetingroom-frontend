@@ -165,7 +165,7 @@ const testingConnection = ref(false)
 const testResult        = ref<SsoConnectionTestResult | null>(null)
 
 const config = ref<PlatformSsoConfig>({
-  isEnabled: false, authority: '', clientId: '', hasClientSecret: false,
+  isEnabled: false, authority: '', clientId: '', hasClientSecret: false, isPublicClient: false,
   scopes: 'openid profile email', claimEmail: 'email', claimName: 'name',
   buttonLabel: null, callbackUrl: '', createdAt: '', updatedAt: '',
 })
@@ -214,7 +214,9 @@ async function save() {
   try {
     await ssoApi.savePlatformConfig({
       isEnabled: form.isEnabled, authority: form.authority, clientId: form.clientId,
-      clientSecret: form.clientSecret || null, scopes: form.scopes,
+      clientSecret: form.clientSecret || null,
+      isPublicClient: config.value.isPublicClient ?? false,
+      scopes: form.scopes,
       claimEmail: form.claimEmail, claimName: form.claimName,
       buttonLabel: form.buttonLabel || null,
     })
