@@ -11,8 +11,13 @@
           <i class="pi pi-arrow-left"></i>
         </button>
         <div class="header-text">
-          <h1 class="page-title">{{ title }}</h1>
-          <p v-if="subtitle" class="page-subtitle">{{ subtitle }}</p>
+          <div class="header-title-row">
+            <h1 class="page-title">{{ title }}</h1>
+            <slot name="title-meta" />
+          </div>
+          <p v-if="subtitle || $slots.subtitle" class="page-subtitle">
+            <slot name="subtitle">{{ subtitle }}</slot>
+          </p>
         </div>
       </div>
 
@@ -45,5 +50,5 @@ const handleBack = () => {
 }
 </script>
 
-<style scoped src="./PageHeader.css"></style>
+<style src="./PageHeader.css"></style>
 

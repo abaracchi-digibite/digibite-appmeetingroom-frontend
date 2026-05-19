@@ -59,6 +59,33 @@ export const useAuthStore = defineStore('auth', () => {
     return userRoles.value.includes(role)
   }
 
+  /**
+   * Verifica se l'utente ha **almeno** un ruolo Tenant del livello richiesto.
+   * Gerarchia (DRF §3.2): Owner > Contributor > Reader.
+   * Platform.Owner è sempre sopra tutto. Senza ruolo tenant → false.
+   *
+   * Esempi:
+   *   hasMinTenantRole('Reader')      → true per Reader, Contributor, Owner, Platform.Owner
+   *   hasMinTenantRole('Contributor') → true per Contributor, Owner, Platform.Owner
+   *   hasMinTenantRole('Owner')       → true per Owner, Platform.Owner
+   */
+  type TenantTier = 'Reader' | 'Contributor' | 'Owner'
+  const TENANT_ROLE_RANK: Record<TenantTier, number> = { Reader: 1, Contributor: 2, Owner: 3 }
+
+  const hasMinTenantRole = (min: TenantTier): boolean => {
+    // Platform.Owner bypassa solo se NON sta impersonando (quando impersona,
+    // deve vedere esattamente come l'utente target).
+    if (isSuperAdmin.value && !impersonationToken.value) return true
+    const need = TENANT_ROLE_RANK[min]
+    let userMax = 0
+    for (const r of userRoles.value) {
+      if (r === 'Tenant.Owner')       userMax = Math.max(userMax, 3)
+      else if (r === 'Tenant.Contributor') userMax = Math.max(userMax, 2)
+      else if (r === 'Tenant.Reader')      userMax = Math.max(userMax, 1)
+    }
+    return userMax >= need
+  }
+
   const isImpersonating = computed((): boolean => !!impersonationToken.value)
 
   // Helper: Reset all other stores
@@ -362,6 +389,7 @@ export const useAuthStore = defineStore('auth', () => {
     currentTenantId,
     isSuperAdmin,
     hasRole,
+    hasMinTenantRole,
     isImpersonating,
     impersonationTenantName,
     impersonationRole,

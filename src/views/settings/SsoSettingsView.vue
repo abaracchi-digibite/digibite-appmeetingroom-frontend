@@ -240,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -343,13 +343,13 @@ const providerPresets = [
 
 // -- Ruoli disponibili per JIT provisioning ------------------------------------
 
-const availableRoles = [
-  { label: 'Tenant.Member',        value: 'Tenant.Member' },
-  { label: 'Tenant.Contributor',   value: 'Tenant.Contributor' },
-  { label: 'Tenant.ResourceAdmin', value: 'Tenant.ResourceAdmin' },
-  { label: 'Tenant.Admin',         value: 'Tenant.Admin' },
-  { label: 'Tenant.Owner',         value: 'Tenant.Owner' },
-]
+const availableRoles = computed(() => [
+  { label: t('users.roles.viewer'),      value: 'Tenant.Member' },
+  { label: t('users.roles.contributor'), value: 'Tenant.Contributor' },
+  { label: 'Tenant.ResourceAdmin',       value: 'Tenant.ResourceAdmin' },
+  { label: 'Tenant.Admin',               value: 'Tenant.Admin' },
+  { label: t('users.roles.owner'),       value: 'Tenant.Owner' },
+])
 
 // -- Lifecycle -----------------------------------------------------------------
 

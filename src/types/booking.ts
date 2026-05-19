@@ -10,7 +10,6 @@ export interface Booking {
   title: string
   notes?: string
   inviteMode: InviteMode
-  visitorTypeId: string
   isRecurring: boolean
   masterBookingId?: string
   recurrenceRule?: string
@@ -59,7 +58,6 @@ export interface CreateBookingDto {
   notes?: string
   organizerId: string
   inviteMode: InviteMode
-  visitorTypeId: string
   isRecurring?: boolean
   recurrenceRule?: string
   resourceCustomFieldValues?: Record<string, unknown>
@@ -119,7 +117,6 @@ export interface UpdateBookingDto {
   title?: string
   notes?: string
   inviteMode?: InviteMode
-  visitorTypeId?: string
   isRecurring?: boolean
   recurrenceRule?: string
   resourceCustomFieldValues?: Record<string, unknown>
@@ -145,11 +142,12 @@ export interface CalendarQuery {
   plantId?: string
   resourceId?: string
   resourceTypeId?: string
-  visitorTypeId?: string
   userId?: string
   status?: BookingStatus
   startDate?: string
   endDate?: string
+  /** DRF §8.5: filtra per tipologia visitatore (match su qualsiasi partecipante della prenotazione). */
+  visitorTypeId?: string
 }
 
 export interface AvailabilityCheck {

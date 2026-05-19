@@ -141,7 +141,7 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import PrimeButton from 'primevue/button'
 import { useBookingsStore } from '@/stores/bookings.store'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const bookingsStore = useBookingsStore()
 
@@ -160,7 +160,7 @@ let clearTimeoutId: ReturnType<typeof setTimeout> | null = null
 
 function formatTime(dateStr: string): string {
   try {
-    return new Date(dateStr).toLocaleString('it-IT', {
+    return new Date(dateStr).toLocaleString(locale.value, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -186,8 +186,8 @@ async function handleCheckIn(): Promise<void> {
       isSuccess: true,
       participantName: (participant.userId
         || `${participant.visitorFirstName ?? ''} ${participant.visitorLastName ?? ''}`.trim()
-        || 'Unknown') as string,
-      bookingTitle: 'Booking', // The API response may include booking info
+        || t('common.defaultUser')) as string,
+      bookingTitle: t('common.loadFailed'), // The API response may include booking info
       checkInTime: new Date().toISOString(),
     }
 

@@ -433,9 +433,10 @@
   color: var(--text-primary, #0f172a);
 }
 
-.list-col-actions :deep(.p-datatable-tbody > tr > td),
-.list-col-actions :deep(.p-datatable-thead > tr > th) {
-  text-align: center;
+.list-col-actions {
+  text-align: right !important;
+  white-space: nowrap;
+  width: 1px !important;
 }
 
 /* ── Card view ───────────────────────────────────────────────────── */
@@ -534,7 +535,7 @@
 .list-row-actions {
   display: inline-flex;
   gap: 0.35rem;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .list-action-btn {

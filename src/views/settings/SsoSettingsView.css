@@ -251,3 +251,22 @@
   .app-sso-config__presets-buttons { justify-content: flex-start; }
   .app-dialog-actions { justify-content: stretch; }
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .app-sso-config__callback-banner {
+  background: rgba(99,102,241,0.1);
+  border-color: rgba(99,102,241,0.28);
+}
+.dark .app-sso-config__callback-banner-text strong { color: #a5b4fc; }
+.dark .app-sso-config__callback-url-box {
+  background: var(--bg-input);
+  border-color: rgba(99,102,241,0.3);
+}
+.dark .app-sso-config__provider-presets,
+.dark .app-sso-config__form-field--toggle,
+.dark .app-sso-config__test-row {
+  background: var(--bg-page);
+  border-color: var(--border-default);
+}
+.dark .app-sso-config__test-result--ok    { background: rgba(16,185,129,0.12); color: #34d399; }
+.dark .app-sso-config__test-result--error { background: rgba(239,68,68,0.12);  color: #f87171; }

@@ -273,7 +273,7 @@ import type { Booking, CalendarQuery } from '@/types/booking'
 import type { BookingStatus } from '@/types/enums'
 import { BookingStatus as BookingStatusEnum } from '@/types/enums'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const confirm = useConfirm()
 const bookingsStore = useBookingsStore()
@@ -453,13 +453,13 @@ function getStatusLabel(status: BookingStatus): string {
 }
 
 function formatDateShort(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('it-IT', {
+  return new Date(dateStr).toLocaleDateString(locale.value, {
     day: '2-digit', month: 'short', year: 'numeric',
   })
 }
 
 function formatTimeRange(startStr: string, endStr: string): string {
-  const fmt = (d: string) => new Date(d).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  const fmt = (d: string) => new Date(d).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
   return `${fmt(startStr)} — ${fmt(endStr)}`
 }
 

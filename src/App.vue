@@ -12,10 +12,14 @@ import Toast from 'primevue/toast'
 import { useUiStore } from '@/stores/ui.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useTenantBranding } from '@/composables/useTenantBranding'
+import { useInactivityTimer } from '@/composables/useInactivityTimer'
 
 const uiStore   = useUiStore()
 const authStore = useAuthStore()
 const { applyAuthenticatedBranding } = useTenantBranding()
+
+// Avvia il timer di inattività: dopo 30 min senza interazione → logout automatico.
+useInactivityTimer()
 
 const isDarkMode = computed(() => uiStore.isDarkMode)
 
@@ -40,6 +44,3 @@ watch(
   }
 )
 </script>
-
-<style src="./App.css"></style>
-

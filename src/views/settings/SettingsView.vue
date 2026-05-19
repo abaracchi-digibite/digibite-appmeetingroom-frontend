@@ -70,84 +70,60 @@
               <p class="section-description">{{ t('settings.companyDesc') }}</p>
             </div>
 
+            <!-- ===== Card 1: Identità (read-only) ===== -->
             <div class="settings-card">
               <div class="card-content">
-                <div class="company-overview-grid">
-                  <div class="company-info-stack">
-                    <div class="form-group">
-                      <label class="form-label">{{ t('settings.companyName') }}</label>
-                      <div class="form-value">{{ companyName }}</div>
-                    </div>
+                <div class="subsection-label">{{ t('settings.companyIdentity') }}</div>
 
-                    <div class="form-group">
-                      <label class="form-label">{{ t('settings.companyId') }}</label>
-                      <code class="form-value code">{{ tenantId }}</code>
-                    </div>
-
-                    <div v-if="planInfo" class="form-group">
-                      <label class="form-label">{{ t('settings.plan') }}</label>
-                      <div class="form-value">{{ planInfo }}</div>
-                    </div>
+                <div class="company-identity-grid">
+                  <div class="form-group">
+                    <label class="form-label">{{ t('settings.companyName') }}</label>
+                    <div class="form-value">{{ companyName }}</div>
                   </div>
 
-                  <div class="sidebar-preview-card">
-                    <div class="sidebar-preview-copy">
-                      <h3>{{ t('settings.logoUsageTitle') }}</h3>
-                      <p>{{ t('settings.logoUsageDesc') }}</p>
-                    </div>
+                  <div class="form-group">
+                    <label class="form-label">{{ t('settings.companyId') }}</label>
+                    <code class="form-value code">{{ tenantId }}</code>
+                  </div>
 
-                    <div class="sidebar-preview-grid">
-                      <div class="sidebar-preview-panel">
-                        <span class="sidebar-preview-label">{{ t('settings.mainLogo') }}</span>
-                        <div class="sidebar-preview-shell sidebar-preview-shell-expanded">
-                          <div class="sidebar-preview-brand-row">
-                            <div v-if="companyLogoUrl" class="sidebar-preview-main-logo">
-                              <img :src="companyLogoUrl" :alt="t('settings.mainLogo')" class="logo-img" />
-                            </div>
-                            <div v-else class="sidebar-preview-fallback">
-                              <span>{{ tenantInitials }}</span>
-                            </div>
-                            <span class="sidebar-preview-name">{{ companyName }}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="sidebar-preview-panel">
-                        <span class="sidebar-preview-label">{{ t('settings.compactLogo') }}</span>
-                        <div class="sidebar-preview-shell sidebar-preview-shell-compact">
-                          <div v-if="companyCompactLogoUrl" class="sidebar-preview-compact-logo">
-                            <img :src="companyCompactLogoUrl" :alt="t('settings.compactLogo')" class="logo-img" />
-                          </div>
-                          <div v-else class="sidebar-preview-fallback sidebar-preview-fallback-compact">
-                            <span>{{ tenantInitials }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  <div v-if="planInfo" class="form-group">
+                    <label class="form-label">{{ t('settings.plan') }}</label>
+                    <div class="form-value">{{ planInfo }}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Branding / Grafica Section -->
-            <div class="section-header" style="margin-top: 2rem;">
-              <h2 class="section-title">{{ t('settings.branding') }}</h2>
-              <p class="section-description">{{ t('settings.brandingDesc') }}</p>
-            </div>
-
+            <!-- ===== Card 2: Loghi ===== -->
             <div class="settings-card">
               <div class="card-content">
-                <div class="branding-upload-block">
-                  <label class="form-label">{{ t('settings.companyLogos') }}</label>
-                  <p class="form-hint">{{ t('settings.logoUploadHint') }}</p>
+                <div class="subsection-label">{{ t('settings.companyLogos') }}</div>
+                <p class="form-hint company-subsection-hint">{{ t('settings.logoUploadHint') }}</p>
 
-                  <div class="logo-upload-grid">
-                    <div class="logo-upload-card">
-                      <div class="logo-upload-header">
-                        <div>
-                          <strong>{{ t('settings.mainLogo') }}</strong>
-                          <p>{{ t('settings.mainLogoDesc') }}</p>
-                        </div>
+                <ul class="logo-row-list">
+                  <!-- Logo principale -->
+                  <li class="logo-row">
+                    <div class="logo-row-preview logo-row-preview-wide">
+                      <img
+                          v-if="companyLogoUrl"
+                          :src="companyLogoUrl"
+                          :alt="t('settings.mainLogo')"
+                          class="logo-img"
+                      />
+                      <div v-else class="logo-row-empty">
+                        <i class="pi pi-image" />
+                      </div>
+                    </div>
+                    <div class="logo-row-body">
+                      <div class="logo-row-text">
+                        <strong class="logo-row-title">{{ t('settings.mainLogo') }}</strong>
+                        <p class="logo-row-desc">{{ t('settings.mainLogoDesc') }}</p>
+                        <span class="logo-row-status" :class="{ 'logo-row-status--empty': !companyLogoUrl }">
+                          <i :class="companyLogoUrl ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'" />
+                          {{ companyLogoUrl ? t('settings.logoLoaded') : t('settings.noLogo') }}
+                        </span>
+                      </div>
+                      <div class="logo-row-actions">
                         <button
                             type="button"
                             class="btn-save-branding"
@@ -155,8 +131,12 @@
                             @click="pickMainLogo"
                         >
                           <i v-if="uploadingMainLogo" class="pi pi-spin pi-spinner" />
-                          <i v-else class="pi pi-upload" />
-                          {{ uploadingMainLogo ? t('settings.uploadingLogo') : t('settings.uploadMainLogo') }}
+                          <i v-else :class="companyLogoUrl ? 'pi pi-refresh' : 'pi pi-upload'" />
+                          {{
+                            uploadingMainLogo
+                                ? t('settings.uploadingLogo')
+                                : (companyLogoUrl ? t('settings.replaceLogo') : t('settings.uploadMainLogo'))
+                          }}
                         </button>
                         <input
                             ref="mainLogoInput"
@@ -166,23 +146,32 @@
                             @change="handleMainLogoSelected"
                         />
                       </div>
-                      <div class="logo-preview-container">
-                        <div v-if="companyLogoUrl" class="logo-preview has-logo logo-preview-large">
-                          <img :src="companyLogoUrl" :alt="t('settings.mainLogo')" class="logo-img" />
-                        </div>
-                        <div v-else class="logo-preview empty logo-preview-large">
-                          <i class="pi pi-image" />
-                          <span>{{ t('settings.noLogo') }}</span>
-                        </div>
+                    </div>
+                  </li>
+
+                  <!-- Logo compatto -->
+                  <li class="logo-row">
+                    <div class="logo-row-preview logo-row-preview-square">
+                      <img
+                          v-if="companyCompactLogoUrl"
+                          :src="companyCompactLogoUrl"
+                          :alt="t('settings.compactLogo')"
+                          class="logo-img"
+                      />
+                      <div v-else class="logo-row-empty">
+                        <span>{{ tenantInitials }}</span>
                       </div>
                     </div>
-
-                    <div class="logo-upload-card">
-                      <div class="logo-upload-header">
-                        <div>
-                          <strong>{{ t('settings.compactLogo') }}</strong>
-                          <p>{{ t('settings.compactLogoDesc') }}</p>
-                        </div>
+                    <div class="logo-row-body">
+                      <div class="logo-row-text">
+                        <strong class="logo-row-title">{{ t('settings.compactLogo') }}</strong>
+                        <p class="logo-row-desc">{{ t('settings.compactLogoDesc') }}</p>
+                        <span class="logo-row-status" :class="{ 'logo-row-status--empty': !companyCompactLogoUrl }">
+                          <i :class="companyCompactLogoUrl ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'" />
+                          {{ companyCompactLogoUrl ? t('settings.logoLoaded') : t('settings.noLogo') }}
+                        </span>
+                      </div>
+                      <div class="logo-row-actions">
                         <button
                             type="button"
                             class="btn-save-branding"
@@ -190,8 +179,12 @@
                             @click="pickCompactLogo"
                         >
                           <i v-if="uploadingCompactLogo" class="pi pi-spin pi-spinner" />
-                          <i v-else class="pi pi-upload" />
-                          {{ uploadingCompactLogo ? t('settings.uploadingLogo') : t('settings.uploadCompactLogo') }}
+                          <i v-else :class="companyCompactLogoUrl ? 'pi pi-refresh' : 'pi pi-upload'" />
+                          {{
+                            uploadingCompactLogo
+                                ? t('settings.uploadingLogo')
+                                : (companyCompactLogoUrl ? t('settings.replaceLogo') : t('settings.uploadCompactLogo'))
+                          }}
                         </button>
                         <input
                             ref="compactLogoInput"
@@ -201,20 +194,17 @@
                             @change="handleCompactLogoSelected"
                         />
                       </div>
-                      <div class="logo-preview-container">
-                        <div v-if="companyCompactLogoUrl" class="logo-preview has-logo logo-preview-square">
-                          <img :src="companyCompactLogoUrl" :alt="t('settings.compactLogo')" class="logo-img" />
-                        </div>
-                        <div v-else class="logo-preview empty logo-preview-square">
-                          <i class="pi pi-image" />
-                          <span>{{ tenantInitials }}</span>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
 
-                <!-- Primary Color -->
+            <!-- ===== Card 3: Brand & Email di sistema ===== -->
+            <div class="settings-card">
+              <div class="card-content">
+                <div class="subsection-label">{{ t('settings.brandColors') }}</div>
+
                 <div class="form-group">
                   <label class="form-label">{{ t('settings.primaryColor') }}</label>
                   <div class="color-picker-row">
@@ -233,7 +223,6 @@
                   <p class="form-hint">{{ t('settings.primaryColorHint') }}</p>
                 </div>
 
-                <!-- Secondary Color -->
                 <div class="form-group">
                   <label class="form-label">{{ t('settings.secondaryColor') }}</label>
                   <div class="color-picker-row">
@@ -252,37 +241,21 @@
                   <p class="form-hint">{{ t('settings.secondaryColorHint') }}</p>
                 </div>
 
-                <div class="branding-meaning-box">
-                  <h3 class="preview-title">{{ t('settings.colorsMeaningTitle') }}</h3>
-                  <div class="branding-usage-grid">
-                    <div class="branding-usage-card">
-                      <span class="branding-usage-badge">{{ t('settings.primary') }}</span>
-                      <p>{{ t('settings.primaryColorMeaning') }}</p>
-                    </div>
-                    <div class="branding-usage-card">
-                      <span class="branding-usage-badge branding-usage-badge-secondary">{{ t('settings.secondary') }}</span>
-                      <p>{{ t('settings.secondaryColorMeaning') }}</p>
-                    </div>
-                    <div class="branding-usage-card branding-usage-card-wide">
-                      <span class="branding-usage-badge branding-usage-badge-neutral">{{ t('settings.logoPreview') }}</span>
-                      <p>{{ t('settings.colorsReferencesExtra') }}</p>
-                    </div>
-                  </div>
-                </div>
+                <hr class="appreception-divider" />
 
-                <!-- Sender Email -->
+                <div class="subsection-label">{{ t('settings.systemEmail') }}</div>
+
                 <div class="form-group">
                   <label class="form-label">{{ t('settings.senderEmail') }}</label>
                   <input
                       v-model="brandingForm.senderEmail"
                       type="email"
                       class="form-input"
-                        :placeholder="t('views.settings.noreplyEmail')"
+                      :placeholder="t('views.settings.noreplyEmail')"
                   />
                   <p class="form-hint">{{ t('settings.senderEmailDesc') }}</p>
                 </div>
 
-                <!-- Sender Name -->
                 <div class="form-group">
                   <label class="form-label">{{ t('settings.senderName') }}</label>
                   <input
@@ -294,89 +267,44 @@
                   <p class="form-hint">{{ t('settings.senderNameDesc') }}</p>
                 </div>
 
-                <!-- Branding Preview -->
-                <div class="branding-preview">
-                  <h3 class="preview-title">{{ t('settings.colorPreview') }}</h3>
-                  <div class="branding-preview-colors">
-                    <div
-                        class="color-box-preview"
-                        :style="{ background: brandingForm.primaryColor || '#2563eb' }"
-                    >
-                      <span>{{ t('settings.primary') }}</span>
-                      <span class="color-hex">{{ brandingForm.primaryColor || '#2563eb' }}</span>
-                    </div>
-                    <div
-                        class="color-box-preview"
-                        :style="{ background: brandingForm.secondaryColor || '#0d9488' }"
-                    >
-                      <span>{{ t('settings.secondary') }}</span>
-                      <span class="color-hex">{{ brandingForm.secondaryColor || '#0d9488' }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Save Button -->
-                <div class="branding-actions">
-                  <button
-                      class="btn-save-branding"
-                      :disabled="savingBranding"
-                      @click="saveBranding"
-                  >
-                    <i v-if="savingBranding" class="pi pi-spin pi-spinner" />
-                    <i v-else class="pi pi-check" />
-                    {{ savingBranding ? t('settings.saving') : t('settings.saveBranding') }}
-                  </button>
+                <div class="appreception-footer">
                   <span v-if="brandingSaved" class="branding-saved-msg">
                     <i class="pi pi-check-circle" />
                     {{ t('settings.brandingSaved') }}
                   </span>
-                  <span v-if="brandingError" class="branding-error-msg">
+                  <span v-else-if="brandingError" class="branding-error-msg">
                     <i class="pi pi-exclamation-circle" />
                     {{ brandingError }}
                   </span>
+                  <div class="appreception-actions">
+                    <button
+                        type="button"
+                        class="btn-save-branding"
+                        :disabled="savingBranding"
+                        @click="saveBranding"
+                    >
+                      <i v-if="savingBranding" class="pi pi-spin pi-spinner" />
+                      <i v-else class="pi pi-check" />
+                      {{ savingBranding ? t('settings.saving') : t('settings.saveBranding') }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- TENANT SECTION (Admin only) -->
-          <div v-if="activeSection === 'tenant' && isAdmin" class="settings-section email-control-room">
+          <div v-if="activeSection === 'tenant' && isAdmin" class="settings-section">
             <div class="section-header">
               <h2 class="section-title">{{ t('settings.emailSettings') }}</h2>
               <p class="section-description">{{ t('settings.emailSettingsDesc') }}</p>
             </div>
 
-            <section class="email-hero-card" aria-labelledby="email-hero-title">
-              <div class="email-hero-glow email-hero-glow-one" />
-              <div class="email-hero-glow email-hero-glow-two" />
-              <div class="email-hero-content">
-                <div class="email-hero-kicker">
-                  <span class="email-live-dot" />
-                  {{ t('settings.emailProvider') }}
-                </div>
-                <h2 id="email-hero-title" class="email-hero-title">{{ t('emailHeroTitle') }}</h2>
-                <p class="email-hero-description">{{ t('emailHeroDescription') }}</p>
-              </div>
-              <div class="email-hero-panel" aria-hidden="true">
-                <div class="email-orbit email-orbit-large" />
-                <div class="email-orbit email-orbit-small" />
-                <div class="email-envelope">
-                  <i class="pi pi-envelope" />
-                </div>
-                <div class="email-auth-chip email-auth-chip-top">
-                  <i class="pi pi-lock" /> TLS
-                </div>
-                <div class="email-auth-chip email-auth-chip-bottom">
-                  <i class="pi pi-send" /> SMTP
-                </div>
-              </div>
-            </section>
-
             <!-- Loading state -->
             <div v-if="emailLoading" class="settings-card email-glass-card email-loading-card">
               <div class="card-content email-loading">
                 <i class="pi pi-spin pi-spinner" />
-                <span>{{ t('common.loading', 'Caricamento...') }}</span>
+                <span>{{ t('common.loading') }}</span>
               </div>
             </div>
 
@@ -562,7 +490,7 @@
                           <div class="email-switch-card">
                             <div class="email-switch-copy">
                               <label class="form-label">{{ t('settings.smtpEnableSsl') }}</label>
-                              <p class="form-hint">Cifra la connessione con SSL/TLS quando supportato dal provider.</p>
+                              <p class="form-hint">{{ t('settings.smtpSslHint') }}</p>
                             </div>
                             <label class="email-native-switch">
                               <input v-model="emailForm.smtpEnableSsl" type="checkbox" />
@@ -617,7 +545,7 @@
                           <span>{{ t('settings.retrySection') }}</span>
                           <p>{{ t('settings.retrySectionDesc') }}</p>
                         </div>
-                        <span class="email-section-badge"><i class="pi pi-refresh" /> Retry</span>
+                        <span class="email-section-badge"><i class="pi pi-refresh" /> {{ t('common.retry') }}</span>
                       </div>
                       <div class="email-field-grid">
                         <div class="email-field-card">
@@ -852,7 +780,7 @@
                     </span>
                     <span class="action-description">{{ t('settings.changePasswordDesc') }}</span>
                   </div>
-                  <button class="btn-secondary" disabled :title="t('settings.notAvailable')">
+                  <button class="btn-secondary" @click="openChangePasswordDialog">
                     {{ t('common.edit') }}
                   </button>
                 </div>
@@ -862,271 +790,270 @@
           </div>
 
           <!-- ------ SSO SECTION (Admin only) - redesigned ------------------------------------------------------------------------------------------- -->
-          <div v-if="activeSection === 'sso' && isAdmin" class="settings-section sso-section sso-control-room">
-            <div class="sso-hero-card">
-              <div class="sso-hero-glow sso-hero-glow-one" />
-              <div class="sso-hero-glow sso-hero-glow-two" />
-              <div class="sso-hero-content">
-                <div class="sso-hero-kicker">
-                  <span class="sso-live-dot" />
-                  {{ ssoForm.isEnabled ? t('common.enabled') : t('common.disabled') }}
-                </div>
-                <h2 class="sso-hero-title">{{ t('sso.settings.title') }}</h2>
-                <p class="sso-hero-description">{{ t('sso.settings.description') }}</p>
-              </div>
-              <div class="sso-hero-panel" aria-hidden="true">
-                <div class="sso-orbit sso-orbit-large" />
-                <div class="sso-orbit sso-orbit-small" />
-                <div class="sso-shield">
-                  <i class="pi pi-shield" />
-                </div>
-                <div class="sso-auth-chip sso-auth-chip-top"><i class="pi pi-check-circle" /> OIDC</div>
-                <div class="sso-auth-chip sso-auth-chip-bottom"><i class="pi pi-lock" /> {{ t('sso.settings.secureBadge') }}</div>
-              </div>
+          <div v-if="activeSection === 'sso' && isAdmin" class="settings-section">
+            <div class="section-header">
+              <h2 class="section-title">{{ t('sso.settings.title') }}</h2>
+              <p class="section-description">{{ t('sso.settings.description') }}</p>
             </div>
 
-            <div v-if="ssoLoading" class="settings-card sso-loading-card">
-              <div class="card-content">
-                <ProgressSpinner style="width:44px;height:44px" strokeWidth="5" />
-                <span>{{ t('common.loading', 'Caricamento...') }}</span>
+            <div v-if="ssoLoading" class="settings-card">
+              <div class="card-content sso-loading-row">
+                <ProgressSpinner style="width:36px;height:36px" strokeWidth="5" />
+                <span>{{ t('common.loading') }}</span>
               </div>
             </div>
 
             <template v-else>
-              <section class="sso-layout">
-                <div class="sso-main-stack">
-                  <div class="settings-card sso-glass-card sso-status-card">
-                    <div class="card-content">
-                      <div class="sso-status-copy">
-                        <div class="sso-icon-tile"><i class="pi pi-sign-in" /></div>
-                        <div>
-                          <div class="sso-card-eyebrow">{{ t('sso.settings.enableSso') }}</div>
-                          <h3>{{ ssoForm.isEnabled ? t('common.enabled') : t('common.disabled') }}</h3>
-                          <p>{{ t('sso.settings.description') }}</p>
-                        </div>
-                      </div>
-                      <div class="sso-status-actions">
-                        <label class="sso-native-switch" :aria-label="t('sso.settings.enableSso')">
-                          <input v-model="ssoForm.isEnabled" type="checkbox" />
-                          <span class="sso-native-switch-track"><span class="sso-native-switch-thumb" /></span>
-                        </label>
-                        <Button :label="t('sso.settings.testConnection')" icon="pi pi-bolt" outlined :loading="ssoTesting" :disabled="!ssoForm.authority" @click="testSsoConnection" />
-                        <Button :label="t('common.save')" icon="pi pi-check" :loading="ssoSaving" severity="primary" @click="onSsoSaveClick" />
-                      </div>
+              <div class="settings-card">
+                <div class="card-content">
+                  <!-- Toggle abilita SSO -->
+                  <div class="appreception-toggle-row">
+                    <div class="appreception-toggle-text">
+                      <span class="appreception-toggle-label">{{ t('sso.settings.enableSso') }}</span>
+                      <span class="appreception-toggle-help">{{ t('sso.settings.description') }}</span>
+                    </div>
+                    <PrimeToggleSwitch v-model="ssoForm.isEnabled" :aria-label="t('sso.settings.enableSso')" />
+                  </div>
+
+                  <hr class="appreception-divider" />
+
+                  <!-- Callback URL (read-only con copia) -->
+                  <div class="subsection-label">{{ t('sso.settings.callbackUrlLabel') }}</div>
+                  <div class="form-group">
+                    <div class="sso-copy-row">
+                      <input
+                          :value="ssoCallbackUrl"
+                          type="text"
+                          class="form-input"
+                          readonly
+                      />
+                      <button
+                          type="button"
+                          class="btn-secondary sso-copy-btn"
+                          @click="copySsoCallback"
+                      >
+                        <i class="pi pi-copy" />
+                        {{ t('common.copy') }}
+                      </button>
+                    </div>
+                    <p class="form-hint">{{ t('sso.settings.callbackUrlDescription') }}</p>
+                  </div>
+
+                  <hr class="appreception-divider" />
+
+                  <!-- Provider OIDC -->
+                  <div class="subsection-label">{{ t('sso.settings.providerSection') }}</div>
+
+                  <div class="form-group">
+                    <label class="form-label">{{ t('sso.settings.quickPresets') }}</label>
+                    <div class="sso-preset-row">
+                      <button
+                          v-for="p in ssoPresets"
+                          :key="p.id"
+                          type="button"
+                          class="btn-secondary sso-preset-btn"
+                          @click="applySsoPreset(p)"
+                      >
+                        {{ p.name }}
+                      </button>
                     </div>
                   </div>
 
-                  <div class="settings-card sso-glass-card sso-callback-card">
-                    <div class="card-content">
-                      <div class="sso-card-headline">
-                        <div class="sso-icon-tile sso-icon-tile-blue"><i class="pi pi-link" /></div>
-                        <div>
-                          <div class="sso-card-eyebrow">{{ t('sso.settings.callbackUrlLabel') }}</div>
-                          <h3>{{ t('sso.settings.callbackUrlLabel') }}</h3>
-                          <p>{{ t('sso.settings.callbackUrlDescription') }}</p>
-                        </div>
-                      </div>
-                      <div class="sso-copy-box">
-                        <code>{{ ssoCallbackUrl }}</code>
-                        <Button icon="pi pi-copy" rounded text severity="secondary" @click="copySsoCallback" />
-                      </div>
-                    </div>
+                  <div class="form-group">
+                    <label class="form-label">
+                      {{ t('sso.settings.authority') }}
+                      <span class="required-star">*</span>
+                    </label>
+                    <input
+                        v-model="ssoForm.authority"
+                        type="url"
+                        class="form-input"
+                        :class="{ 'input-error': errors.authority && touched.authority }"
+                        placeholder="https://login.microsoftonline.com/{tenant}/v2.0"
+                        autocomplete="off"
+                        spellcheck="false"
+                        @blur="touched.authority = true"
+                    />
+                    <p class="form-hint">{{ t('sso.settings.authorityHint') }}</p>
+                    <p v-if="errors.authority && touched.authority" class="error-text">
+                      {{ t('sso.settings.errors.authorityRequired') }}
+                    </p>
                   </div>
 
-                  <div class="settings-card sso-form-card sso-glass-card">
-                    <div class="card-content">
-                      <div class="sso-form-section-title">
-                        <div>
-                          <span>{{ t('sso.settings.providerSection') }}</span>
-                          <p>{{ t('sso.settings.quickPresets') }}</p>
-                        </div>
-                        <div class="sso-provider-pills">
-                          <Button v-for="p in ssoPresets" :key="p.id" :label="p.name" size="small" outlined :class="['preset-'+p.id]" @click="applySsoPreset(p)" />
-                        </div>
-                      </div>
+                  <hr class="appreception-divider" />
 
-                      <div class="sso-field-grid sso-field-grid-single">
-                        <div class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.authority') }} <span class="required-star">*</span></label>
-                          <input
-                              v-model="ssoForm.authority"
-                              type="url"
-                              class="form-input sso-native-input"
-                              :class="[errors.authority && touched.authority ? 'input-error' : '']"
-                              placeholder="https://login.microsoftonline.com/{tenant}/v2.0"
-                              autocomplete="off"
-                              spellcheck="false"
-                              @blur="touched.authority = true"
-                          />
-                          <small class="form-hint">{{ t('sso.settings.authorityHint') }}</small>
-                          <small v-if="errors.authority && touched.authority" class="error-text">{{ t('sso.settings.errors.authorityRequired', 'Inserisci l\'Authority (Issuer URL).') }}</small>
-                        </div>
-                      </div>
+                  <!-- Credenziali -->
+                  <div class="subsection-label">{{ t('sso.settings.credentialsSection') }}</div>
 
-                      <div class="sso-mini-grid">
-                        <div class="sso-switch-card">
-                          <div class="sso-switch-copy">
-                            <div class="form-label">{{ t('sso.settings.publicClient') }}</div>
-                            <small class="form-hint">{{ t('sso.settings.publicClientHint') }}</small>
-                          </div>
-                          <label class="sso-native-switch" :aria-label="t('sso.settings.publicClient')">
-                            <input v-model="ssoForm.isPublicClient" type="checkbox" />
-                            <span class="sso-native-switch-track"><span class="sso-native-switch-thumb" /></span>
-                          </label>
-                        </div>
-                      </div>
+                  <div class="appreception-toggle-row">
+                    <div class="appreception-toggle-text">
+                      <span class="appreception-toggle-label">{{ t('sso.settings.publicClient') }}</span>
+                      <span class="appreception-toggle-help">{{ t('sso.settings.publicClientHint') }}</span>
+                    </div>
+                    <PrimeToggleSwitch v-model="ssoForm.isPublicClient" :aria-label="t('sso.settings.publicClient')" />
+                  </div>
 
-                      <div class="sso-field-grid">
-                        <div class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.clientId') }} <span class="required-star">*</span></label>
-                          <input v-model="ssoForm.clientId" type="text" class="form-input sso-native-input" :class="[errors.clientId && touched.clientId ? 'input-error' : '']" placeholder="client-id-generato-dal-provider" autocomplete="off" spellcheck="false" @blur="touched.clientId = true" />
-                          <small v-if="errors.clientId && touched.clientId" class="error-text">{{ t('sso.settings.errors.clientIdRequired', 'Inserisci il Client ID.') }}</small>
-                        </div>
-                        <div v-if="!ssoForm.isPublicClient" class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.clientSecret') }}</label>
-                          <input v-model="ssoForm.clientSecret" type="password" class="form-input sso-native-input" :class="[errors.clientSecret && touched.clientSecret ? 'input-error' : '']" :placeholder="ssoHasSecret ? 'Secret già salvato: scrivi per sostituirlo' : t('sso.settings.clientSecretPlaceholder')" autocomplete="new-password" spellcheck="false" @blur="touched.clientSecret = true" />
-                          <small class="form-hint">{{ ssoHasSecret ? t('sso.settings.clientSecretKeepHint') : '' }}</small>
-                          <small v-if="errors.clientSecret && touched.clientSecret" class="error-text">{{ t('sso.settings.errors.clientSecretRequired', 'Inserisci il Client Secret.') }}</small>
-                        </div>
-                      </div>
+                  <div class="form-group">
+                    <label class="form-label">
+                      {{ t('sso.settings.clientId') }}
+                      <span class="required-star">*</span>
+                    </label>
+                    <input
+                        v-model="ssoForm.clientId"
+                        type="text"
+                        class="form-input"
+                        :class="{ 'input-error': errors.clientId && touched.clientId }"
+                        :placeholder="t('sso.settings.clientIdPlaceholder')"
+                        autocomplete="off"
+                        spellcheck="false"
+                        @blur="touched.clientId = true"
+                    />
+                    <p v-if="errors.clientId && touched.clientId" class="error-text">
+                      {{ t('sso.settings.errors.clientIdRequired') }}
+                    </p>
+                  </div>
 
-                      <div class="sso-field-grid sso-field-grid-single">
-                        <div class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.scopes') }}</label>
-                          <input v-model="ssoForm.scopes" type="text" class="form-input sso-native-input" :class="[errors.scopes && touched.scopes ? 'input-error' : '']" placeholder="openid profile email" autocomplete="off" spellcheck="false" @blur="touched.scopes = true" />
-                          <small class="form-hint">{{ t('sso.settings.scopesHint') }}</small>
-                          <small v-if="errors.scopes && touched.scopes" class="error-text">{{ t('sso.settings.errors.scopesRequired', 'Specifica almeno uno scope (es. openid profile email).') }}</small>
-                        </div>
-                      </div>
+                  <div v-if="!ssoForm.isPublicClient" class="form-group">
+                    <label class="form-label">{{ t('sso.settings.clientSecret') }}</label>
+                    <input
+                        v-model="ssoForm.clientSecret"
+                        type="password"
+                        class="form-input"
+                        :class="{ 'input-error': errors.clientSecret && touched.clientSecret }"
+                        :placeholder="ssoHasSecret ? t('sso.settings.clientSecretReplacePlaceholder') : t('sso.settings.clientSecretPlaceholder')"
+                        autocomplete="new-password"
+                        spellcheck="false"
+                        @blur="touched.clientSecret = true"
+                    />
+                    <p v-if="ssoHasSecret" class="form-hint">
+                      <i class="pi pi-lock" /> {{ t('sso.settings.clientSecretKeepHint') }}
+                    </p>
+                    <p v-if="errors.clientSecret && touched.clientSecret" class="error-text">
+                      {{ t('sso.settings.errors.clientSecretRequired') }}
+                    </p>
+                  </div>
 
-                      <div class="sso-mini-grid">
-                        <div class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.buttonLabel') }}</label>
-                          <input v-model="ssoForm.buttonLabel" type="text" class="form-input-full sso-native-input" :placeholder="t('sso.settings.buttonLabelPlaceholder')" autocomplete="off" />
-                          <small class="form-hint">{{ t('sso.settings.buttonLabelHint') }}</small>
-                        </div>
-                        <div class="sso-switch-card">
-                          <div class="sso-switch-copy">
-                            <div class="form-label">{{ t('sso.settings.requireSsoOnly') }}</div>
-                            <small class="form-hint">{{ t('sso.settings.requireSsoOnlyHint') }}</small>
-                          </div>
-                          <label class="sso-native-switch" :aria-label="t('sso.settings.requireSsoOnly')">
-                            <input v-model="ssoForm.requireSsoOnly" type="checkbox" />
-                            <span class="sso-native-switch-track"><span class="sso-native-switch-thumb" /></span>
-                          </label>
-                        </div>
-                      </div>
+                  <div class="form-group">
+                    <label class="form-label">{{ t('sso.settings.scopes') }}</label>
+                    <input
+                        v-model="ssoForm.scopes"
+                        type="text"
+                        class="form-input"
+                        :class="{ 'input-error': errors.scopes && touched.scopes }"
+                        placeholder="openid profile email"
+                        autocomplete="off"
+                        spellcheck="false"
+                        @blur="touched.scopes = true"
+                    />
+                    <p class="form-hint">{{ t('sso.settings.scopesHint') }}</p>
+                    <p v-if="errors.scopes && touched.scopes" class="error-text">
+                      {{ t('sso.settings.errors.scopesRequired') }}
+                    </p>
+                  </div>
 
-                      <div class="sso-mini-grid">
-                        <div class="sso-switch-card">
-                          <div class="sso-switch-copy">
-                            <div class="form-label">{{ t('sso.settings.jitProvisioning') }}</div>
-                            <small class="form-hint">{{ t('sso.settings.jitDescription') }}</small>
-                          </div>
-                          <label class="sso-native-switch" :aria-label="t('sso.settings.jitProvisioning')">
-                            <input v-model="ssoForm.jitProvisioning" type="checkbox" />
-                            <span class="sso-native-switch-track"><span class="sso-native-switch-thumb" /></span>
-                          </label>
-                        </div>
-                        <div v-if="ssoForm.jitProvisioning" class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.jitDefaultRole') }}</label>
-                          <select v-model="ssoForm.jitDefaultRole" class="form-input-full sso-native-input sso-native-select">
-                            <option v-for="role in ssoRoles" :key="role.value" :value="role.value">{{ role.label }}</option>
-                          </select>
-                        </div>
-                      </div>
+                  <hr class="appreception-divider" />
 
-                      <div class="sso-form-section-title sso-form-section-title-compact">
-                        <div>
-                          <span>{{ t('sso.settings.claimMappingTitle', 'Mappatura claim') }}</span>
-                          <p>{{ t('sso.settings.claimMappingDescription', "Associa i claim dell'identity provider ai campi utente di Digibite.") }}</p>
-                        </div>
-                      </div>
+                  <!-- Opzioni -->
+                  <div class="subsection-label">{{ t('sso.settings.optionsSection') }}</div>
 
-                      <div class="sso-field-grid">
-                        <div class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.claimEmail') }}</label>
-                          <input v-model="ssoForm.claimEmail" type="text" class="form-input sso-native-input" placeholder="email" autocomplete="off" spellcheck="false" />
-                        </div>
-                        <div class="sso-field-card">
-                          <label class="form-label">{{ t('sso.settings.claimName') }}</label>
-                          <input v-model="ssoForm.claimName" type="text" class="form-input sso-native-input" placeholder="name" autocomplete="off" spellcheck="false" />
-                        </div>
-                      </div>
+                  <div class="form-group">
+                    <label class="form-label">{{ t('sso.settings.buttonLabel') }}</label>
+                    <input
+                        v-model="ssoForm.buttonLabel"
+                        type="text"
+                        class="form-input"
+                        :placeholder="t('sso.settings.buttonLabelPlaceholder')"
+                        autocomplete="off"
+                    />
+                    <p class="form-hint">{{ t('sso.settings.buttonLabelHint') }}</p>
+                  </div>
 
-                      <div v-if="ssoTestResult" class="sso-test-result" :class="ssoTestResult.success ? 'ok' : 'ko'">
-                        <i :class="ssoTestResult.success ? 'pi pi-check-circle' : 'pi pi-times-circle'" />
-                        <span>{{ ssoTestResult.success ? t('sso.settings.testOk', 'Connessione verificata') : t('sso.settings.testKo', 'Connessione non riuscita') }}</span>
-                      </div>
+                  <div class="appreception-toggle-row">
+                    <div class="appreception-toggle-text">
+                      <span class="appreception-toggle-label">{{ t('sso.settings.requireSsoOnly') }}</span>
+                      <span class="appreception-toggle-help">{{ t('sso.settings.requireSsoOnlyHint') }}</span>
+                    </div>
+                    <PrimeToggleSwitch v-model="ssoForm.requireSsoOnly" :aria-label="t('sso.settings.requireSsoOnly')" />
+                  </div>
 
-                      <div class="sso-actions-bar">
-                        <Button :label="t('common.save')" icon="pi pi-check" @click="onSsoSaveClick" />
-                        <Button v-if="ssoHasSecret" :label="t('sso.settings.deleteConfig')" icon="pi pi-trash" severity="danger" outlined @click="deleteSsoConfig" />
-                      </div>
+                  <div class="appreception-toggle-row">
+                    <div class="appreception-toggle-text">
+                      <span class="appreception-toggle-label">{{ t('sso.settings.jitProvisioning') }}</span>
+                      <span class="appreception-toggle-help">{{ t('sso.settings.jitDescription') }}</span>
+                    </div>
+                    <PrimeToggleSwitch v-model="ssoForm.jitProvisioning" :aria-label="t('sso.settings.jitProvisioning')" />
+                  </div>
+
+                  <div v-if="ssoForm.jitProvisioning" class="form-group">
+                    <label class="form-label">{{ t('sso.settings.jitDefaultRole') }}</label>
+                    <select v-model="ssoForm.jitDefaultRole" class="form-input">
+                      <option v-for="role in ssoRoles" :key="role.value" :value="role.value">{{ role.label }}</option>
+                    </select>
+                  </div>
+
+                  <hr class="appreception-divider" />
+
+                  <!-- Mappatura claim -->
+                  <div class="subsection-label">{{ t('sso.settings.claimMappingTitle') }}</div>
+                  <p class="form-hint company-subsection-hint">
+                    {{ t('sso.settings.claimMappingDescription') }}
+                  </p>
+
+                  <div class="form-group">
+                    <label class="form-label">{{ t('sso.settings.claimEmail') }}</label>
+                    <input v-model="ssoForm.claimEmail" type="text" class="form-input" placeholder="email" autocomplete="off" spellcheck="false" />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">{{ t('sso.settings.claimName') }}</label>
+                    <input v-model="ssoForm.claimName" type="text" class="form-input" placeholder="name" autocomplete="off" spellcheck="false" />
+                  </div>
+
+                  <!-- Footer: esito test + bottoni azione -->
+                  <div class="appreception-footer">
+                    <span v-if="ssoTestResult" class="sso-test-result-inline" :class="ssoTestResult.success ? 'ok' : 'ko'">
+                      <i :class="ssoTestResult.success ? 'pi pi-check-circle' : 'pi pi-times-circle'" />
+                      {{ ssoTestResult.success
+                          ? t('sso.settings.testOk')
+                          : t('sso.settings.testKo') }}
+                    </span>
+                    <div class="appreception-actions">
+                      <button
+                          v-if="ssoHasSecret"
+                          type="button"
+                          class="btn-save-branding btn-save-branding-danger"
+                          @click="deleteSsoConfig"
+                      >
+                        <i class="pi pi-trash" />
+                        {{ t('sso.settings.deleteConfig') }}
+                      </button>
+                      <button
+                          type="button"
+                          class="btn-secondary"
+                          :disabled="ssoTesting || !ssoForm.authority"
+                          @click="testSsoConnection"
+                      >
+                        <i v-if="ssoTesting" class="pi pi-spin pi-spinner" />
+                        <i v-else class="pi pi-bolt" />
+                        {{ t('sso.settings.testConnection') }}
+                      </button>
+                      <button
+                          type="button"
+                          class="btn-save-branding"
+                          :disabled="ssoSaving"
+                          @click="onSsoSaveClick"
+                      >
+                        <i v-if="ssoSaving" class="pi pi-spin pi-spinner" />
+                        <i v-else class="pi pi-check" />
+                        {{ t('common.save') }}
+                      </button>
                     </div>
                   </div>
                 </div>
-
-                <aside class="sso-side-stack">
-                  <div class="settings-card sso-help-card sso-glass-card">
-                    <div class="card-content">
-                      <div class="sso-help-hero">
-                        <div class="sso-help-title-block">
-                          <span class="sso-card-eyebrow">{{ t('sso.settings.helpEyebrow') }}</span>
-                          <h3>{{ t('sso.settings.helpTitle') }}</h3>
-                          <p>{{ t('sso.settings.helpDesc') }}</p>
-                        </div>
-                        <span class="sso-help-badge"><i class="pi pi-sparkles" /> 3 step</span>
-                      </div>
-
-                      <div class="sso-help-steps" :aria-label="t('sso.settings.helpChecklistAriaLabel')">
-                        <div class="sso-help-step">
-                          <span class="sso-help-step-number">1</span>
-                          <div class="sso-help-step-copy">
-                            <strong>{{ t('sso.settings.helpProviderTitle') }}</strong>
-                            <span>{{ t('sso.settings.helpProviderDesc') }}</span>
-                          </div>
-                        </div>
-                        <div class="sso-help-step">
-                          <span class="sso-help-step-number">2</span>
-                          <div class="sso-help-step-copy">
-                            <strong>{{ t('sso.settings.helpCredentialsTitle') }}</strong>
-                            <span>{{ t('sso.settings.helpCredentialsDesc') }}</span>
-                          </div>
-                        </div>
-                        <div class="sso-help-step">
-                          <span class="sso-help-step-number">3</span>
-                          <div class="sso-help-step-copy">
-                            <strong>{{ t('sso.settings.helpVerifyTitle') }}</strong>
-                            <span>{{ t('sso.settings.helpVerifyDesc') }}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="sso-provider-reference">
-                        <div class="sso-provider-reference-title"><i class="pi pi-link" /> {{ t('sso.settings.commonAuthorityUrls') }}</div>
-                        <div class="sso-provider-reference-list">
-                          <div class="sso-provider-reference-item">
-                            <span><i class="pi pi-building" /> Azure AD</span>
-                            <code>https://login.microsoftonline.com/{tenant}/v2.0</code>
-                          </div>
-                          <div class="sso-provider-reference-item">
-                            <span><i class="pi pi-globe" /> Google</span>
-                            <code>https://accounts.google.com</code>
-                          </div>
-                          <div class="sso-provider-reference-item">
-                            <span><i class="pi pi-key" /> Keycloak</span>
-                            <code>https://{host}/realms/{realm}</code>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </aside>
-              </section>
+              </div>
             </template>
           </div>
-          <!-- ------ fine SSO SECTION (redesigned) ------------------------------------------------------------------------------------------------ -->
+          <!-- ------ fine SSO SECTION ------------------------------------------------------------------------------------------------ -->
 
           <!-- ------ AppReception (integrazione client REST per-tenant) ------------------------------------------------------------------ -->
           <div v-if="activeSection === 'appReception' && isAdmin" class="settings-section">
@@ -1135,108 +1062,115 @@
               <p class="section-description">{{ t('settings.appReceptionDesc') }}</p>
             </div>
 
-            <div class="settings-card">
+            <div class="settings-card appreception-card">
               <div class="card-content">
-              <!-- Toggle abilita integrazione -->
-              <div class="form-group">
-                <label class="checkbox-row">
-                  <input v-model="appReceptionForm.isEnabled" type="checkbox" class="checkbox-input" />
-                  <span>{{ t('settings.appReceptionEnable') }}</span>
-                </label>
-                <p class="form-hint">{{ t('settings.appReceptionEnableHelp') }}</p>
-              </div>
+                <!-- Toggle abilita: switch PrimeVue (chiaro e accessibile) -->
+                <div class="appreception-toggle-row">
+                  <div class="appreception-toggle-text">
+                    <span class="appreception-toggle-label">{{ t('settings.appReceptionEnable') }}</span>
+                    <span class="appreception-toggle-help">{{ t('settings.appReceptionEnableHelp') }}</span>
+                  </div>
+                  <PrimeToggleSwitch v-model="appReceptionForm.isEnabled" :aria-label="t('settings.appReceptionEnable')" />
+                </div>
 
-              <!-- Base URL -->
-              <div class="form-group">
-                <label class="form-label">{{ t('settings.appReceptionBaseUrl') }}</label>
-                <input
-                    v-model="appReceptionForm.baseUrl"
-                    type="url"
-                    class="form-input"
-                    placeholder="https://reception.cliente.com"
-                />
-                <p class="form-hint">{{ t('settings.appReceptionBaseUrlHelp') }}</p>
-              </div>
+                <hr class="appreception-divider" />
 
-              <!-- Username -->
-              <div class="form-group">
-                <label class="form-label">{{ t('settings.appReceptionUsername') }}</label>
-                <input
-                    v-model="appReceptionForm.username"
-                    type="text"
-                    class="form-input"
-                    autocomplete="off"
-                />
-              </div>
+                <!-- Connessione -->
+                <div class="subsection-label">{{ t('settings.appReceptionConnection') }}</div>
 
-              <!-- Password -->
-              <div class="form-group">
-                <label class="form-label">{{ t('settings.appReceptionPassword') }}</label>
-                <input
-                    v-model="appReceptionForm.password"
-                    type="password"
-                    class="form-input"
-                    autocomplete="new-password"
-                    :placeholder="appReceptionCurrent?.hasPassword ? t('settings.appReceptionPasswordKeep') : ''"
-                />
-                <p v-if="appReceptionCurrent?.hasPassword" class="form-hint">
-                  <i class="pi pi-lock" /> {{ t('settings.appReceptionPasswordExisting') }}
-                </p>
-              </div>
+                <div class="form-group">
+                  <label class="form-label">{{ t('settings.appReceptionBaseUrl') }}</label>
+                  <input
+                      v-model="appReceptionForm.baseUrl"
+                      type="url"
+                      class="form-input"
+                      placeholder="https://reception.customer.com"
+                  />
+                  <p class="form-hint">{{ t('settings.appReceptionBaseUrlHelp') }}</p>
+                </div>
 
-              <!-- Attendees field id -->
-              <div class="form-group">
-                <label class="form-label">{{ t('settings.appReceptionAttendeesFieldId') }}</label>
-                <input
-                    v-model.number="appReceptionForm.attendeesFieldId"
-                    type="number"
-                    min="0"
-                    class="form-input"
-                    placeholder="—"
-                />
-                <p class="form-hint">{{ t('settings.appReceptionAttendeesFieldIdHelp') }}</p>
-              </div>
+                <div class="form-group">
+                  <label class="form-label">{{ t('settings.appReceptionUsername') }}</label>
+                  <input
+                      v-model="appReceptionForm.username"
+                      type="text"
+                      class="form-input"
+                      autocomplete="off"
+                  />
+                </div>
 
-              <!-- Cron schedule (avanzato) -->
-              <div class="form-group">
-                <label class="form-label">{{ t('settings.appReceptionJobScheduleCron') }}</label>
-                <input
-                    v-model="appReceptionForm.jobScheduleCron"
-                    type="text"
-                    class="form-input"
-                    placeholder="0 */5 * * * ?"
-                />
-                <p class="form-hint">{{ t('settings.appReceptionJobScheduleHelp') }}</p>
-              </div>
+                <div class="form-group">
+                  <label class="form-label">{{ t('settings.appReceptionPassword') }}</label>
+                  <input
+                      v-model="appReceptionForm.password"
+                      type="password"
+                      class="form-input"
+                      autocomplete="new-password"
+                      :placeholder="appReceptionCurrent?.hasPassword ? t('settings.appReceptionPasswordKeep') : ''"
+                  />
+                  <p v-if="appReceptionCurrent?.hasPassword" class="form-hint">
+                    <i class="pi pi-lock" /> {{ t('settings.appReceptionPasswordExisting') }}
+                  </p>
+                </div>
 
-              <div class="branding-actions">
-                <button
-                    v-if="appReceptionCurrent"
-                    type="button"
-                    class="btn-save-branding btn-save-branding-danger"
-                    :disabled="appReceptionDeleting"
-                    @click="deleteAppReception"
-                >
-                  <i v-if="appReceptionDeleting" class="pi pi-spin pi-spinner" />
-                  <i v-else class="pi pi-trash" />
-                  {{ t('common.delete') }}
-                </button>
-                <button
-                    type="button"
-                    class="btn-save-branding"
-                    :disabled="appReceptionSaving"
-                    @click="saveAppReception"
-                >
-                  <i v-if="appReceptionSaving" class="pi pi-spin pi-spinner" />
-                  <i v-else class="pi pi-check" />
-                  {{ t('common.save') }}
-                </button>
-              </div>
+                <hr class="appreception-divider" />
 
-              <p v-if="appReceptionCurrent" class="form-hint" style="margin-top: 0.75rem;">
-                <i class="pi pi-clock" />
-                {{ t('settings.appReceptionLastUpdate') }}: {{ formatAppReceptionDate(appReceptionCurrent.updatedAt) }}
-              </p>
+                <!-- Avanzato -->
+                <div class="subsection-label">{{ t('settings.appReceptionAdvanced') }}</div>
+
+                <div class="form-group">
+                  <label class="form-label">{{ t('settings.appReceptionAttendeesFieldId') }}</label>
+                  <input
+                      v-model.number="appReceptionForm.attendeesFieldId"
+                      type="number"
+                      min="0"
+                      class="form-input"
+                      placeholder="—"
+                  />
+                  <p class="form-hint">{{ t('settings.appReceptionAttendeesFieldIdHelp') }}</p>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">{{ t('settings.appReceptionJobScheduleCron') }}</label>
+                  <input
+                      v-model="appReceptionForm.jobScheduleCron"
+                      type="text"
+                      class="form-input"
+                      placeholder="0 */5 * * * ?"
+                  />
+                  <p class="form-hint">{{ t('settings.appReceptionJobScheduleHelp') }}</p>
+                </div>
+
+                <!-- Footer: timestamp + bottoni Save/Delete -->
+                <div class="appreception-footer">
+                  <span v-if="appReceptionCurrent" class="appreception-meta">
+                    <i class="pi pi-clock" />
+                    {{ t('settings.appReceptionLastUpdate') }}: {{ formatAppReceptionDate(appReceptionCurrent.updatedAt) }}
+                  </span>
+                  <div class="appreception-actions">
+                    <button
+                        v-if="appReceptionCurrent"
+                        type="button"
+                        class="btn-save-branding btn-save-branding-danger"
+                        :disabled="appReceptionDeleting"
+                        @click="deleteAppReception"
+                    >
+                      <i v-if="appReceptionDeleting" class="pi pi-spin pi-spinner" />
+                      <i v-else class="pi pi-trash" />
+                      {{ t('common.delete') }}
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-save-branding"
+                        :disabled="appReceptionSaving"
+                        @click="saveAppReception"
+                    >
+                      <i v-if="appReceptionSaving" class="pi pi-spin pi-spinner" />
+                      <i v-else class="pi pi-check" />
+                      {{ t('common.save') }}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1245,6 +1179,60 @@
         </main>
       </div>
     </div>
+    <!-- ─── Change Password Dialog ─────────────────────────────── -->
+    <AppDialog
+        v-model:visible="changePasswordVisible"
+        :header="t('settings.changePasswordTitle')"
+        icon="pi pi-lock"
+        size="sm"
+    >
+      <template #default>
+        <div class="dlg-field">
+          <label class="dlg-label">{{ t('settings.currentPassword') }} <span class="required-star">*</span></label>
+          <input
+              v-model="changePwdForm.currentPassword"
+              type="password"
+              class="dlg-input"
+              autocomplete="current-password"
+          />
+        </div>
+        <div class="dlg-field">
+          <label class="dlg-label">{{ t('settings.newPassword') }} <span class="required-star">*</span></label>
+          <input
+              v-model="changePwdForm.newPassword"
+              type="password"
+              class="dlg-input"
+              autocomplete="new-password"
+          />
+        </div>
+        <div class="dlg-field">
+          <label class="dlg-label">{{ t('settings.confirmNewPassword') }} <span class="required-star">*</span></label>
+          <input
+              v-model="changePwdForm.confirmNewPassword"
+              type="password"
+              class="dlg-input"
+              autocomplete="new-password"
+          />
+        </div>
+        <p v-if="changePwdError" class="dlg-error-text">{{ changePwdError }}</p>
+      </template>
+      <template #footer>
+        <Button
+            :label="t('common.cancel')"
+            severity="secondary"
+            text
+            :disabled="changePwdSaving"
+            @click="changePasswordVisible = false"
+        />
+        <Button
+            :label="changePwdSaving ? t('settings.saving') : t('settings.changePassword')"
+            icon="pi pi-lock"
+            :loading="changePwdSaving"
+            @click="submitChangePassword"
+        />
+      </template>
+    </AppDialog>
+    <!-- ─── Fine Change Password Dialog ─────────────────────────── -->
   </MainLayout>
 </template>
 
@@ -1261,11 +1249,14 @@ import { ssoApi } from '@/api/sso.api'
 import type { SsoConnectionTestResult } from '@/api/sso.api'
 import { appReceptionApi } from '@/api/app-reception.api'
 import type { AppReceptionConfigInput, AppReceptionConfigResponse } from '@/types/app-reception'
+import { authApi } from '@/api/auth.api'
 // Divider import removed (unused)
 import ProgressSpinner from 'primevue/progressspinner'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
@@ -1297,13 +1288,13 @@ const ssoForm = ref({
   buttonLabel:     '',
 })
 
-const ssoRoles = [
-  { label: 'Tenant.Member',        value: 'Tenant.Member' },
-  { label: 'Tenant.Contributor',   value: 'Tenant.Contributor' },
-  { label: 'Tenant.ResourceAdmin', value: 'Tenant.ResourceAdmin' },
-  { label: 'Tenant.Admin',         value: 'Tenant.Admin' },
-  { label: 'Tenant.Owner',         value: 'Tenant.Owner' },
-]
+const ssoRoles = computed(() => [
+  { label: t('users.roles.viewer'),      value: 'Tenant.Member' },
+  { label: t('users.roles.contributor'), value: 'Tenant.Contributor' },
+  { label: 'Tenant.ResourceAdmin',       value: 'Tenant.ResourceAdmin' },
+  { label: 'Tenant.Admin',               value: 'Tenant.Admin' },
+  { label: t('users.roles.owner'),       value: 'Tenant.Owner' },
+])
 
 const ssoPresets = [
   { id: 'azure',    name: 'Microsoft Azure AD',  authority: 'https://login.microsoftonline.com/{tenant-id}/v2.0', claimName: 'name' },
@@ -1401,7 +1392,7 @@ function onSsoSaveClick(): void {
     toast.add({
       severity: 'warn',
       summary:  t('common.error'),
-      detail:   `${t('sso.settings.fillRequired', 'Compila i campi obbligatori')}: ${missing.join(', ')}`,
+      detail:   `${t('sso.settings.fillRequired')}: ${missing.join(', ')}`,
       life:     4000,
     })
     return
@@ -1524,22 +1515,23 @@ const userInitials = computed(() => {
 
 const primaryRole = computed(() => {
   const roles = userRoles.value
-  if (roles.includes('Platform.Owner')) return 'SuperAdmin'
-  if (roles.includes('Tenant.Owner')) return 'Admin Tenant'
-  if (roles.includes('Tenant.Contributor')) return 'Contributor'
-  return 'Lettore'
+  if (roles.includes('Platform.Owner')) return t('users.roles.platformOwner')
+  if (roles.includes('Tenant.Owner')) return t('users.roles.owner')
+  if (roles.includes('Tenant.Contributor')) return t('users.roles.contributor')
+  return t('users.roles.viewer')
 })
 
-const isAdmin = computed(() => {
-  const roles = userRoles.value
-  return roles.includes('Platform.Owner') || roles.includes('Tenant.Owner')
-})
+// Solo SysAdmin (Platform.Owner) o Admin del tenant (Tenant.Owner) vedono
+// le sezioni "Azienda", "Tenant", "Single Sign-On" e "AppReception".
+// Uso hasMinTenantRole('Owner') così durante impersonification del SuperAdmin
+// il check ricade sui ruoli del tenant target (vedere come quel ruolo).
+const isAdmin = computed(() => authStore.hasMinTenantRole('Owner'))
 
 const tenantId = computed(() => authStore.currentTenantId ?? '–')
 
 const currentTenant = computed(() => tenantsStore.currentTenant ?? tenantsStore.tenants[0] ?? null)
 
-const companyName = computed(() => currentTenant.value?.name ?? 'Sconosciuto')
+const companyName = computed(() => currentTenant.value?.name ?? t('common.unknown'))
 const companyLogoUrl = computed(() => currentTenant.value?.logoUrl ?? null)
 const companyCompactLogoUrl = computed(() => currentTenant.value?.compactLogoUrl ?? null)
 const tenantInitials = computed(() => {
@@ -1695,11 +1687,11 @@ async function sendTestEmail() {
     })
     testResult.value = result.success
         ? { success: true, message: t('settings.testSuccess') }
-        : { success: false, message: t('settings.testFailed', { error: result.error ?? 'unknown error' }) }
+        : { success: false, message: t('settings.testFailed', { error: result.error ?? t('common.unknown') }) }
   } catch (err: unknown) {
     testResult.value = {
       success: false,
-      message: t('settings.testFailed', { error: err instanceof Error ? err.message : 'unknown error' }),
+      message: t('settings.testFailed', { error: err instanceof Error ? err.message : t('common.unknown') }),
     }
   } finally {
     testSending.value = false
@@ -1733,7 +1725,7 @@ function setLocale(loc: 'it' | 'en') {
 function formatDate(date: string | Date | null | undefined): string {
   if (!date) return '–'
   const d = new Date(date)
-  return d.toLocaleDateString('it-IT', {
+  return d.toLocaleDateString(locale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -1743,7 +1735,7 @@ function formatDate(date: string | Date | null | undefined): string {
 function formatDateTime(date: string | Date | null | undefined): string {
   if (!date) return '–'
   const d = new Date(date)
-  return d.toLocaleDateString('it-IT', {
+  return d.toLocaleDateString(locale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -1833,7 +1825,7 @@ const appReceptionForm = ref<{
 })
 
 function formatAppReceptionDate(iso: string): string {
-  try { return new Date(iso).toLocaleString('it-IT') } catch { return iso }
+  try { return new Date(iso).toLocaleString(locale.value) } catch { return iso }
 }
 
 async function loadAppReception(): Promise<void> {
@@ -1904,6 +1896,51 @@ function initBrandingForm() {
     brandingForm.value.secondaryColor = tenant.secondaryColor ?? '#0d9488'
     brandingForm.value.senderEmail = tenant.senderEmail ?? ''
     brandingForm.value.senderName = tenant.senderName ?? ''
+  }
+}
+
+// ─── Change Password ──────────────────────────────────────────────────────
+const changePasswordVisible = ref(false)
+const changePwdSaving = ref(false)
+const changePwdError = ref('')
+
+const changePwdForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmNewPassword: '',
+})
+
+function openChangePasswordDialog(): void {
+  changePwdForm.value = { currentPassword: '', newPassword: '', confirmNewPassword: '' }
+  changePwdError.value = ''
+  changePasswordVisible.value = true
+}
+
+async function submitChangePassword(): Promise<void> {
+  changePwdError.value = ''
+
+  if (!changePwdForm.value.currentPassword || !changePwdForm.value.newPassword || !changePwdForm.value.confirmNewPassword) {
+    changePwdError.value = t('settings.fillAllFields')
+    return
+  }
+  if (changePwdForm.value.newPassword.length < 8) {
+    changePwdError.value = t('settings.passwordTooShort')
+    return
+  }
+  if (changePwdForm.value.newPassword !== changePwdForm.value.confirmNewPassword) {
+    changePwdError.value = t('settings.passwordMismatch')
+    return
+  }
+
+  changePwdSaving.value = true
+  try {
+    await authApi.changePassword(changePwdForm.value.currentPassword, changePwdForm.value.newPassword)
+    changePasswordVisible.value = false
+    toast.add({ severity: 'success', summary: t('common.saved'), detail: t('settings.passwordChanged'), life: 3500 })
+  } catch {
+    changePwdError.value = t('settings.changePasswordError')
+  } finally {
+    changePwdSaving.value = false
   }
 }
 

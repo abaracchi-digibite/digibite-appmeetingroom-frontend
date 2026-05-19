@@ -27,7 +27,7 @@
               <Textarea v-model="formData.description" :placeholder="t('visitorTypes.description')" class="w-full" rows="3" />
             </div>
             <div class="flex items-center gap-2">
-              <Checkbox v-model="formData.isActive" input-id="isActive" binary />
+              <PrimeToggleSwitch v-model="formData.isActive" input-id="isActive" />
               <label for="isActive" class="text-sm">{{ t('common.active') }}</label>
             </div>
             <div class="flex gap-3 pt-4">
@@ -57,13 +57,21 @@
               </div>
             </template>
             <Column field="label" :header="t('visitorTypes.fieldLabel')" />
-            <Column field="fieldType" :header="t('visitorTypes.fieldType')" />
+            <Column field="fieldType" :header="t('visitorTypes.fieldType')">
+              <template #body="{ data }">
+                {{ t('customFields.types.' + data.fieldType.toLowerCase(), data.fieldType) }}
+              </template>
+            </Column>
             <Column field="isRequired" :header="t('visitorTypes.required')" style="width: 100px">
               <template #body="{ data }">
                 <Tag :value="data.isRequired ? t('common.yes') : t('common.no')" :severity="data.isRequired ? 'info' : 'warning'" />
               </template>
             </Column>
-            <Column field="visibility" :header="t('visitorTypes.visibility')" />
+            <Column field="visibility" :header="t('visitorTypes.visibility')">
+              <template #body="{ data }">
+                {{ t('visitorTypes.visibility' + data.visibility.charAt(0).toUpperCase() + data.visibility.slice(1), data.visibility) }}
+              </template>
+            </Column>
             <Column :header="t('common.name')" style="width: 150px">
               <template #body="{ data }">
                 <code class="field-name-code">{{ data.name }}</code>
@@ -210,6 +218,7 @@ import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import Card from 'primevue/card'
 import Checkbox from 'primevue/checkbox'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
 import { FieldVisibility } from '@/types/enums'
 import type { UpdateVisitorTypeDto } from '@/types/visitor-type'
 import type { CustomFieldDef, FieldLinkResponse } from '@/types/custom-field'

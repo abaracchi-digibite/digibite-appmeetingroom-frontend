@@ -50,32 +50,30 @@
   margin-top: 1.5rem;
 }
 
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-  .empty-state {
-    background-color: #1f2937;
-    border-color: #374151;
-  }
+/* Dark theme support — classe .dark su <html> (gestita da uiStore) */
+:global(.dark) .empty-state {
+  background-color: var(--bg-card);
+  border-color: var(--border-default);
+}
 
-  .empty-icon {
-    background: linear-gradient(135deg, #2d3748 0%, #1f2937 100%);
-    color: #6b7280;
-  }
+:global(.dark) .empty-icon {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  color: var(--text-muted);
+}
 
-  .empty-title {
-    color: #f3f4f6;
-  }
+:global(.dark) .empty-title {
+  color: var(--text-primary);
+}
 
-  .empty-description {
-    color: #9ca3af;
-  }
+:global(.dark) .empty-description {
+  color: var(--text-secondary);
 }
 
 /* Responsive */
 @media (max-width: 640px) {
   .empty-state {
     min-height: 300px;
-    padding: 1.5rem;
+    padding: 1rem;
   }
 
   .empty-icon {

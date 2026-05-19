@@ -283,3 +283,57 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .list-btn-secondary:hover { border-color: rgba(129,140,248,0.5); }
+
+/* Badge ICS: viola troppo scuro su sfondo scuro */
+.dark .ics-badge {
+  background: rgba(124, 58, 237, 0.2);
+  color: #c4b5fd;
+}
+
+/* Help modal: chip, tag, variabili — indigo troppo scuro */
+.dark .help-chip,
+.dark .help-tag {
+  background: rgba(79, 70, 229, 0.15);
+  color: #818cf8;
+}
+
+.dark .help-var-name {
+  background: rgba(79, 70, 229, 0.15);
+  color: #818cf8;
+}
+
+.dark .var-chip {
+  background: rgba(79, 70, 229, 0.15);
+  color: #818cf8;
+}
+
+.dark .var-chip:hover { background: rgba(79, 70, 229, 0.28); }
+
+/* Form: errore rosso troppo scuro */
+.dark .form-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+/* Radio scope: indigo troppo scuro */
+.dark .scope-radio-option.selected {
+  border-color: rgba(129, 140, 248, 0.5);
+  background: rgba(79, 70, 229, 0.12);
+  color: #818cf8;
+}
+
+/* Tipo destinatario */
+.dark .recipient-type-card.selected {
+  border-color: rgba(129, 140, 248, 0.5);
+  background: rgba(79, 70, 229, 0.12);
+}
+
+.dark .recipient-type-icon { color: #818cf8; }
+
+/* Toggle switch off: grigio chiaro → grigio scuro */
+.dark .toggle-sw { background: #334155; }
+.dark .toggle-sw.on { background: #4f46e5; }

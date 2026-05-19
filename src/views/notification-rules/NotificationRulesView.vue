@@ -169,12 +169,12 @@
       </div>
 
       <!-- --------- Dialog Crea / Modifica --------------------------------------------------------------------------------------------------------------------------------- -->
-      <Dialog
+      <AppDialog
         v-model:visible="showCreateDialog"
-        modal
         :header="isEditing ? t('notifications.editRule') : t('notifications.createNew')"
-        :style="{ width: 'min(680px, 94vw)' }"
-        :pt="{ content: { style: 'padding: 0' } }"
+        :icon="isEditing ? 'pi pi-pencil' : 'pi pi-bell'"
+        severity="primary"
+        size="md"
       >
         <form class="rule-form" @submit.prevent="saveRule">
 
@@ -402,27 +402,25 @@
             {{ saveError }}
           </div>
 
-          <!-- Pulsanti -->
-          <div class="form-footer">
-            <button type="button" class="btn-cancel" @click="showCreateDialog = false">
-              {{ t('common.cancel') }}
-            </button>
-            <button type="submit" class="btn-submit" :disabled="saving">
-              <i v-if="saving" class="pi pi-spin pi-spinner" />
-              <i v-else class="pi pi-check" />
-              {{ saving ? t('common.saving') : t('common.save') }}
-            </button>
-          </div>
-
         </form>
-      </Dialog>
+
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showCreateDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="saving" @click="saveRule">
+            <i :class="saving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ saving ? t('common.saving') : t('common.save') }}
+          </button>
+        </template>
+      </AppDialog>
 
       <!-- --------- Modal "Come funziona" ------------------------------------------------------------------------------------------------------------------------------------ -->
-      <Dialog
+      <AppDialog
         v-model:visible="showHelpModal"
-        modal
         :header="t('notifications.howItWorks')"
-        :style="{ width: 'min(700px, 94vw)' }"
+        icon="pi pi-question-circle"
+        severity="info"
+        size="md"
       >
         <div class="help-modal">
 
@@ -505,7 +503,7 @@
           </div>
 
         </div>
-      </Dialog>
+      </AppDialog>
 
     </div>
   </MainLayout>
@@ -517,7 +515,7 @@ import { useI18n } from 'vue-i18n'
 import { useNotificationRulesStore } from '@/stores/notification-rules.store'
 import { useResourcesStore } from '@/stores/resources.store'
 import MainLayout from '@/layouts/MainLayout.vue'
-import Dialog from 'primevue/dialog'
+import AppDialog from '@/components/common/AppDialog.vue'
 import PrimeMultiSelect from 'primevue/multiselect'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -868,7 +866,7 @@ async function saveRule() {
         : formData.value.resourceIds
 
       if (ids.length === 0) {
-        throw new Error(t('notifications.atLeastOneScope') || 'Seleziona almeno un ambito.')
+        throw new Error(t('notifications.atLeastOneScope'))
       }
 
       // Creazione sequenziale (non Promise.all) per produrre messaggi di

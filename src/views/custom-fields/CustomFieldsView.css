@@ -125,3 +125,17 @@
   .option-add-form { flex-direction: column; align-items: stretch; }
   .option-add-btn { width: 100%; justify-content: center; }
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+/* Type chips: testi troppo scuri su sfondo scuro */
+.dark .chip-indigo { color: #a5b4fc; }
+.dark .chip-blue   { color: #93c5fd; }
+.dark .chip-green  { color: #34d399; }
+.dark .chip-orange { color: #fb923c; }
+.dark .chip-purple { color: #a78bfa; }
+
+/* Option value code */
+.dark .option-value { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+
+/* Remove btn */
+.dark .option-remove-btn:hover { background: rgba(239,68,68,0.15); color: #f87171; }

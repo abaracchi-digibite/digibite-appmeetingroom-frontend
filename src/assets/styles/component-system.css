@@ -182,6 +182,32 @@
   border-color: var(--color-primary-700) !important;
 }
 
+/* Disabled state — primary buttons spenti (no gradient, grigio opaco) */
+:where(
+  .btn-new,
+  .btn-create,
+  .option-add-btn,
+  .btn-submit,
+  .btn-save,
+  .dialog-btn-save,
+  .field-add-btn,
+  .slot-trigger-btn,
+  .slot-add-btn,
+  .btn-add-item,
+  .btn-primary,
+  .btn-outline-primary,
+  .action-chip.action-primary,
+  .btn-create-sm
+):disabled {
+  background: var(--color-secondary-200, #e2e8f0) !important;
+  border-color: var(--color-secondary-300, #cbd5e1) !important;
+  color: var(--color-secondary-500, #64748b) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+  transform: none !important;
+}
+
 :where(
   .btn-cancel,
   .dialog-btn-cancel,
@@ -261,28 +287,55 @@
   border-color: rgba(245, 158, 11, 0.16) !important;
 }
 
-:where(.dialog-btn-save, .dialog-btn-cancel, .btn-submit, .btn-cancel) {
+:where(.dialog-btn-save, .dialog-btn-cancel, .dialog-btn-delete, .btn-submit, .btn-cancel) {
   min-width: 8rem;
 }
 
-:where(.dialog-btn-save, .dialog-btn-cancel) {
-  min-height: var(--app-action-height-sm);
-  padding: 0.65rem 0.95rem;
+:where(.dialog-btn-save, .dialog-btn-cancel, .dialog-btn-delete) {
+  min-height: var(--app-action-height-sm) !important;
+  padding: 0.55rem 1rem !important;
+  font-size: 0.875rem !important;
 }
 
-/* Global dialog logic for every PrimeVue modal */
+/* Danger variant for confirm-delete dialogs */
+:where(.dialog-btn-delete) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-action-gap);
+  border: 1px solid var(--color-danger-600, #dc2626) !important;
+  border-radius: var(--app-action-radius) !important;
+  background: linear-gradient(135deg, var(--color-danger-600, #dc2626), var(--color-danger-500, #ef4444)) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.18) !important;
+}
+
+:where(.dialog-btn-delete):not(:disabled):hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--color-danger-700, #b91c1c), var(--color-danger-600, #dc2626)) !important;
+  border-color: var(--color-danger-700, #b91c1c) !important;
+}
+
+:where(.dialog-btn-delete):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Global dialog logic for every PrimeVue modal — flat, borderless */
 .p-dialog {
-  border-radius: var(--app-dialog-radius) !important;
-  border: 1px solid var(--border-default, #e2e8f0) !important;
-  box-shadow: var(--app-dialog-shadow) !important;
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18) !important;
   overflow: hidden !important;
   background: var(--bg-card, #ffffff) !important;
 }
 
 .p-dialog .p-dialog-header {
-  padding: 1.2rem 1.4rem 1rem !important;
-  border-bottom: 1px solid var(--border-default, #e2e8f0) !important;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.045), rgba(99, 102, 241, 0));
+  padding: 0.85rem 1.1rem !important;
+  border-bottom: none !important;
+  background: transparent !important;
 }
 
 .p-dialog .p-dialog-title {
@@ -293,18 +346,18 @@
 }
 
 .p-dialog .p-dialog-content {
-  padding: 1.25rem 1.4rem !important;
+  padding: 0.5rem 1.1rem 0.85rem !important;
   background: var(--bg-card, #ffffff) !important;
   color: var(--text-primary, #0f172a) !important;
 }
 
 .p-dialog .p-dialog-footer {
-  padding: 1rem 1.4rem 1.2rem !important;
-  border-top: 1px solid var(--border-default, #e2e8f0) !important;
-  background: rgba(248, 250, 252, 0.74) !important;
+  padding: 0.75rem 1.1rem 0.85rem !important;
+  border-top: none !important;
+  background: transparent !important;
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 0.625rem;
   flex-wrap: wrap;
 }
 
@@ -325,6 +378,23 @@
   color: var(--color-primary-600) !important;
 }
 
+/* Toggle switch — visibilità OFF migliorata su sfondi chiari */
+.p-toggleswitch .p-toggleswitch-slider,
+.p-toggleswitch.p-toggleswitch .p-toggleswitch-slider {
+  background: var(--color-secondary-300, #cbd5e1) !important;
+  border: 1px solid var(--color-secondary-400, #94a3b8) !important;
+}
+
+.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+  background: var(--color-primary-600, #4f46e5) !important;
+  border-color: var(--color-primary-600, #4f46e5) !important;
+}
+
+.dark .p-toggleswitch .p-toggleswitch-slider {
+  background: var(--color-secondary-700, #334155) !important;
+  border-color: var(--color-secondary-600, #475569) !important;
+}
+
 /* Dark mode */
 .dark .p-button.p-button-secondary,
 .dark .p-button.p-button-outlined.p-button-secondary,
@@ -341,13 +411,7 @@
 }
 
 .dark .p-dialog {
-  border-color: var(--border-default, #334155) !important;
   background: var(--bg-card, #1e293b) !important;
-}
-
-.dark .p-dialog .p-dialog-header {
-  border-bottom-color: var(--border-default, #334155) !important;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0));
 }
 
 .dark .p-dialog .p-dialog-content {
@@ -355,10 +419,23 @@
   color: var(--text-primary, #f8fafc) !important;
 }
 
-.dark .p-dialog .p-dialog-footer {
-  border-top-color: var(--border-default, #334155) !important;
-  background: rgba(15, 23, 42, 0.56) !important;
-}
+/* ===== Time-slot list (riusabile per fasce orarie / finestre disponibilità ecc.) ===== */
+.slot-editor { margin-top: 0.5rem; }
+.slot-inputs { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.slot-time-input { border: 1px solid var(--border-default); border-radius: 0.5rem; padding: 0.4rem 0.6rem; font-size: 0.85rem; font-family: inherit; }
+.slot-time-input:focus { outline: none; border-color: rgba(79, 70, 229, 0.5); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
+.slot-separator { color: var(--text-muted); font-weight: 600; }
+.slot-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; }
+.slot-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 0.75rem; border: 1px solid var(--border-default); border-radius: 0.5rem; background: var(--bg-card-hover); }
+.slot-row-left { display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1; }
+.slot-row-icon { width: 1.85rem; height: 1.85rem; border-radius: 0.45rem; display: flex; align-items: center; justify-content: center; background: rgba(79,70,229,0.12); color: #6d28d9; flex-shrink: 0; }
+.slot-row-content { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.slot-row-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.slot-row-time { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.slot-time-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; padding: 0.25rem 0.6rem; border-radius: 999px; background: #fff; border: 1px solid var(--border-default); font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+.slot-time-arrow { color: var(--text-muted); font-size: 0.75rem; }
+.slot-empty { display: flex; align-items: center; gap: 0.45rem; margin: 0.6rem 0 0; padding: 0.55rem 0.7rem; background: rgba(99, 102, 241, 0.05); border: 1px dashed rgba(99, 102, 241, 0.25); border-radius: 0.5rem; color: #4338ca; font-size: 0.78rem; }
+.slot-empty i { font-size: 0.85rem; }
 
 @media (max-width: 640px) {
   .p-dialog .p-dialog-footer {
@@ -369,4 +446,29 @@
   :where(.dialog-btn-save, .dialog-btn-cancel, .btn-submit, .btn-cancel) {
     width: 100%;
   }
+}
+
+/* ============================================================
+   DARK MODE — integrazioni
+   ============================================================ */
+
+/* .p-button.p-button-outlined senza modificatore secondary/danger/warning
+   (la regola esistente copre solo le varianti con secondary) */
+.dark .p-button.p-button-outlined:not(.p-button-secondary):not(.p-button-danger):not(.p-button-warning):not(.p-button-success) {
+  background: rgba(30, 41, 59, 0.88) !important;
+  border-color: var(--border-default, #334155) !important;
+  color: var(--text-secondary, #cbd5e1) !important;
+}
+
+/* Pillola orario — slot editor */
+.dark .slot-time-pill {
+  background: var(--bg-card-hover);
+  border-color: var(--border-default);
+}
+
+/* Slot vuoto: testo e bordo indigo troppo scuri */
+.dark .slot-empty {
+  color: #818cf8;
+  border-color: rgba(129, 140, 248, 0.3);
+  background: rgba(79, 70, 229, 0.07);
 }

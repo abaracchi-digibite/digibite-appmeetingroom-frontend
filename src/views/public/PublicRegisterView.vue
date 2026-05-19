@@ -235,7 +235,7 @@ import {
   type PublicRegistrationResult,
 } from '@/api/public.api'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 
 type PageState = 'loading' | 'invalid' | 'form' | 'success'
@@ -246,9 +246,9 @@ const submitting = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 const result = ref<PublicRegistrationResult | null>(null)
 
-// Branding tenant - default AppMeetingRoom, override se il tenant ha un brand configurato
+// Branding tenant - default app name, override se il tenant ha un brand configurato
 const branding = ref({
-  name: 'AppMeetingRoom',
+  name: t('app.name'),
   logoUrl: null as string | null,
   primaryColor: '#6366f1',
   secondaryColor: '#764ba2',
@@ -311,15 +311,15 @@ function formatDateTime(startTime: string | null, endTime: string | null): strin
   if (!startTime) return '-'
   try {
     const start = new Date(startTime)
-    const dateStr = start.toLocaleDateString('it-IT', {
+    const dateStr = start.toLocaleDateString(locale.value, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     })
-    const startTimeStr = start.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-    if (!endTime) return `${dateStr} alle ${startTimeStr}`
-    const endTimeStr = new Date(endTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+    const startTimeStr = start.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
+    if (!endTime) return `${dateStr} ${t('common.atTime')} ${startTimeStr}`
+    const endTimeStr = new Date(endTime).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
     return `${dateStr}, ${startTimeStr} — ${endTimeStr}`
   } catch {
     return startTime

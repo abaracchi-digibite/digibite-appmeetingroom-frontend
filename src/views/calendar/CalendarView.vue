@@ -1,6 +1,13 @@
 <template>
   <MainLayout>
     <div class="calendar-page">
+      <!-- Hint introduttivo: visibile sempre in cima alla pagina, spiega come
+           prenotare rapidamente trascinando sul calendario. -->
+      <div class="cal-hint">
+        <i class="pi pi-info-circle" />
+        <span>{{ t('calendar.selectHint') }}</span>
+      </div>
+
       <div class="cal-body" :class="{ 'cal-body-no-sidebar': !showFiltersVisible }">
 
         <!-- ------ Filter Sidebar --------------------------------------------------------------------------------------------------------------------- -->
@@ -169,7 +176,7 @@
 
             <div v-if="bookingsStore.error && !loading" class="cal-error">
               <i class="pi pi-exclamation-circle" />
-              <span>{{ t('errors.loadFailed') }}</span>
+              <span>{{ t('common.loadFailed') }}</span>
               <button class="btn-secondary" @click="fetchCalendar()">{{ t('common.retry') }}</button>
             </div>
 
@@ -181,207 +188,386 @@
               :options="calendarOptions"
             />
           </div>
-
-          <!-- Hint bar -->
-          <div class="cal-hint">
-            <i class="pi pi-info-circle" />
-            <span>{{ t('calendar.selectHint') }}</span>
-          </div>
         </div>
       </div>
 
       <!-- ------ Quick Book Modal --------------------------------------------------------------------------------------------------------------------- -->
-      <PrimeDialog
+      <AppDialog
         v-model:visible="showQuickBook"
         :header="t('calendar.quickBook')"
-        modal
-        :style="{ width: '460px' }"
-        :breakpoints="{ '640px': '95vw' }"
-        class="quickbook-dialog"
+        icon="pi pi-bolt"
+        severity="primary"
+        size="md"
       >
-        <div class="qb-body">
-          <div class="qb-timerange">
-            <div class="qb-timerange-item">
-              <i class="pi pi-calendar" />
-              <div>
-                <span class="qb-label">{{ t('calendar.start') }}</span>
-                <strong class="qb-value">{{ formatDisplay(quickBook.start) }}</strong>
+        <div class="dlg-form">
+          <!-- Sezione riepilogo orario selezionato -->
+          <div class="dlg-section">
+            <div class="dlg-fields-2">
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('calendar.start') }}</label>
+                <div class="qb-time-readout">
+                  <i class="pi pi-calendar" />
+                  <span>{{ formatDisplay(quickBook.start) }}</span>
+                </div>
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('calendar.end') }}</label>
+                <div class="qb-time-readout">
+                  <i class="pi pi-calendar-clock" />
+                  <span>{{ formatDisplay(quickBook.end) }}</span>
+                </div>
               </div>
             </div>
-            <div class="qb-arrow"><i class="pi pi-arrow-right" /></div>
-            <div class="qb-timerange-item">
-              <i class="pi pi-calendar-clock" />
-              <div>
-                <span class="qb-label">{{ t('calendar.end') }}</span>
-                <strong class="qb-value">{{ formatDisplay(quickBook.end) }}</strong>
+          </div>
+
+          <!-- Sezione dati prenotazione -->
+          <div class="dlg-section">
+            <div class="dlg-fields-2">
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('wizard.titleLabel') }} <span class="req">*</span></label>
+                <PrimeInputText
+                  v-model="quickBook.title"
+                  :placeholder="t('calendar.bookingTitlePlaceholder')"
+                  class="w-full"
+                  required
+                />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('bookings.resource') }} <span class="req">*</span></label>
+                <PrimeMultiSelect
+                  v-model="quickBook.resourceIds"
+                  :options="quickBookResourceGroupedOptions"
+                  option-group-label="label"
+                  option-group-children="items"
+                  option-label="label"
+                  option-value="value"
+                  :placeholder="t('calendar.selectResource')"
+                  display="chip"
+                  class="w-full"
+                >
+                  <template #optiongroup="{ option }">
+                    <span class="qb-res-group" :style="option.color ? { color: option.color } : {}">
+                      <span v-if="option.color" class="qb-res-group-dot" :style="{ background: option.color }" />
+                      {{ option.label }}
+                    </span>
+                  </template>
+                </PrimeMultiSelect>
               </div>
             </div>
-          </div>
-
-          <div class="qb-field">
-            <label class="qb-field-label">{{ t('wizard.titleLabel') }}</label>
-            <PrimeInputText
-              v-model="quickBook.title"
-              :placeholder="t('calendar.bookingTitlePlaceholder')"
-              class="w-full"
-            />
-          </div>
-
-          <div class="qb-field">
-            <label class="qb-field-label">{{ t('bookings.resource') }}</label>
-            <PrimeSelect
-              v-model="quickBook.resourceId"
-              :options="resourceOptions"
-              option-label="label"
-              option-value="value"
-              :placeholder="t('calendar.selectResource')"
-              class="w-full"
-            />
-          </div>
-
-          <div class="qb-hint">
-            <i class="pi pi-info-circle" />
-            {{ t('calendar.quickBookHint') }}
           </div>
         </div>
 
         <template #footer>
-          <button class="btn-secondary" @click="showQuickBook = false">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn-primary" @click="proceedToWizard">
-            <i class="pi pi-arrow-right mr-1" />
-            {{ t('calendar.continueToWizard') }}
-          </button>
+          <div class="dlg-footer-split">
+            <button type="button" class="dialog-btn dialog-btn-cancel" @click="showQuickBook = false">
+              <i class="pi pi-times" />{{ t('common.cancel') }}
+            </button>
+            <button type="button" class="dialog-btn dialog-btn-save" :disabled="!canProceedQuickBook" @click="proceedToWizard">
+              <i class="pi pi-arrow-right" />{{ t('calendar.continueToWizard') }}
+            </button>
+          </div>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
       <!-- ------ Event Detail Dialog ------------------------------------------------------------------------------------------------------------ -->
-      <PrimeDialog
+      <AppDialog
         v-model:visible="showEventDetail"
-        :header="selectedBooking?.title"
-        modal
-        :style="{ width: '520px' }"
-        :breakpoints="{ '640px': '95vw' }"
+        :header="selectedBooking?.title || ''"
+        icon="pi pi-calendar"
+        severity="primary"
+        size="md"
         class="event-detail-dialog"
       >
-        <div v-if="selectedBooking" class="event-detail">
-
-          <div class="event-status-bar" :style="{ background: getStatusColor(selectedBooking.status) }">
-            <i class="pi pi-circle-fill mr-2" style="font-size: 0.6rem" />
+        <template v-if="selectedBooking" #subtitle>
+          <span class="ed-status-pill" :style="{ background: getStatusColor(selectedBooking.status) }">
+            <i class="pi pi-circle-fill" />
             {{ t(`bookings.status.${selectedBooking.status.charAt(0).toLowerCase() + selectedBooking.status.slice(1)}`) }}
+          </span>
+        </template>
+
+        <div v-if="selectedBooking" class="ed-wrap">
+          <!-- ─── Quando ─────────────────────────── -->
+          <section class="ed-hero">
+            <div class="ed-hero-date">{{ getBookingDateLabel(selectedBooking) }}</div>
+            <div class="ed-hero-time-row">
+              <div class="ed-hero-time">{{ getBookingTimeRangeLabel(selectedBooking) }}</div>
+              <span v-if="bookingCountdown" class="ed-countdown" :class="`ed-countdown-${bookingCountdown.tone}`">
+                <span class="ed-countdown-dot" />
+                {{ bookingCountdown.label }}
+              </span>
+            </div>
+            <div class="ed-hero-meta">
+              <span class="ed-hero-meta-item"><i class="pi pi-hourglass" />{{ getBookingDurationLabel(selectedBooking) }}</span>
+              <span class="ed-hero-meta-sep">•</span>
+              <span class="ed-hero-meta-item"><i class="pi pi-map-marker" />{{ getBookingPlantLabel(selectedBooking) }}</span>
+              <template v-if="selectedBooking.isRecurring">
+                <span class="ed-hero-meta-sep">•</span>
+                <span class="ed-hero-meta-item ed-hero-meta-accent"><i class="pi pi-sync" />{{ t('bookings.isRecurring') }}</span>
+              </template>
+            </div>
+          </section>
+
+          <!-- ─── CTA Meeting URL (Teams / Meet) ─── -->
+          <button
+            v-if="selectedBooking.meetingUrl"
+            type="button"
+            class="ed-meeting-cta"
+            @click="openMeetingUrl"
+          >
+            <i class="pi pi-video" />
+            <span class="ed-meeting-cta-text">
+              <span class="ed-meeting-cta-title">{{ t('bookings.joinMeeting') }}</span>
+              <span class="ed-meeting-cta-host">{{ selectedBooking.meetingUrl }}</span>
+            </span>
+            <i class="pi pi-external-link" />
+          </button>
+
+          <!-- ─── Rejection callout (se rejected) ─── -->
+          <div v-if="selectedBooking.status === 'Rejected' && selectedBooking.rejectionReason" class="ed-reject-callout">
+            <i class="pi pi-times-circle" />
+            <div class="ed-reject-body">
+              <span class="ed-reject-label">{{ t('bookings.rejectionReason') }}</span>
+              <span class="ed-reject-text">{{ selectedBooking.rejectionReason }}</span>
+            </div>
           </div>
 
-          <div class="event-info-grid">
-            <div class="event-info-item">
-              <span class="ei-label">{{ t('calendar.organizer') }}</span>
-              <span class="ei-value">{{ selectedBookingOrganizer }}</span>
-            </div>
+          <hr class="ed-divider" />
 
-            <div class="event-info-item">
-              <span class="ei-label">{{ t('calendar.participants') }}</span>
-              <span class="ei-value">{{ selectedBooking.participants?.length ?? 0 }}</span>
+          <!-- ─── Organizzatore + Partecipanti ─── -->
+          <section class="ed-stat-row">
+            <div class="ed-stat">
+              <span class="ed-stat-label">{{ t('calendar.organizer') }}</span>
+              <div class="ed-stat-body">
+                <span class="ed-stat-avatar" :style="{ background: avatarColorFor(selectedBookingOrganizer) }">
+                  {{ participantInitials(selectedBookingOrganizer) }}
+                </span>
+                <span class="ed-stat-value">{{ selectedBookingOrganizer }}</span>
+              </div>
             </div>
-
-            <div class="event-info-item full">
-              <span class="ei-label">{{ t('calendar.resources') }}</span>
-              <div v-if="selectedBooking.resources?.length" class="resource-chips">
-                <span
-                  v-for="resource in selectedBooking.resources"
-                  :key="resource.id"
-                  class="resource-chip"
+            <div class="ed-stat">
+              <span class="ed-stat-label">
+                {{ t('calendar.participants') }}
+                <span class="ed-stat-count-inline">{{ selectedBooking.participants?.length ?? 0 }}</span>
+              </span>
+              <div class="ed-stat-body">
+                <div v-if="participantsPreview.length" class="ed-avatar-stack">
+                  <span
+                    v-for="(p, idx) in participantsPreview"
+                    :key="idx"
+                    class="ed-avatar"
+                    :style="{ background: p.color }"
+                    :title="p.name"
+                  >{{ p.initials }}</span>
+                  <span v-if="participantsOverflow > 0" class="ed-avatar ed-avatar-more">+{{ participantsOverflow }}</span>
+                </div>
+                <span v-else class="ed-stat-empty">{{ t('common.noData') }}</span>
+                <button
+                  v-if="allParticipantsForList.length"
+                  class="ed-participants-list-btn"
+                  :class="{ active: showParticipantsList }"
+                  :title="showParticipantsList ? t('common.hide') : t('common.show')"
+                  @click="showParticipantsList = !showParticipantsList"
                 >
-                  <i class="pi pi-box mr-1" />
-                  {{ getResourceName(resource.resourceId) }}
-                  <span class="resource-chip-time">
-                    {{ formatTime(resource.startTime) }} — {{ formatTime(resource.endTime) }}
+                  <i :class="showParticipantsList ? 'pi pi-chevron-up' : 'pi pi-list'" />
+                </button>
+              </div>
+              <div v-if="showParticipantsList && allParticipantsForList.length" class="ed-participants-list">
+                <div
+                  v-for="(p, idx) in allParticipantsForList"
+                  :key="idx"
+                  class="ed-participant-row"
+                >
+                  <span class="ed-participant-avatar" :style="{ background: avatarColorFor(p.name) }">
+                    {{ participantInitials(p.name) }}
                   </span>
+                  <div class="ed-participant-info">
+                    <div class="ed-participant-name-row">
+                      <span class="ed-participant-name">{{ p.name }}</span>
+                      <span class="ed-participant-type-badge" :style="{ '--badge-color': p.typeColor }">{{ p.typeLabel }}</span>
+                    </div>
+                    <span v-if="p.email" class="ed-participant-email">{{ p.email }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="participantsBreakdown.length > 1" class="ed-breakdown">
+                <span
+                  v-for="g in participantsBreakdown"
+                  :key="g.key"
+                  class="ed-breakdown-chip"
+                >
+                  <span class="ed-breakdown-dot" :style="{ background: g.color }" />
+                  <span class="ed-breakdown-count">{{ g.count }}</span>
+                  <span class="ed-breakdown-label">{{ g.label }}</span>
                 </span>
               </div>
-              <span v-else class="ei-value text-muted">{{ t('common.noData') }}</span>
             </div>
+          </section>
 
-            <div v-if="selectedBooking.notes" class="event-info-item full">
-              <span class="ei-label">{{ t('calendar.notes') }}</span>
-              <p class="ei-notes">{{ selectedBooking.notes }}</p>
+          <hr class="ed-divider" />
+
+          <!-- ─── Risorse ──────────────────────── -->
+          <section class="ed-block">
+            <div class="ed-block-head">
+              <span class="ed-block-title">{{ t('calendar.resources') }}</span>
+              <span class="ed-block-count">{{ selectedBooking.resources?.length ?? 0 }}</span>
             </div>
+            <div v-if="selectedBooking.resources?.length" class="ed-res-list">
+              <div
+                v-for="resource in selectedBooking.resources"
+                :key="resource.id"
+                class="ed-res-row"
+                :style="{ '--ed-res-accent': getResourceTypeColor(resource.resourceId) || '#4f46e5' }"
+              >
+                <span class="ed-res-accent-bar" />
+                <div class="ed-res-info">
+                  <span class="ed-res-name">{{ getResourceName(resource.resourceId) }}</span>
+                  <span class="ed-res-time">
+                    {{ formatTime(resource.startTime) }}<span class="ed-res-time-sep">→</span>{{ formatTime(resource.endTime) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="ed-empty">{{ t('common.noData') }}</div>
+          </section>
+
+          <template v-if="selectedBooking.notes">
+            <hr class="ed-divider" />
+            <!-- ─── Note ──────────────────────── -->
+            <section class="ed-notes">
+              <span class="ed-block-title">{{ t('calendar.notes') }}</span>
+              <p class="ed-notes-text">{{ selectedBooking.notes }}</p>
+            </section>
+          </template>
+
+          <!-- ─── Audit footer (creato / approvato) ─── -->
+          <div class="ed-audit">
+            <span v-if="selectedBooking.createdAt" class="ed-audit-item">
+              <i class="pi pi-clock" />
+              {{ t('common.createdAt') }} {{ formatDateShort(selectedBooking.createdAt) }}
+            </span>
+            <span v-if="selectedBooking.approvedById && selectedBooking.approvedAt" class="ed-audit-item">
+              <i class="pi pi-check-circle" />
+              {{ t('bookings.approvedBy') }}
+              <strong>{{ getUserName(selectedBooking.approvedById) }}</strong>
+              {{ t('common.on') }} {{ formatDateShort(selectedBooking.approvedAt) }}
+            </span>
           </div>
         </div>
 
         <template #footer>
-          <button class="btn-secondary" @click="showEventDetail = false">
-            {{ t('common.close') }}
-          </button>
-          <!-- Cancella — DRF §7.2: stati Cancelled/Rejected/Completed non cancellabili -->
-          <button
-            v-if="selectedBooking && canCancelBooking"
-            class="btn-danger"
-            :disabled="cancelLoading"
-            @click="openCancelDialog"
-          >
-            <i class="pi pi-trash mr-1" />
-            {{ t('common.delete') }}
-          </button>
-          <!-- Modifica — DRF §7.3: stati editabili Draft/PendingApproval/Confirmed -->
-          <button
-            v-if="selectedBooking && canEditBooking"
-            class="btn-secondary"
-            @click="goToEditBooking"
-          >
-            <i class="pi pi-pencil mr-1" />
-            {{ t('common.edit') }}
-          </button>
-          <router-link
-            v-if="selectedBooking"
-            :to="{ name: 'BookingDetail', params: { id: selectedBooking.id } }"
-            class="btn-primary"
-            @click="showEventDetail = false"
-          >
-            <i class="pi pi-external-link mr-1" />
-            {{ t('calendar.viewDetail') }}
-          </router-link>
+          <!-- Footer split: Chiudi a sinistra, azioni (Elimina/Modifica/Visualizza
+               dettagli) a destra. .ed-footer è display:flex space-between. -->
+          <div class="ed-footer">
+            <button type="button" class="ed-btn ed-btn-ghost" @click="showEventDetail = false">
+              <i class="pi pi-times" />{{ t('common.close') }}
+            </button>
+            <div class="ed-footer-actions">
+              <button
+                v-if="selectedBooking && canCancelBooking"
+                type="button"
+                class="ed-btn ed-btn-danger"
+                :disabled="cancelLoading"
+                @click="openCancelDialog"
+              >
+                <i class="pi pi-trash" />
+                <span>{{ t('common.delete') }}</span>
+              </button>
+              <button
+                v-if="selectedBooking && canEditBooking"
+                type="button"
+                class="ed-btn ed-btn-secondary"
+                @click="goToEditBooking"
+              >
+                <i class="pi pi-pencil" />
+                <span>{{ t('common.edit') }}</span>
+              </button>
+              <router-link
+                v-if="selectedBooking"
+                :to="{ name: 'BookingDetail', params: { id: selectedBooking.id } }"
+                class="ed-btn ed-btn-primary"
+                @click="showEventDetail = false"
+              >
+                <i class="pi pi-external-link" />
+                <span>{{ t('calendar.viewDetail') }}</span>
+              </router-link>
+            </div>
+          </div>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
-      <!-- ─── Dialog conferma cancellazione ────────────────────────────────── -->
-      <PrimeDialog
+      <!-- ─── Dialog conferma cancellazione (redesigned) ──────────────────── -->
+      <AppDialog
         v-model:visible="showCancelDialog"
-        :header="t('bookings.confirmDeleteHeader') || 'Conferma cancellazione'"
-        modal
-        :style="{ width: '440px' }"
-        :breakpoints="{ '640px': '95vw' }"
+        :header="t('bookings.confirmDeleteHeader')"
+        icon="pi pi-trash"
+        severity="danger"
+        size="sm"
       >
-        <div v-if="bookingToCancel" class="event-detail">
-          <p style="margin-bottom: 12px;">
-            {{ t('bookings.confirmDelete') || 'Sei sicuro di voler cancellare questa prenotazione?' }}
-          </p>
-          <div class="event-status-bar" style="background: rgba(239,68,68,0.12); color: #991b1b;">
-            <strong>{{ bookingToCancel.title || t('bookings.untitled') }}</strong>
+        <div v-if="bookingToCancel" class="del-modal">
+          <!-- Hero: icona grande + messaggio principale centrato -->
+          <div class="del-hero">
+            <div class="del-hero-icon">
+              <i class="pi pi-exclamation-triangle" />
+            </div>
+            <h3 class="del-hero-title">{{ t('bookings.confirmDelete') }}</h3>
+            <p class="del-hero-subtitle">{{ t('bookings.deleteWarning') }}</p>
           </div>
-          <p style="margin-top: 12px; color: #64748b; font-size: 13px;">
-            {{ t('bookings.deleteWarning') || 'I partecipanti registrati riceveranno un avviso di cancellazione.' }}
-          </p>
+
+          <!-- Card riepilogo prenotazione -->
+          <div class="del-summary">
+            <div class="del-summary-title">
+              <i class="pi pi-calendar" />
+              <span>{{ bookingToCancel.title || t('bookings.untitled') }}</span>
+            </div>
+            <div class="del-summary-grid">
+              <div class="del-summary-item">
+                <span class="del-summary-label">{{ t('calendar.start') }}</span>
+                <span class="del-summary-value">
+                  {{ formatDisplay(bookingToCancel.resources?.[0]?.startTime ?? '') }}
+                </span>
+              </div>
+              <div class="del-summary-item">
+                <span class="del-summary-label">{{ t('calendar.end') }}</span>
+                <span class="del-summary-value">
+                  {{ formatDisplay(bookingToCancel.resources?.[0]?.endTime ?? '') }}
+                </span>
+              </div>
+              <div v-if="bookingToCancel.resources?.[0]?.resourceId" class="del-summary-item del-summary-item-full">
+                <span class="del-summary-label">{{ t('bookings.resource') }}</span>
+                <span class="del-summary-value">
+                  <i class="pi pi-map-marker" />
+                  {{ getResourceName(bookingToCancel.resources[0].resourceId) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info: i partecipanti registrati ricevono notifica ICS di cancellazione -->
+          <div class="del-irreversible">
+            <i class="pi pi-info-circle" />
+            <span>{{ t('bookings.deleteNotifyParticipants') }}</span>
+          </div>
         </div>
 
         <template #footer>
-          <button class="btn-secondary" :disabled="cancelLoading" @click="showCancelDialog = false">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn-danger" :disabled="cancelLoading" @click="confirmCancelBooking">
-            <i class="pi pi-trash mr-1" />
-            <span v-if="cancelLoading">{{ t('common.loading') || 'Caricamento...' }}</span>
-            <span v-else>{{ t('common.delete') }}</span>
-          </button>
+          <div class="dlg-footer-split">
+            <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="cancelLoading" @click="showCancelDialog = false">
+              <i class="pi pi-times" />{{ t('common.cancel') }}
+            </button>
+            <button type="button" class="dialog-btn dialog-btn-delete" :disabled="cancelLoading" @click="confirmCancelBooking">
+              <i :class="cancelLoading ? 'pi pi-spin pi-spinner' : 'pi pi-trash'" />{{ t('common.delete') }}
+            </button>
+          </div>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
       <!-- ─── Dialog conferma spostamento / ridimensionamento ─────────────── -->
-      <PrimeDialog
+      <AppDialog
         v-model:visible="showMoveConfirmDialog"
         :header="pendingMoveInfo?.mode === 'resize' ? t('calendar.confirmResizeHeader') : t('calendar.confirmMoveHeader')"
-        modal
-        :style="{ width: '420px' }"
-        :breakpoints="{ '640px': '95vw' }"
+        :icon="pendingMoveInfo?.mode === 'resize' ? 'pi pi-arrows-alt' : 'pi pi-arrow-right-arrow-left'"
+        severity="primary"
+        size="sm"
         :closable="!moveLoading"
       >
         <div v-if="pendingMoveInfo" class="event-detail">
@@ -404,16 +590,16 @@
           </div>
         </div>
         <template #footer>
-          <button class="btn-secondary" :disabled="moveLoading" @click="cancelMoveBooking">
-            {{ t('common.cancel') }}
-          </button>
-          <button class="btn-primary" :disabled="moveLoading" @click="confirmMoveBooking">
-            <i class="pi pi-check mr-1" />
-            <span v-if="moveLoading">{{ t('common.loading') || 'Salvataggio...' }}</span>
-            <span v-else>{{ pendingMoveInfo?.mode === 'resize' ? t('calendar.confirmResizeConfirm') : t('calendar.confirmMoveConfirm') }}</span>
-          </button>
+          <div class="dlg-footer-split">
+            <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="moveLoading" @click="cancelMoveBooking">
+              <i class="pi pi-times" />{{ t('common.cancel') }}
+            </button>
+            <button type="button" class="dialog-btn dialog-btn-save" :disabled="moveLoading" @click="confirmMoveBooking">
+              <i :class="moveLoading ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ pendingMoveInfo?.mode === 'resize' ? t('calendar.confirmResizeConfirm') : t('calendar.confirmMoveConfirm') }}
+            </button>
+          </div>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
     </div>
   </MainLayout>
@@ -431,7 +617,7 @@ import itLocale from '@fullcalendar/core/locales/it'
 import MainLayout from '@/layouts/MainLayout.vue'
 import PrimeSelect from 'primevue/select'
 import PrimeMultiSelect from 'primevue/multiselect'
-import PrimeDialog from 'primevue/dialog'
+import AppDialog from '@/components/common/AppDialog.vue'
 import PrimeProgressSpinner from 'primevue/progressspinner'
 import PrimeInputText from 'primevue/inputtext'
 import PrimeToggleSwitch from 'primevue/toggleswitch'
@@ -448,7 +634,7 @@ import type { Booking, CalendarQuery } from '@/types/booking'
 import type { BookingStatus } from '@/types/enums'
 import { BookingStatus as BookingStatusEnum } from '@/types/enums'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const toast = useToast()
 const bookingsStore = useBookingsStore()
@@ -456,6 +642,7 @@ const authStore = useAuthStore()
 const resourcesStore = useResourcesStore()
 const plantsStore = usePlantsStore()
 const usersStore = useUsersStore()
+const visitorTypesStore = useVisitorTypesStore()
 const unavailabilityStore = useUnavailabilityStore()
 
 // ------ Refs ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -468,10 +655,12 @@ const isCalendarInitialized = ref(false)
 const showEventDetail = ref(false)
 const showQuickBook = ref(false)
 const selectedBooking = ref<Booking | null>(null)
+const showParticipantsList = ref(false)
 const currentView = ref<string>('timeGridWeek')
 const showWeekends = ref(true)
-const showFilters = ref(false)
-const showFiltersVisible = ref(false)
+// Filtri aperti di default all'atterraggio sulla pagina (richiesta UX).
+const showFilters = ref(true)
+const showFiltersVisible = ref(true)
 const showMoveConfirmDialog = ref(false)
 const moveLoading = ref(false)
 type PendingMoveInfo = {
@@ -619,6 +808,10 @@ watch(showFilters, (val) => {
   if (val) showFiltersVisible.value = true
 })
 
+watch(showEventDetail, (val) => {
+  if (!val) showParticipantsList.value = false
+})
+
 function onFiltersAfterLeave() {
   if (closeFiltersTimeout) {
     clearTimeout(closeFiltersTimeout)
@@ -643,8 +836,12 @@ const quickBook = ref({
   start: '',
   end: '',
   title: '',
-  resourceId: '',
+  resourceIds: [] as string[],
 })
+
+const canProceedQuickBook = computed(() =>
+  quickBook.value.title.trim().length > 0 && quickBook.value.resourceIds.length > 0
+)
 
 const filters = ref({
   plantId: '',
@@ -671,20 +868,21 @@ const siteOptions = computed(() =>
 )
 
 
-const visitorTypeOptions = computed(() => {
-  const store = useVisitorTypesStore()
-  return store.visitorTypes.map((vt) => ({ label: vt.name, value: vt.id }))
-})
+const visitorTypeOptions = computed(() =>
+  visitorTypesStore.visitorTypes.map((vt) => ({ label: vt.name, value: vt.id }))
+)
 
 const resourceTypeOptions = computed(() =>
-  resourcesStore.resourceTypes.map((rt) => ({
+  // Solo i tipi attivi: i tipi disattivati non devono comparire nei filtri.
+  resourcesStore.activeResourceTypes.map((rt) => ({
     label: rt.name,
     value: rt.id,
   }))
 )
 
 const resourceOptions = computed(() => {
-  let resources = resourcesStore.resources
+  // Risorse prenotabili: escluse quelle di tipo disattivato.
+  let resources = resourcesStore.bookableResources
 
   if (filters.value.plantId) {
     resources = resources.filter((r) => r.plantId === filters.value.plantId)
@@ -697,6 +895,28 @@ const resourceOptions = computed(() => {
     label: resource.name,
     value: resource.id,
   }))
+})
+
+const quickBookResourceGroupedOptions = computed(() => {
+  let resources = resourcesStore.bookableResources
+
+  if (filters.value.plantId) {
+    resources = resources.filter((r) => r.plantId === filters.value.plantId)
+  }
+  if (filters.value.resourceTypeIds.length > 0) {
+    resources = resources.filter((r) => filters.value.resourceTypeIds.includes(r.resourceTypeId))
+  }
+
+  const groups = new Map<string, { label: string; color: string | undefined; items: { label: string; value: string }[] }>()
+  for (const resource of resources) {
+    const rt = resourcesStore.resourceTypeById(resource.resourceTypeId)
+    const typeLabel = rt?.name ?? '–'
+    if (!groups.has(resource.resourceTypeId)) {
+      groups.set(resource.resourceTypeId, { label: typeLabel, color: rt?.color || undefined, items: [] })
+    }
+    groups.get(resource.resourceTypeId)!.items.push({ label: resource.name, value: resource.id })
+  }
+  return Array.from(groups.values())
 })
 
 const statusOptions = computed(() => [
@@ -740,12 +960,10 @@ const calendarEvents = computed(() => {
   }
 
 
-  // Filtro per tipologia visitatore (client-side)
-  if (filters.value.visitorTypeId) {
-    filtered = filtered.filter((booking) =>
-      booking.visitorTypeId === filters.value.visitorTypeId
-    )
-  }
+  // Filtro per tipologia visitatore: ora applicato lato backend tramite
+  // CalendarQuery.visitorTypeId (DRF §8.5). Il match è su qualsiasi
+  // partecipante della prenotazione. Vedi watcher su filters.visitorTypeId
+  // che rilancia fetchCalendar().
 
   // Filtro "Solo le mie prenotazioni" (organizzatore)
   if (filters.value.onlyMine) {
@@ -762,10 +980,10 @@ const calendarEvents = computed(() => {
     )
   }
 
-  return filtered.map((booking) => {
-    const startTime = booking.resources?.[0]?.startTime
-    const endTime = booking.resources?.[0]?.endTime
-
+  // flatMap: ogni slot di risorsa diventa un evento distinto nel calendario.
+  // Una prenotazione con più risorse (fasce orarie diverse) genera un evento
+  // per ciascuna, così tutte le fasce sono visibili (es. 10:00-11:00 e 11:00-12:30).
+  return filtered.flatMap((booking) => {
     // Colore evento: lo SFONDO riflette lo stato (legenda comune,
     // Confirmed=verde, Cancelled=rosso ecc.) mentre il BORDO usa il
     // colore configurato sul Tipo di Risorsa (DRF §5.1 — "icona/colore
@@ -774,12 +992,13 @@ const calendarEvents = computed(() => {
     // Se il tipo non ha colore configurato, il bordo cade sul colore status.
     const statusColor = getStatusColor(booking.status)
     const resourceTypeColor = getResourceTypeColorForBooking(booking)
+    const resources = booking.resources ?? []
 
-    return {
-      id: booking.id,
+    return resources.map((resource, rIdx) => ({
+      id: rIdx === 0 ? booking.id : `${booking.id}::${resource.id}`,
       title: booking.title,
-      start: startTime,
-      end: endTime,
+      start: resource.startTime,
+      end: resource.endTime,
       backgroundColor: statusColor,
       borderColor: resourceTypeColor || statusColor,
       textColor: '#ffffff',
@@ -789,7 +1008,7 @@ const calendarEvents = computed(() => {
         resourceTypeColor ? 'event-with-type-color' : '',
       ].filter(Boolean),
       extendedProps: { booking },
-    }
+    }))
   })
 })
 
@@ -805,6 +1024,10 @@ const calendarOptions = computed(() => ({
   locale: itLocale,
   events: calendarEvents.value,
   weekends: showWeekends.value,
+  // Forza tutti gli eventi a essere "block" (barra piena colorata) anche in
+  // vista mensile, dove di default FullCalendar usa "dot + testo" con sfondo
+  // trasparente che diventa invisibile col textColor bianco.
+  eventDisplay: 'block',
   selectable: true,
   selectMirror: true,
   selectMinDistance: 5,
@@ -879,6 +1102,200 @@ function getResourceName(resourceId: string): string {
   return resourcesStore.resourceById(resourceId)?.name || resourceId
 }
 
+/** Etichetta data della prenotazione, derivata dalla prima risorsa. */
+function getBookingDateLabel(booking: Booking): string {
+  const startStr = booking.resources?.[0]?.startTime
+  if (!startStr) return '–'
+  const d = new Date(startStr)
+  return d.toLocaleDateString(locale.value, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/** Durata totale del booking (max end − min start) formattata "Xh Ym". */
+function getBookingDurationLabel(booking: Booking): string {
+  const res = booking.resources ?? []
+  if (!res.length) return '–'
+  const starts = res.map((r) => new Date(r.startTime).getTime())
+  const ends   = res.map((r) => new Date(r.endTime).getTime())
+  const minutes = Math.max(0, Math.round((Math.max(...ends) - Math.min(...starts)) / 60000))
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
+}
+
+/** Etichetta sede (plant) derivata dalla prima risorsa. */
+function getBookingPlantLabel(booking: Booking): string {
+  const plantId = booking.resources?.[0]?.plantId
+  if (!plantId) return '–'
+  return plantsStore.plantById(plantId)?.name ?? '–'
+}
+
+/** Etichetta range orario "HH:mm → HH:mm" (min start / max end del booking). */
+function getBookingTimeRangeLabel(booking: Booking): string {
+  const res = booking.resources ?? []
+  if (!res.length) return '–'
+  const start = new Date(Math.min(...res.map((r) => new Date(r.startTime).getTime())))
+  const end   = new Date(Math.max(...res.map((r) => new Date(r.endTime).getTime())))
+  return `${formatTime(start.toISOString())} - ${formatTime(end.toISOString())}`
+}
+
+/** Colore del tipo della risorsa (per accent della card). */
+function getResourceTypeColor(resourceId: string): string | undefined {
+  const r = resourcesStore.resourceById(resourceId)
+  if (!r) return undefined
+  return resourcesStore.resourceTypeById(r.resourceTypeId)?.color
+}
+
+/** Palette deterministica per gli avatar dei partecipanti (stable per nome). */
+const AVATAR_COLORS = [
+  '#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed', '#2563eb', '#0d9488',
+]
+
+function avatarColorFor(seed: string): string {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function participantInitials(name: string): string {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
+
+/** Max 4 partecipanti come {initials, name, color}; il resto va in overflow. */
+const participantsPreview = computed(() => {
+  const list = selectedBooking.value?.participants ?? []
+  return list.slice(0, 4).map((p) => {
+    let name: string
+    if (p.isInternal && p.userId) {
+      const u = usersStore.users.find((x) => x.id === p.userId)
+      name = u?.fullName?.trim() || u?.email || p.userId
+    } else {
+      name = `${p.visitorFirstName ?? ''} ${p.visitorLastName ?? ''}`.trim() || p.visitorEmail || '?'
+    }
+    return { initials: participantInitials(name), name, color: avatarColorFor(name) }
+  })
+})
+
+const participantsOverflow = computed(() => {
+  const total = selectedBooking.value?.participants?.length ?? 0
+  return Math.max(0, total - participantsPreview.value.length)
+})
+
+/**
+ * Countdown / live indicator: "Inizia tra X" prima dell'inizio,
+ * "In corso da X" mentre è attivo, "Terminato X fa" dopo la fine.
+ * Si refresh ogni minuto via `nowTick`.
+ */
+const nowTick = ref(Date.now())
+let nowTickInterval: ReturnType<typeof setInterval> | null = null
+
+function formatRelative(diffMs: number): string {
+  const abs = Math.abs(diffMs)
+  const m = Math.round(abs / 60_000)
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  const mm = m % 60
+  if (h < 24) return mm === 0 ? `${h}h` : `${h}h ${mm}m`
+  const d = Math.floor(h / 24)
+  return `${d}g`
+}
+
+type CountdownInfo = { label: string; tone: 'soon' | 'live' | 'past' }
+
+const bookingCountdown = computed((): CountdownInfo | null => {
+  const res = selectedBooking.value?.resources ?? []
+  if (!res.length) return null
+  const start = Math.min(...res.map((r) => new Date(r.startTime).getTime()))
+  const end   = Math.max(...res.map((r) => new Date(r.endTime).getTime()))
+  const now = nowTick.value
+  if (now < start) return { label: `${t('calendar.startsIn')} ${formatRelative(start - now)}`, tone: 'soon' }
+  if (now < end)   return { label: `${t('calendar.inProgressFor')} ${formatRelative(now - start)}`, tone: 'live' }
+  return { label: `${t('calendar.endedAgo')} ${formatRelative(now - end)} ${t('calendar.ago')}`, tone: 'past' }
+})
+
+/**
+ * Breakdown partecipanti per tipologia visitatore (chip "3 Clienti + 1 Fornitore").
+ * Gli interni sono raggruppati come "Interni". Ordine: count DESC.
+ */
+type BreakdownGroup = { key: string; label: string; count: number; color: string }
+
+const participantsBreakdown = computed((): BreakdownGroup[] => {
+  const list = selectedBooking.value?.participants ?? []
+  if (!list.length) return []
+  const groups = new Map<string, { label: string; count: number; color: string }>()
+  for (const p of list) {
+    let key: string
+    let label: string
+    let color: string
+    if (p.isInternal) {
+      key = '__internal'
+      label = t('bookings.internal')
+      color = '#475569'
+    } else if (p.visitorTypeId) {
+      key = p.visitorTypeId
+      label = visitorTypesStore.visitorTypeById(p.visitorTypeId)?.name ?? t('bookings.visitor')
+      color = '#4f46e5'
+    } else {
+      key = '__visitor'
+      label = t('bookings.visitor')
+      color = '#94a3b8'
+    }
+    const g = groups.get(key)
+    if (g) g.count++
+    else groups.set(key, { label, count: 1, color })
+  }
+  return Array.from(groups.entries())
+    .map(([k, v]) => ({ key: k, ...v }))
+    .sort((a, b) => b.count - a.count)
+})
+
+const allParticipantsForList = computed(() => {
+  const list = selectedBooking.value?.participants ?? []
+  return list.map((p) => {
+    if (p.isInternal && p.userId) {
+      const u = usersStore.users.find((x) => x.id === p.userId)
+      return {
+        name: u?.fullName?.trim() || u?.email || p.userId,
+        email: u?.email || '',
+        typeLabel: t('bookings.internal'),
+        typeColor: '#475569',
+      }
+    }
+    const name = `${p.visitorFirstName ?? ''} ${p.visitorLastName ?? ''}`.trim() || p.visitorEmail || '?'
+    const vt = p.visitorTypeId ? visitorTypesStore.visitorTypeById(p.visitorTypeId) : null
+    return {
+      name,
+      email: p.visitorEmail || '',
+      typeLabel: vt?.name ?? t('bookings.visitor'),
+      typeColor: vt ? '#4f46e5' : '#94a3b8',
+    }
+  })
+})
+
+/** Helper per audit footer: nome utente da userId */
+function getUserName(userId?: string | null): string {
+  if (!userId) return ''
+  const u = usersStore.users.find((x) => x.id === userId)
+  return u?.fullName?.trim() || u?.email || userId
+}
+
+function formatDateShort(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleDateString(locale.value, { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+/** Apre il link meeting in una nuova tab */
+function openMeetingUrl() {
+  const url = selectedBooking.value?.meetingUrl
+  if (url) window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 /**
  * Risolve il colore del Tipo di Risorsa associato alla prima risorsa della
  * prenotazione (DRF §5.1 — "icona/colore identificativo nella UI").
@@ -898,7 +1315,7 @@ function getResourceTypeColorForBooking(booking: Booking): string | undefined {
 function formatDisplay(dateStr: string): string {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleString('it-IT', {
+  return d.toLocaleString(locale.value, {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
@@ -909,7 +1326,7 @@ function formatDisplay(dateStr: string): string {
 
 function formatTime(dateStr: string): string {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  return new Date(dateStr).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
 }
 
 // ------ Actions ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -953,7 +1370,7 @@ function onEventDrop(info: any): void {
   }))
   const fmt = (iso: string) => {
     const d = new Date(iso)
-    return `${d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    return `${d.toLocaleDateString(locale.value, { weekday: 'short', day: '2-digit', month: '2-digit' })} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
   pendingMoveInfo.value = {
     info,
@@ -1017,7 +1434,7 @@ function onEventResize(info: any): void {
   }))
   const fmt = (iso: string) => {
     const d = new Date(iso)
-    return `${d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' })} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    return `${d.toLocaleDateString(locale.value, { weekday: 'short', day: '2-digit', month: '2-digit' })} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
   pendingMoveInfo.value = {
     info,
@@ -1090,7 +1507,7 @@ function onDateSelect(info: any) {
     start: info.startStr,
     end: info.endStr,
     title: '',
-    resourceId: filters.value.resourceIds?.[0] || '',
+    resourceIds: filters.value.resourceIds.length > 0 ? [...filters.value.resourceIds] : [],
   }
   showQuickBook.value = true
 }
@@ -1102,7 +1519,7 @@ function proceedToWizard() {
     query: {
       startDate: quickBook.value.start,
       endDate: quickBook.value.end,
-      resourceId: quickBook.value.resourceId || undefined,
+      resourceId: quickBook.value.resourceIds.length > 0 ? quickBook.value.resourceIds : undefined,
       title: quickBook.value.title || undefined,
     },
   })
@@ -1130,6 +1547,7 @@ async function fetchCalendar(_start?: Date, _end?: Date): Promise<void> {
 
     const query: CalendarQuery = {}
     if (filters.value.plantId) query.plantId = filters.value.plantId
+    if (filters.value.visitorTypeId) query.visitorTypeId = filters.value.visitorTypeId
 
     // I filtri multipli (resourceTypeIds, resourceIds, statuses) sono applicati
     // client-side nel computed calendarEvents, non servono nella query API.
@@ -1160,10 +1578,11 @@ async function fetchCalendar(_start?: Date, _end?: Date): Promise<void> {
 }
 
 // ------ Watchers ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-// Solo plantId richiede un nuovo fetch dal backend; gli altri filtri
-// (resourceTypeIds, resourceIds, statuses) sono applicati client-side nel computed.
+// plantId e visitorTypeId richiedono un nuovo fetch dal backend (sono parametri
+// del CalendarQuery server-side). Gli altri filtri (resourceTypeIds, resourceIds,
+// statuses) sono applicati client-side nel computed calendarEvents.
 watch(
-  () => filters.value.plantId,
+  () => [filters.value.plantId, filters.value.visitorTypeId],
   () => { fetchCalendar() }
 )
 
@@ -1181,6 +1600,9 @@ onMounted(async () => {
     resizeObserver.observe(calMainRef.value)
   }
 
+  // Tick di 1 minuto per il countdown live nel dialog event-detail
+  nowTickInterval = setInterval(() => { nowTick.value = Date.now() }, 60_000)
+
   try {
     await Promise.all([
       plantsStore.fetchAll(),
@@ -1188,6 +1610,8 @@ onMounted(async () => {
       resourcesStore.fetchAllResourceTypes(),
       // Carica gli utenti per risolvere organizerId → nome nel popover dettagli.
       usersStore.users.length === 0 ? usersStore.fetchAll() : Promise.resolve(),
+      // Carica i tipi visitatore per il breakdown partecipanti e per i filtri.
+      visitorTypesStore.visitorTypes.length === 0 ? visitorTypesStore.fetchAllVisitorTypes() : Promise.resolve(),
       // Carica i blocchi di indisponibilità per disabilitare i giorni bloccati a giornata intera.
       unavailabilityStore.unavailabilityBlocks.length === 0
         ? unavailabilityStore.fetchAllUnavailabilityBlocks()
@@ -1202,6 +1626,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  if (nowTickInterval) clearInterval(nowTickInterval)
 })
 </script>
 

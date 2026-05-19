@@ -7,6 +7,16 @@
       </div>
 
       <template v-else>
+        <!-- Banner sessione scaduta per inattività -->
+        <Message
+          v-if="sessionExpiredByInactivity"
+          severity="warn"
+          :closable="false"
+          class="inactivity-message"
+        >
+          {{ $t('auth.sessionExpiredInactivity') }}
+        </Message>
+
         <div class="login-header">
           <h2 class="login-title">
             {{ ssoInfo?.tenantName ? ssoInfo.tenantName : $t('auth.welcomeBack') }}
@@ -74,7 +84,7 @@
           <div class="form-group remember-group">
             <div class="checkbox-wrapper">
               <Checkbox v-model="form.rememberMe" input-id="rememberMe" />
-              <label for="rememberMe" class="remember-label">{{ $t('auth.rememberMe') || 'Remember me' }}</label>
+              <label for="rememberMe" class="remember-label">{{ $t('auth.rememberMe') }}</label>
             </div>
           </div>
 
@@ -125,6 +135,9 @@ const route     = useRoute()
 const { t }     = useI18n()
 const authStore = useAuthStore()
 
+// Mostra un avviso se l'utente è stato reindirizzato qui per inattività.
+const sessionExpiredByInactivity = computed(() => route.query.reason === 'inactivity')
+
 // ------ SSO state ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 const checkingSso = ref(true)
@@ -151,12 +164,12 @@ const loginError = ref<string>('')
 const emailError = computed(() => {
   if (!form.value.email) return ''
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(form.value.email) ? '' : t('auth.invalidEmail') || 'Invalid email'
+  return emailRegex.test(form.value.email) ? '' : t('auth.invalidEmail')
 })
 
 const passwordError = computed(() => {
   if (!form.value.password) return ''
-  return form.value.password.length < 6 ? t('auth.passwordMinLength') || 'Minimum 6 characters' : ''
+  return form.value.password.length < 6 ? t('auth.passwordMinLength') : ''
 })
 
 const isFormValid = computed(() => {
@@ -220,7 +233,7 @@ async function handleSsoLogin(): Promise<void> {
 
 const handleLogin = async (): Promise<void> => {
   if (!isFormValid.value) {
-    loginError.value = t('auth.fillRequiredFields') || 'Please fill in all required fields'
+    loginError.value = t('auth.fillRequiredFields')
     return
   }
 
@@ -244,7 +257,7 @@ const handleLogin = async (): Promise<void> => {
     const redirect = route.query.redirect ? String(route.query.redirect) : '/dashboard'
     await router.push(redirect)
   } catch {
-    loginError.value = authStore.error || t('auth.loginError') || 'Login failed. Please try again.'
+    loginError.value = authStore.error || t('auth.loginError')
   } finally {
     isLoading.value = false
   }

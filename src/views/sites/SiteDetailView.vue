@@ -128,7 +128,7 @@
                   {{ t('common.status') }}
                 </label>
                 <div class="flex items-center gap-2">
-                  <Checkbox v-model="formData.isActive" input-id="isActive" binary />
+                  <PrimeToggleSwitch v-model="formData.isActive" input-id="isActive" />
                   <label for="isActive" class="text-sm font-medium text-slate-700">
                     {{ formData.isActive ? t('plants.active') : t('common.no') }}
                   </label>
@@ -203,7 +203,7 @@ import Column from 'primevue/column'
 import Dropdown from 'primevue/dropdown'
 import Tag from 'primevue/tag'
 import Card from 'primevue/card'
-import Checkbox from 'primevue/checkbox'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
 
 const { t } = useI18n()
 const router = useRouter()

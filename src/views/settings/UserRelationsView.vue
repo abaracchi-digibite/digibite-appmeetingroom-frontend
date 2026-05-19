@@ -156,97 +156,99 @@
         </article>
       </div>
 
-      <PrimeDialog
+      <AppDialog
         v-model:visible="showAssignDialog"
-        modal
         :header="t('permissions.assignDialogTitle')"
-        :style="{ width: '580px' }"
+        icon="pi pi-shield"
+        severity="primary"
+        size="md"
       >
-        <form class="assign-form" @submit.prevent="saveAssign">
-          <div class="assign-grid">
-            <div class="assign-field">
-              <label class="assign-label required">{{ t('permissions.user') }}</label>
-              <PrimeDropdown
-                v-model="assignForm.userId"
-                :options="userOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full"
-                :filter="true"
-                :placeholder="t('permissions.selectUser')"
-              />
-            </div>
-
-            <div class="assign-field">
-              <label class="assign-label required">{{ t('permissions.objectType') }}</label>
-              <PrimeDropdown
-                v-model="assignForm.objectType"
-                :options="objectTypeOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full"
-                :placeholder="t('permissions.selectObjectType')"
-              />
-            </div>
-
-            <div class="assign-field">
-              <label class="assign-label required">{{ t('permissions.relation') }}</label>
-              <PrimeDropdown
-                v-model="assignForm.relation"
-                :options="relationOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full"
-                :placeholder="t('permissions.selectRelationType')"
-                :disabled="!assignForm.objectType"
-              />
-            </div>
-
-            <div class="assign-field" v-if="assignForm.objectType">
-              <label class="assign-label required">{{ t('permissions.object') }}</label>
-
-              <div v-if="assignForm.objectType === 'tenant'" class="assign-readonly">
-                <i class="pi pi-building" />
-                <span>{{ t('permissions.currentTenant') }}</span>
+        <form class="dlg-form" @submit.prevent="saveAssign">
+          <div class="dlg-section">
+            <div class="dlg-fields-2">
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('permissions.user') }} *</label>
+                <PrimeDropdown
+                  v-model="assignForm.userId"
+                  :options="userOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full"
+                  :filter="true"
+                  :placeholder="t('permissions.selectUser')"
+                />
               </div>
 
-              <PrimeDropdown
-                v-else-if="assignForm.objectType !== 'booking'"
-                v-model="assignForm.objectId"
-                :options="objectOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full"
-                :filter="true"
-                :loading="loadingObjects"
-                :placeholder="loadingObjects ? t('common.loading') : t('permissions.selectObject')"
-              />
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('permissions.objectType') }} *</label>
+                <PrimeDropdown
+                  v-model="assignForm.objectType"
+                  :options="objectTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full"
+                  :placeholder="t('permissions.selectObjectType')"
+                />
+              </div>
 
-              <input
-                v-else
-                v-model="assignForm.objectId"
-                type="text"
-                class="assign-input"
-                :placeholder="t('permissions.bookingPlaceholder')"
-              />
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('permissions.relation') }} *</label>
+                <PrimeDropdown
+                  v-model="assignForm.relation"
+                  :options="relationOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full"
+                  :placeholder="t('permissions.selectRelationType')"
+                  :disabled="!assignForm.objectType"
+                />
+              </div>
+
+              <div class="dlg-field" v-if="assignForm.objectType">
+                <label class="dlg-label">{{ t('permissions.object') }} *</label>
+
+                <div v-if="assignForm.objectType === 'tenant'" class="assign-readonly">
+                  <i class="pi pi-building" />
+                  <span>{{ t('permissions.currentTenant') }}</span>
+                </div>
+
+                <PrimeDropdown
+                  v-else-if="assignForm.objectType !== 'booking'"
+                  v-model="assignForm.objectId"
+                  :options="objectOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full"
+                  :filter="true"
+                  :loading="loadingObjects"
+                  :placeholder="loadingObjects ? t('common.loading') : t('permissions.selectObject')"
+                />
+
+                <input
+                  v-else
+                  v-model="assignForm.objectId"
+                  type="text"
+                  class="assign-input"
+                  :placeholder="t('permissions.bookingPlaceholder')"
+                />
+              </div>
+
+              <div v-if="formError" class="dlg-field dlg-field-full">
+                <small class="dlg-help" style="color: var(--color-danger, #ef4444);">{{ formError }}</small>
+              </div>
             </div>
           </div>
-
-          <p v-if="formError" class="assign-error">{{ formError }}</p>
-
-          <div class="assign-actions">
-            <PrimeButton :label="t('common.cancel')" text @click="showAssignDialog = false" />
-            <PrimeButton
-              type="submit"
-              :label="t('common.save')"
-              icon="pi pi-check"
-              :loading="saving"
-              :disabled="!canSubmitAssign"
-              class="relations-primary-btn"
-            />
-          </div>
         </form>
-      </PrimeDialog>
+
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showAssignDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="!canSubmitAssign || saving" @click="saveAssign">
+            <i :class="saving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.save') }}
+          </button>
+        </template>
+      </AppDialog>
     </div>
   </MainLayout>
 </template>
@@ -255,14 +257,13 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
-import PrimeButton from 'primevue/button'
-import PrimeDialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import PrimeDropdown from 'primevue/dropdown'
 import MultiSelect from 'primevue/multiselect'
 import Tag from 'primevue/tag'
 import MainLayout from '@/layouts/MainLayout.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { permissionsApi, type UserRelationResponse } from '@/api/permissions.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePlantsStore } from '@/stores/plants.store'
@@ -275,7 +276,7 @@ import {
   rebacObjectOptions,
 } from '@/features/rebac/rebac-catalog'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 
 const authStore = useAuthStore()
@@ -397,7 +398,7 @@ function getObjectLabel(objectType: string, objectId?: string | null): string {
 }
 
 function formatDate(date: string): string {
-  return new Date(date).toLocaleString('it-IT', {
+  return new Date(date).toLocaleString(locale.value, {
     year: 'numeric',
     month: 'short',
     day: '2-digit',

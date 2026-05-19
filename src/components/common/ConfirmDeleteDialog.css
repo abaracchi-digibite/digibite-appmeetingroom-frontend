@@ -4,7 +4,7 @@
 }
 
 :deep(.p-dialog-header) {
-  padding: 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid #f3f4f6;
   background-color: #fef2f2;
 }
@@ -31,7 +31,7 @@
 }
 
 .dialog-content {
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   text-align: center;
 }
 
@@ -85,6 +85,40 @@
 
 :deep(.dialog-footer .p-button-danger:hover:not(:disabled)) {
   background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+/* Dark mode overrides */
+:global(.dark) :deep(.p-dialog-header) {
+  border-bottom-color: var(--border-default);
+  background-color: rgba(127, 29, 29, 0.15);
+}
+
+:global(.dark) .warning-icon {
+  background-color: rgba(239, 68, 68, 0.18);
+}
+
+:global(.dark) .confirm-message {
+  color: var(--text-primary);
+}
+
+:global(.dark) :deep(.p-dialog-header) {
+  border-bottom-color: var(--border-default);
+}
+
+:global(.dark) :deep(.p-dialog-footer) {
+  border-top-color: var(--border-default);
+}
+
+:global(.dark) .warning-text {
+  color: var(--text-secondary);
+}
+
+:global(.dark) .warning-text {
+  color: var(--text-secondary);
+}
+
+:global(.dark) :deep(.p-dialog-footer) {
+  border-top-color: var(--border-default);
 }
 
 @media (max-width: 640px) {

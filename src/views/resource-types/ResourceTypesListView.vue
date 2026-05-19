@@ -1,169 +1,146 @@
 ﻿<template>
   <MainLayout>
-    <div class="resource-types-container">
-      <!-- Toolbar -->
-      <div class="toolbar-section mb-4 p-4 rounded-lg" style="background-color: var(--bg-card);">
-        <div class="flex flex-col gap-4">
-          <div class="flex gap-3 flex-wrap items-center">
-            <IconField class="flex-1 min-w-64">
-              <InputIcon class="pi pi-search" />
-              <InputText v-model="searchQuery" :placeholder="t('common.search')" class="w-full search-input" />
-            </IconField>
+    <div class="list-page">
 
-            <div class="flex gap-1 p-1 rounded-lg" style="background: var(--bg-page); border: 1px solid var(--border-default);">
-              <button
-                class="px-2 py-1 rounded-md text-sm transition-all"
-                :class="viewMode === 'table' ? 'bg-white shadow text-indigo-600 font-medium' : 'text-slate-500 hover:text-slate-700'"
-                :style="viewMode === 'table' ? 'background: var(--bg-card);' : ''"
-                @click="setViewMode('table')"
-                :title="t('common.viewTable')"
-              ><i class="pi pi-list text-sm" /></button>
-              <button
-                class="px-2 py-1 rounded-md text-sm transition-all"
-                :class="viewMode === 'card' ? 'bg-white shadow text-indigo-600 font-medium' : 'text-slate-500 hover:text-slate-700'"
-                :style="viewMode === 'card' ? 'background: var(--bg-card);' : ''"
-                @click="setViewMode('card')"
-                :title="t('common.viewCards')"
-              ><i class="pi pi-th-large text-sm" /></button>
-            </div>
-
-            <Button :label="t('resourceTypes.createNew')" icon="pi pi-plus" @click="showCreateDialog = true" severity="success" size="small" />
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
+            />
           </div>
+          <button type="button" class="list-btn-primary" @click="showCreateDialog = true">
+            <i class="pi pi-plus" />
+            <span>{{ t('resourceTypes.createNew') }}</span>
+          </button>
+        </div>
 
-          <div class="flex gap-3 flex-wrap items-center justify-end">
-            <div class="text-sm text-slate-600">{{ filteredResourceTypes.length }} {{ t('common.results') }}</div>
+        <div class="list-row-secondary">
+          <div class="list-row-secondary-right">
+            <span class="list-count-flat">{{ filteredResourceTypes.length }} {{ t('common.results') }}</span>
+            <div class="list-view-flat">
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
+                <i class="pi pi-list" />
+              </button>
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'card' }" :title="t('common.viewCards')" @click="setViewMode('card')">
+                <i class="pi pi-th-large" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Loading -->
-      <div v-if="resourcesStore.loading" class="flex justify-center items-center h-96">
-        <div class="text-center">
-          <i class="pi pi-spin pi-spinner text-4xl mb-4" style="color: #2563EB;"></i>
-          <p class="text-slate-600">{{ t('common.loading') }}</p>
-        </div>
+      <!-- ── Loading / Empty ──────────────────────────────────────── -->
+      <div v-if="resourcesStore.loading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
+        <span>{{ t('common.loading') }}</span>
       </div>
 
-      <!-- Empty -->
-      <div v-else-if="filteredResourceTypes.length === 0" class="flex justify-center items-center h-96 rounded-lg" style="background-color: var(--bg-page);">
-        <div class="text-center">
-          <i class="pi pi-inbox text-6xl mb-4" style="color: #9CA3AF;"></i>
-          <p class="text-slate-600 text-lg">{{ t('common.noResults') }}</p>
-        </div>
+      <div v-else-if="filteredResourceTypes.length === 0" class="list-empty">
+        <i class="pi pi-inbox" />
+        <p>{{ t('common.noResults') }}</p>
       </div>
 
-      <div v-else>
-        <!-- Card View -->
-        <div v-if="viewMode === 'card'" class="cards-grid">
-          <div v-for="resourceType in filteredResourceTypes" :key="resourceType.id" class="card" style="background-color: var(--bg-card); border: 1px solid var(--border-default);">
-            <div class="card-header" :style="{ borderLeftColor: resourceType.color || '#2563EB' }">
-              <div class="flex items-start justify-between">
-                <div class="icon-badge mr-2" :style="{ backgroundColor: (resourceType.color || '#2563EB') + '25', color: resourceType.color || '#2563EB' }">
-                  <i v-if="resourceType.icon" :class="`pi ${resourceType.icon}`"></i>
-                  <i v-else class="pi pi-tag"></i>
-                </div>
-                <div>
-                  <h3 class="card-title">{{ resourceType.name }}</h3>
-                  <p class="text-xs text-slate-500 mt-1">ID: {{ resourceType.id?.substring(0, 8) }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="card-content">
-              <div class="info-row" v-if="resourceType.description">
-                <i class="pi pi-align-left info-icon" :style="{ color: resourceType.color || '#2563EB' }"></i>
-                <div class="info-text">
-                  <p class="text-xs text-slate-500 uppercase tracking-wide">{{ t('common.description') }}</p>
-                  <p class="text-sm text-slate-700 line-clamp-2">{{ resourceType.description }}</p>
-                </div>
-              </div>
-              <div class="info-row" v-if="resourceType.color">
-                <i class="pi pi-palette info-icon" :style="{ color: resourceType.color }"></i>
-                <div class="info-text">
-                  <p class="text-xs text-slate-500 uppercase tracking-wide">{{ t('resourceTypes.color') }}</p>
-                  <div class="flex items-center gap-2 mt-1">
-                    <div :style="{ backgroundColor: resourceType.color }" class="w-6 h-6 rounded border border-slate-300"></div>
-                    <p class="text-sm font-mono text-slate-600">{{ resourceType.color }}</p>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-4 pt-4 border-t" style="border-color: var(--border-default);">
-                <div class="flex flex-col gap-2">
-                  <span class="status-badge" :style="{ backgroundColor: resourceType.allowMultiBooking ? 'rgba(13,148,136,0.15)' : 'rgba(156,163,175,0.15)', color: resourceType.allowMultiBooking ? '#065F46' : '#6B7280' }">
-                    <i :class="resourceType.allowMultiBooking ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-                    {{ t('resourceTypes.multiBooking') }}: {{ resourceType.allowMultiBooking ? t('common.yes') : t('common.no') }}
-                  </span>
-                  <div v-if="resourceType?.customFields && resourceType.customFields.length > 0">
-                    <span class="status-badge" style="background-color: rgba(124,58,237,0.15); color: #6d28d9;">
-                      <i class="pi pi-list"></i>
-                      {{ resourceType.customFields.length }} {{ t('resourceTypes.customFields') }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="card-actions">
-              <Button icon="pi pi-pencil" rounded severity="info" text @click="editResourceType(resourceType)" :title="t('common.edit')" class="action-btn" />
-              <Button icon="pi pi-trash" rounded severity="danger" text @click="deleteResourceType(resourceType.id)" :title="t('common.delete')" class="action-btn" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Table View -->
-        <div v-else>
-          <DataTable :value="filteredResourceTypes" responsiveLayout="scroll" stripedRows showGridlines>
-            <template #empty>
-              <div class="text-center py-8">
-                <i class="pi pi-inbox text-4xl mb-3" style="color: #cbd5e1;"></i>
-                <p style="color: #64748b;">{{ t('common.noData') }}</p>
+      <!-- ── Tabella ──────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+        <DataTable :value="filteredResourceTypes" responsiveLayout="scroll" stripedRows class="list-table">
+          <Column field="name" :header="t('resourceTypes.name')" :sortable="true" style="width: 30%">
+            <template #body="{ data }">
+              <span class="list-cell-strong">
+                <i :class="`pi ${data.icon || 'pi-tag'}`" :style="{ color: data.color || '#2563EB', marginRight: '0.5rem' }" />
+                {{ data.name }}
+              </span>
+            </template>
+          </Column>
+          <Column field="color" :header="t('resourceTypes.color')" style="width: 18%">
+            <template #body="{ data }">
+              <span class="list-cell-muted" style="display:inline-flex;align-items:center;gap:0.5rem;">
+                <span :style="{ backgroundColor: data.color || '#2563EB', width: '14px', height: '14px', borderRadius: '4px', display: 'inline-block', border: '1px solid var(--border-default)' }"></span>
+                {{ data.color || '—' }}
+              </span>
+            </template>
+          </Column>
+          <Column field="isActive" :header="t('common.status')" :sortable="true" style="width: 14%">
+            <template #body="{ data }">
+              <Tag
+                :value="data.isActive !== false ? t('common.active') : t('common.inactive')"
+                :severity="data.isActive !== false ? 'success' : 'danger'"
+              />
+            </template>
+          </Column>
+          <Column
+            class="list-col-actions"
+            headerStyle="width: 110px; padding-right: 1rem"
+            bodyStyle="width: 110px; padding-right: 1rem"
+          >
+            <template #header>
+              <span style="display:block; width:100%; text-align:right">{{ t('common.actions') }}</span>
+            </template>
+            <template #body="{ data }">
+              <div class="list-row-actions" style="display:flex; justify-content:flex-end">
+                <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="editResourceType(data)">
+                  <i class="pi pi-pencil" />
+                </button>
+                <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteResourceType(data.id)">
+                  <i class="pi pi-trash" />
+                </button>
               </div>
             </template>
-            <Column field="name" :header="t('resourceTypes.name')" sortable style="width: 24%">
-              <template #body="{ data }">
-                <div class="flex items-center gap-2">
-                  <div class="icon-chip" :style="{ backgroundColor: (data.color || '#2563EB') + '25', color: data.color || '#2563EB' }">
-                    <i v-if="data.icon" :class="`pi ${data.icon}`"></i>
-                    <i v-else class="pi pi-tag"></i>
-                  </div>
-                  <span style="color: #0f172a; font-weight: 500;">{{ data.name }}</span>
-                </div>
-              </template>
-            </Column>
-            <Column field="description" :header="t('common.description')" style="width: 26%">
-              <template #body="{ data }"><span style="color: #0f172a;">{{ data.description || '-' }}</span></template>
-            </Column>
-            <Column field="color" :header="t('resourceTypes.color')" style="width: 14%">
-              <template #body="{ data }">
-                <div class="flex items-center gap-2">
-                  <div class="w-5 h-5 rounded border border-slate-300" :style="{ backgroundColor: data.color || '#2563EB' }"></div>
-                  <span style="color: #0f172a;">{{ data.color || '-' }}</span>
-                </div>
-              </template>
-            </Column>
-            <Column field="allowMultiBooking" :header="t('resourceTypes.multiBooking')" sortable style="width: 10%">
-              <template #body="{ data }">
-                <span class="status-badge" :style="{ backgroundColor: data.allowMultiBooking ? 'rgba(13,148,136,0.15)' : 'rgba(156,163,175,0.15)', color: data.allowMultiBooking ? '#065F46' : '#6B7280' }">
-                  <i :class="data.allowMultiBooking ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-                  {{ data.allowMultiBooking ? t('common.yes') : t('common.no') }}
-                </span>
-              </template>
-            </Column>
-            <Column :header="t('common.actions')" style="width: 140px">
-              <template #body="{ data }">
-                <div class="table-actions">
-                  <Button icon="pi pi-pencil" @click="editResourceType(data)" outlined severity="warning" size="small" />
-                  <Button icon="pi pi-trash" @click="deleteResourceType(data.id)" outlined severity="danger" size="small" />
-                </div>
-              </template>
-            </Column>
-          </DataTable>
-        </div>
+          </Column>
+        </DataTable>
+      </div>
+
+      <!-- ── Cards ────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article v-for="resourceType in filteredResourceTypes" :key="resourceType.id" class="list-card">
+          <div class="list-card-head">
+            <h3 class="list-card-title">
+              <i :class="`pi ${resourceType.icon || 'pi-tag'}`" :style="{ color: resourceType.color || '#2563EB', marginRight: '0.4rem' }" />
+              {{ resourceType.name }}
+            </h3>
+            <Tag
+              :value="resourceType.isActive !== false ? t('common.active') : t('common.inactive')"
+              :severity="resourceType.isActive !== false ? 'success' : 'danger'"
+            />
+          </div>
+          <div class="list-card-info">
+            <div v-if="resourceType.color" class="list-card-info-row">
+              <i class="pi pi-palette" />
+              <span style="display:inline-flex;align-items:center;gap:0.4rem;">
+                <span :style="{ backgroundColor: resourceType.color, width: '14px', height: '14px', borderRadius: '4px', display: 'inline-block', border: '1px solid var(--border-default)' }"></span>
+                {{ resourceType.color }}
+              </span>
+            </div>
+            <div class="list-card-info-row">
+              <i class="pi pi-check-square" />
+              <span>{{ t('resourceTypes.multiBooking') }}: {{ resourceType.allowMultiBooking ? t('common.yes') : t('common.no') }}</span>
+            </div>
+            <div v-if="resourceType?.customFields?.length" class="list-card-info-row">
+              <i class="pi pi-list" />
+              <span>{{ resourceType.customFields.length }} {{ t('resourceTypes.customFields') }}</span>
+            </div>
+          </div>
+          <div class="list-card-actions">
+            <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="editResourceType(resourceType)">
+              <i class="pi pi-pencil" />
+            </button>
+            <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deleteResourceType(resourceType.id)">
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
       </div>
 
       <!-- ------ Create / Edit Dialog --------------------------------------------------------------------------------------------------------------------------------- -->
       <AppDialog
         v-model:visible="showCreateDialog"
         :header="isEditing ? t('common.edit') : t('resourceTypes.createNew')"
-        :subtitle="formData.name || (t('resourceTypes.description') || 'Gestisci i tipi di risorsa')"
+        :subtitle="formData.name || t('resourceTypes.description')"
         :icon="isEditing ? 'pi pi-pencil' : 'pi pi-plus-circle'"
         severity="primary"
         size="lg"
@@ -172,7 +149,7 @@
           <!-- Informazioni generali -->
           <div class="dlg-section">
             <div class="dlg-section-title">
-              <i class="pi pi-info-circle" /> Informazioni generali
+              <i class="pi pi-info-circle" /> {{ t('resourceTypes.generalSection') }}
             </div>
             <div class="dlg-fields-2">
               <div class="dlg-field dlg-field-full">
@@ -201,38 +178,63 @@
                 </div>
                   <small class="dlg-help">{{ t('resourceTypes_colorHelp') }}</small>
               </div>
-              <div class="dlg-field dlg-field-full">
-                <label class="dlg-label">{{ t('resourceTypes.timeSlots') }}</label>
-                  <button type="button" class="slot-trigger-btn" @click="showSlotEditor = !showSlotEditor">
-                    <i class="pi pi-plus" /> {{ t('resourceTypes_addTimeSlot') }}
-                  </button>
-                <div v-if="showSlotEditor" class="slot-editor">
-                  <div class="slot-inputs">
-                    <input v-model="newSlotStart" type="time" class="slot-time-input" />
-                    <span class="slot-separator">-</span>
-                    <input v-model="newSlotEnd" type="time" class="slot-time-input" />
-                    <button type="button" class="slot-add-btn" @click="addTimeSlot"><i class="pi pi-check" /> {{ t('resourceTypes.confirmSlot') }}</button>
-                  </div>
-                </div>
-                <div v-if="parsedTimeSlots.length > 0" class="slot-list">
-                  <div v-for="(slot, index) in parsedTimeSlots" :key="`${slot}-${index}`" class="slot-row">
-                    <div class="slot-row-left">
-                      <div class="slot-row-icon"><i class="pi pi-clock" /></div>
-                      <div class="slot-row-content">
-                        <div class="slot-row-title">{{ t('resourceTypes.timeSlotIndex', { n: index + 1 }) }}</div>
-                        <div class="slot-row-time">
-                          <span class="slot-time-pill">{{ slot.split('-')[0] }}</span>
-                          <i class="pi pi-arrow-right slot-time-arrow" />
-                          <span class="slot-time-pill">{{ slot.split('-')[1] }}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button type="button" class="slot-row-remove" @click="removeTimeSlot(index)" :title="t('resourceTypes.removeSlotTitle')"><i class="pi pi-trash" /></button>
-                  </div>
-                </div>
-                <small class="dlg-help">{{ t('resourceTypes_timeSlotsHelp') }}</small>
+            </div>
+          </div>
+
+          <!-- Orari di disponibilità (stesso pattern/testo della pagina Risorse) -->
+          <div class="dlg-section">
+            <div class="dlg-section-title">
+              <i class="pi pi-clock" />{{ t('resources.availability.title') }}
+            </div>
+
+            <button type="button" class="slot-trigger-btn" @click="showSlotEditor = !showSlotEditor">
+              <i class="pi pi-plus" /> {{ t('resources.availability.addWindow') }}
+            </button>
+
+            <div v-if="showSlotEditor" class="slot-editor">
+              <div class="slot-inputs">
+                <input v-model="newSlotStart" type="time" step="900" class="slot-time-input" />
+                <span class="slot-separator">-</span>
+                <input v-model="newSlotEnd" type="time" step="900" class="slot-time-input" />
+                <button type="button" class="slot-add-btn" @click="addTimeSlot">
+                  <i class="pi pi-check" /> {{ t('resourceTypes.confirmSlot') }}
+                </button>
               </div>
             </div>
+
+            <div v-if="parsedTimeSlots.length > 0" class="slot-list">
+              <div v-for="(slot, index) in parsedTimeSlots" :key="`${slot}-${index}`" class="slot-row">
+                <div class="slot-row-left">
+                  <div class="slot-row-icon"><i class="pi pi-clock" /></div>
+                  <div class="slot-row-content">
+                    <div class="slot-row-title">
+                      {{ t('resources.availability.windowIndex', { n: index + 1 }) }}
+                    </div>
+                    <div class="slot-row-time">
+                      <span class="slot-time-pill">{{ slot.split('-')[0] }}</span>
+                      <i class="pi pi-arrow-right slot-time-arrow" />
+                      <span class="slot-time-pill">{{ slot.split('-')[1] }}</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="slot-row-remove"
+                  :title="t('common.delete')"
+                  @click="removeTimeSlot(index)"
+                >
+                  <i class="pi pi-trash" />
+                </button>
+              </div>
+            </div>
+            <p v-else class="slot-empty">
+              <i class="pi pi-info-circle" />
+              {{ t('resources.availability.empty') }}
+            </p>
+
+            <small class="dlg-help">
+              {{ t('resources.availability.help') }}
+            </small>
           </div>
 
           <!-- Multi-booking -->
@@ -244,7 +246,7 @@
               </div>
               <div class="selected-field-chips">
                 <span class="meta-chip">{{ selectedCatalogField.fieldType }}</span>
-                <span v-if="selectedCatalogField.options?.length" class="meta-chip">{{ selectedCatalogField.options.length }} opzioni</span>
+                <span v-if="selectedCatalogField.options?.length" class="meta-chip">{{ selectedCatalogField.options.length }} {{ t('resourceTypes.options') }}</span>
               </div>
             </div>
           </div>
@@ -253,16 +255,26 @@
             <div class="dlg-status-row">
               <div>
                 <div class="dlg-status-title">{{ t('resourceTypes.multiBooking') }}</div>
-                <div class="dlg-status-desc">{{ t('resourceTypes.multiBookingHelp') || 'Consenti prenotazioni multiple contemporanee' }}</div>
+                <div class="dlg-status-desc">{{ t('resourceTypes.multiBookingHelp') }}</div>
               </div>
-              <Checkbox v-model="formData.allowMultiBooking" input-id="allowMultiBooking" binary />
+              <PrimeToggleSwitch v-model="formData.allowMultiBooking" input-id="allowMultiBooking" />
+            </div>
+          </div>
+
+          <div class="dlg-section dlg-section-status">
+            <div class="dlg-status-row">
+              <div>
+                <div class="dlg-status-title">{{ t('common.active') }}</div>
+                <div class="dlg-status-desc">{{ t('resourceTypes.isActiveHelp') }}</div>
+              </div>
+              <PrimeToggleSwitch v-model="formData.isActive" input-id="resourceTypeIsActive" />
             </div>
           </div>
 
           <!-- Hint box (create mode) -->
           <div v-if="!isEditing" class="dlg-hint-box">
             <i class="pi pi-lightbulb" />
-            Salva il tipo di risorsa per poter aggiungere i campi personalizzati.
+            {{ t('resourceTypes.customFieldsHint') }}
           </div>
 
           <!-- Campi personalizzati (edit mode) -->
@@ -270,16 +282,16 @@
             <div class="dlg-section-title" style="justify-content: space-between;">
               <span class="flex items-center gap-2">
                 <i class="pi pi-list" />
-                {{ t('resourceTypes.customFields') || 'Campi personalizzati' }}
+                {{ t('resourceTypes.customFields') }}
               </span>
               <button type="button" class="field-add-btn" @click="openAddFieldDialog">
-                <i class="pi pi-plus" /> {{ t('resourceTypes.addField') || 'Aggiungi campo' }}
+                <i class="pi pi-plus" /> {{ t('resourceTypes.addField') }}
               </button>
             </div>
 
             <div v-if="!currentCustomFields.length" class="fields-empty">
               <i class="pi pi-inbox" />
-              <span>{{ t('resourceTypes.noFields') || 'Nessun campo personalizzato' }}</span>
+              <span>{{ t('resourceTypes.noFields') }}</span>
             </div>
 
             <div v-else class="fields-list">
@@ -287,11 +299,11 @@
                 <div class="field-row-info">
                   <span class="field-row-label">{{ field.label }}</span>
                   <div class="field-row-meta">
-                    <span class="field-chip field-chip-type">{{ field.fieldType }}</span>
+                    <span class="field-chip field-chip-type">{{ t('customFields.types.' + field.fieldType.toLowerCase(), field.fieldType) }}</span>
                     <span class="field-chip" :class="field.isRequired ? 'field-chip-required' : 'field-chip-optional'">
-                      {{ field.isRequired ? t('visitorTypes.required') : t('common.optional') || 'Opzionale' }}
+                      {{ field.isRequired ? t('visitorTypes.required') : t('common.optional') }}
                     </span>
-                    <span class="field-chip field-chip-vis">{{ field.visibility }}</span>
+                    <span class="field-chip field-chip-vis">{{ t('visitorTypes.visibility' + field.visibility.charAt(0).toUpperCase() + field.visibility.slice(1), field.visibility) }}</span>
                   </div>
                 </div>
                 <div class="field-row-actions">
@@ -320,8 +332,8 @@
       <!-- ------ Field Add / Edit Dialog --------------------------------------------------------------------------------------------------------------------- -->
       <AppDialog
         v-model:visible="showFieldDialog"
-        :header="isEditingField ? (t('resourceTypes.editField') || 'Modifica associazione campo') : (t('resourceTypes.addField') || 'Aggiungi campo')"
-        :subtitle="selectedCatalogField?.label || 'Seleziona un campo dal catalogo'"
+        :header="isEditingField ? t('resourceTypes.editField') : t('resourceTypes.addField')"
+        :subtitle="selectedCatalogField?.label || t('resourceTypes.selectFieldFromCatalog')"
         icon="pi pi-list"
         severity="primary"
         size="md"
@@ -357,8 +369,8 @@
           <div class="dlg-section dlg-section-status">
             <div class="dlg-status-row">
               <div>
-                <div class="dlg-status-title">{{ t('resourceTypes.required') || 'Obbligatorio' }}</div>
-                <div class="dlg-status-desc">{{ t('resourceTypes.requiredHelp') || 'Il campo sarà obbligatorio durante la prenotazione' }}</div>
+                <div class="dlg-status-title">{{ t('resourceTypes.required') }}</div>
+                <div class="dlg-status-desc">{{ t('resourceTypes.requiredHelp') }}</div>
               </div>
               <Checkbox v-model="fieldLinkData.isRequired" input-id="fieldRequired" binary />
             </div>
@@ -384,15 +396,14 @@ import { useI18n } from 'vue-i18n'
 import { useResourcesStore } from '@/stores/resources.store'
 import MainLayout from '@/layouts/MainLayout.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
-import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Checkbox from 'primevue/checkbox'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
 import Select from 'primevue/select'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Tag from 'primevue/tag'
 import { FieldVisibility } from '@/types/enums'
 import { customFieldsApi } from '@/api/custom-fields.api'
 import { useCustomFieldsStore } from '@/stores/custom-fields.store'
@@ -403,12 +414,12 @@ const { t } = useI18n()
 const resourcesStore = useResourcesStore()
 const customFieldsStore = useCustomFieldsStore()
 
-const ICON_OPTIONS = [
-  { label: 'Sala riunioni', value: 'pi pi-building' },
-  { label: 'Proiettore', value: 'pi pi-video' },
-  { label: 'Scrivania', value: 'pi pi-desktop' },
-  { label: 'Altro', value: 'pi pi-box' },
-]
+const ICON_OPTIONS = computed(() => [
+  { label: t('resourceTypes.iconMeetingRoom'), value: 'pi pi-building' },
+  { label: t('resourceTypes.iconProjector'), value: 'pi pi-video' },
+  { label: t('resourceTypes.iconDesk'), value: 'pi pi-desktop' },
+  { label: t('resourceTypes.iconOther'), value: 'pi pi-box' },
+])
 
 // ------ View state ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const searchQuery = ref('')
@@ -426,10 +437,11 @@ const editingId = ref<string | null>(null)
 
 const formData = ref<CreateResourceTypeDto>({
   name: '',
-  icon: ICON_OPTIONS[0].value,
+  icon: ICON_OPTIONS.value[0].value,
   color: '#2563eb',
   defaultTimeSlots: '',
   allowMultiBooking: false,
+  isActive: true,
 })
 
 // ------ Field dialog ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -492,6 +504,7 @@ const editResourceType = async (resourceType: any) => {
     color: resourceType.color,
     defaultTimeSlots: resourceType.defaultTimeSlots,
     allowMultiBooking: resourceType.allowMultiBooking,
+    isActive: resourceType.isActive ?? true,
   }
   if (!customFieldsStore.fields.length) {
     await customFieldsStore.fetchAll()
@@ -542,10 +555,11 @@ const closeDialog = () => {
   currentCustomFields.value = []
   formData.value = {
     name: '',
-    icon: ICON_OPTIONS[0].value,
+    icon: ICON_OPTIONS.value[0].value,
     color: '#2563eb',
     defaultTimeSlots: '',
     allowMultiBooking: false,
+    isActive: true,
   }
 }
 

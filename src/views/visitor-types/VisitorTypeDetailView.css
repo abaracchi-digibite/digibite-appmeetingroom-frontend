@@ -63,3 +63,12 @@
   .selected-field-meta { flex-direction: column; align-items: flex-start; }
 }
 
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .catalog-empty-cta {
+  background: rgba(59,130,246,0.1);
+  border-color: rgba(96,165,250,0.3);
+}
+.dark .catalog-empty-cta > i       { color: #60a5fa; }
+.dark .catalog-empty-cta-body strong { color: var(--text-primary); }
+.dark .catalog-empty-cta-body p    { color: var(--text-secondary); }
+.dark .catalog-empty-cta .btn-link { color: #60a5fa; }

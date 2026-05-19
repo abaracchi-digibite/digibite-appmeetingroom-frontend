@@ -280,3 +280,38 @@
   .register-container { gap: 1rem; }
 }
 
+
+/* ========== DARK MODE OVERRIDES ========== */
+/* Questa pagina è pubblica (branded) ma supportiamo comunque dark mode */
+.dark .register-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+}
+.dark .state-card h2   { color: var(--text-primary); }
+.dark .state-card p    { color: var(--text-secondary); }
+
+.dark .booking-info    { border-bottom-color: var(--border-default); }
+.dark .booking-info h2 { color: var(--text-primary); }
+.dark .booking-subtitle { color: var(--text-secondary); }
+.dark .detail-label    { color: var(--text-muted); }
+.dark .detail-value    { color: var(--text-primary); }
+
+.dark .form-section h3 { color: var(--text-primary); }
+.dark .form-group label { color: var(--text-secondary); }
+.dark .form-input {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.dark .form-input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129,140,248,0.15);
+}
+.dark .bool-label { color: var(--text-primary); }
+
+.dark .qr-block {
+  background: var(--bg-input);
+  border-color: var(--border-default);
+}
+.dark .qr-label { color: var(--text-secondary); }
+.dark .qr-image { background: var(--bg-card); }

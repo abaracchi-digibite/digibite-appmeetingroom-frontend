@@ -8,21 +8,14 @@
       </div>
 
       <template v-if="booking">
-        <!-- Top Bar -->
-        <div class="top-bar">
-          <div class="top-bar-left">
-            <button class="btn-icon" @click="goBack" :title="t('common.back')">
-              <i class="pi pi-arrow-left" />
-            </button>
-            <div class="title-group">
-              <h1>{{ booking.title }}</h1>
-              <span class="status-chip" :style="getStatusStyle(booking.status)">
-                  <i :class="`pi ${getStatusIcon(booking.status)}`" />
-                  <span class="status-chip-label">{{ getStatusLabel(booking.status) }}</span>
-              </span>
-            </div>
-          </div>
-          <div class="top-bar-actions">
+        <PageHeader :title="booking.title" show-back-button>
+          <template #title-meta>
+<!--            <span class="status-chip" :style="getStatusStyle(booking.status)">-->
+<!--              <i :class="`pi ${getStatusIcon(booking.status)}`" />-->
+<!--              <span class="status-chip-label">{{ getStatusLabel(booking.status) }}</span>-->
+<!--            </span>-->
+          </template>
+          <template #actions>
             <button
                 v-if="canConfirmDraft"
                 class="btn btn-continue-draft"
@@ -77,8 +70,8 @@
               <i class="pi pi-trash" />
               {{ t('common.delete') }}
             </button>
-          </div>
-        </div>
+          </template>
+        </PageHeader>
 
         <!-- Content Grid -->
         <div class="content-grid">
@@ -166,6 +159,27 @@
                     </div>
                   </div>
                 </div>
+                <div v-if="bookingCustomFieldEntries.length > 0" class="res-cf-section">
+                  <div class="res-cf-header">
+                    <i class="pi pi-sliders-h" />
+                    <span>{{ t('bookings.customFields') }}</span>
+                    <button type="button" class="cf-toggle-btn" @click="showResourceCF = !showResourceCF">
+                      <i :class="showResourceCF ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" />
+                      {{ showResourceCF ? t('bookings.hideCustomFields') : t('bookings.showCustomFields') }}
+                    </button>
+                  </div>
+                  <dl v-show="showResourceCF" class="cf-grid">
+                    <div v-for="entry in bookingCustomFieldEntries" :key="entry.key" class="cf-item">
+                      <dt class="cf-key">{{ entry.label }}</dt>
+                      <dd class="cf-val" :class="{ 'cf-val-empty': entry.displayItems.length === 0 }">
+                        <template v-if="entry.displayItems.length > 1">
+                          <span v-for="item in entry.displayItems" :key="`${entry.key}-${item}`" class="cf-pill">{{ item }}</span>
+                        </template>
+                        <template v-else>{{ entry.displayItems[0] || t('bookings.notFilled') }}</template>
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
               </div>
             </div>
 
@@ -177,7 +191,10 @@
                   <span>{{ t('bookings.participants') }}</span>
                 </div>
                 <div class="card-header-actions">
-                  <span class="badge-count badge-count-inline">{{ booking.participants.length }}</span>
+                  <span class="badge-count badge-count-inline">
+                    <template v-if="hasActiveParticipantFilter">{{ filteredParticipants.length }} / {{ booking.participants.length }}</template>
+                    <template v-else>{{ booking.participants.length }}</template>
+                  </span>
                   <button
                       v-if="canManageParticipants"
                       type="button"
@@ -195,136 +212,188 @@
                   <i class="pi pi-users" />
                   <span>{{ t('bookings.noParticipants') }}</span>
                 </div>
-                <div v-else class="participants-grid">
-                  <div
-                      v-for="participant in booking.participants"
-                      :key="participant.id"
-                      class="participant-row"
-                  >
-                    <div class="participant-avatar">
-                      <i class="pi pi-user" />
+                <template v-else>
+                  <!-- Premium filter bar: search + segmented status + type pills -->
+                  <div class="pp-tools">
+                    <div class="pp-tools-top">
+                      <div class="pp-search">
+                        <i class="pi pi-search" />
+                        <input
+                            type="text"
+                            v-model="participantSearch"
+                            :placeholder="t('bookings.searchParticipantsPlaceholder')"
+                        />
+                        <button
+                            v-if="participantSearch"
+                            type="button"
+                            class="pp-search-clear"
+                            :title="t('common.clear')"
+                            @click="participantSearch = ''"
+                        >
+                          <i class="pi pi-times" />
+                        </button>
+                      </div>
+
+                      <div v-if="statusFilterOptions.length > 1" class="pp-segmented" role="group">
+                        <button
+                            v-for="opt in statusFilterOptions"
+                            :key="`status-${opt.key}`"
+                            type="button"
+                            class="pp-seg-btn"
+                            :class="{ active: participantStatusFilter === opt.key }"
+                            @click="participantStatusFilter = opt.key"
+                        >
+                          <span class="pp-seg-label">{{ opt.label }}</span>
+                          <span class="pp-seg-count">{{ opt.count }}</span>
+                        </button>
+                      </div>
                     </div>
-                    <div class="participant-info">
-                      <div class="participant-name">
-                        <span>{{ getParticipantDisplayName(participant) }}</span>
-                        <span v-if="participant.isGroupLeader" class="leader-tag">
-                          <i class="pi pi-star-fill" /> {{ t('bookings.coordinator') }}
+
+                    <div v-if="typeFilterOptions.length > 2" class="pp-tools-types">
+                      <span class="pp-tools-types-label">{{ t('resources.type') }}</span>
+                      <button
+                          v-for="opt in typeFilterOptions"
+                          :key="`type-${opt.key}`"
+                          type="button"
+                          class="pp-type-pill"
+                          :class="{ active: participantTypeFilter === opt.key }"
+                          @click="participantTypeFilter = opt.key"
+                      >
+                        <span class="pp-type-dot" :style="{ background: typeFilterColor(opt.key) }" />
+                        <span>{{ opt.label }}</span>
+                        <span class="pp-type-count">{{ opt.count }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="filteredParticipants.length === 0" class="empty-state-inline pp-empty-filter">
+                    <i class="pi pi-filter-slash" />
+                    <span>{{ t('bookings.noParticipantsForFilter') }}</span>
+                    <button type="button" class="pp-filter-reset-link" @click="resetParticipantFilters">
+                      {{ t('calendar.resetFilters') }}
+                    </button>
+                  </div>
+                  <ul v-else class="participants-list">
+                    <li
+                        v-for="participant in filteredParticipants"
+                        :key="participant.id"
+                        class="pp-row"
+                    >
+                    <div class="pp-left">
+                      <div class="pp-avatar-wrap">
+                        <div class="pp-avatar" :style="{ background: avatarColorFor(getParticipantDisplayName(participant)) }">
+                          {{ participantInitials(getParticipantDisplayName(participant)) }}
+                        </div>
+                        <span
+                            v-if="participant.isPresent"
+                            class="pp-presence"
+                            :title="t('bookings.checkIn')"
+                        >
+                          <i class="pi pi-check" />
                         </span>
                       </div>
-                      <div class="participant-meta">
-                        <span class="type-label">{{ participant.isInternal ? t('bookings.internal') : t('bookings.visitor') }}</span>
-                        <a v-if="getParticipantEmail(participant)" :href="`mailto:${getParticipantEmail(participant)}`" class="email-link">
-                          {{ getParticipantEmail(participant) }}
-                        </a>
-                      </div>
-                      <div
-                          v-if="getParticipantCustomFieldEntries(participant).length > 0"
-                          class="participant-custom-panel"
-                      >
-                        <div class="participant-custom-head">
-                          <i class="pi pi-list" />
-                          <span>{{ t('bookings.participantCustomFieldsTitle') }}</span>
+
+                      <div class="pp-info">
+                        <div class="pp-name-line">
+                          <span class="pp-name">{{ getParticipantDisplayName(participant) }}</span>
+                          <span v-if="participant.isGroupLeader" class="pp-leader" :title="t('bookings.coordinator')">
+                            <i class="pi pi-star-fill" />
+                          </span>
                         </div>
-                        <div class="participant-custom-values">
-                          <div
-                              v-for="entry in getParticipantCustomFieldEntries(participant)"
-                              :key="`${participant.id}-${entry.key}`"
-                              class="participant-custom-item"
+                        <div class="pp-meta-line">
+                          <span class="pp-role" :class="participant.isInternal ? 'pp-role-internal' : 'pp-role-visitor'">
+                            <i :class="participant.isInternal ? 'pi pi-id-card' : 'pi pi-user'" />
+                            {{ getRoleLabel(participant) }}
+                          </span>
+                          <template v-if="getParticipantEmail(participant)">
+                            <span class="pp-dot" aria-hidden="true">·</span>
+                            <a :href="`mailto:${getParticipantEmail(participant)}`" class="pp-email">
+                              <i class="pi pi-envelope" />{{ getParticipantEmail(participant) }}
+                            </a>
+                          </template>
+                        </div>
+
+                        <div
+                            v-if="getParticipantCustomFieldEntries(participant).length > 0"
+                            class="pp-fields"
+                        >
+                          <button
+                              type="button"
+                              class="pp-cf-toggle-btn"
+                              @click="toggleParticipantCF(participant.id)"
                           >
-                            <span class="participant-custom-label">{{ entry.label }}</span>
-                            <span class="participant-custom-text">{{ entry.display || t('bookings.notFilled') }}</span>
-                          </div>
+                            <i :class="expandedParticipantCF.has(participant.id) ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" />
+                            {{ expandedParticipantCF.has(participant.id) ? t('bookings.hideCustomFields') : t('bookings.showCustomFields') }}
+                          </button>
+                          <dl v-show="expandedParticipantCF.has(participant.id)" class="pp-fields-list">
+                            <div
+                                v-for="entry in getParticipantCustomFieldEntries(participant)"
+                                :key="`${participant.id}-${entry.key}`"
+                                class="pp-field-row"
+                            >
+                              <dt class="pp-field-label">{{ entry.label }}</dt>
+                              <dd class="pp-field-value" :class="{ 'pp-field-empty': entry.displayItems.length === 0 }">
+                                <template v-if="entry.displayItems.length > 1">
+                                  <span
+                                      v-for="item in entry.displayItems"
+                                      :key="`${participant.id}-${entry.key}-${item}`"
+                                      class="pp-chip"
+                                  >{{ item }}</span>
+                                </template>
+                                <template v-else>
+                                  {{ entry.displayItems[0] || t('bookings.notFilled') }}
+                                </template>
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+
+                        <div
+                            v-if="isCurrentUserParticipant(participant) && participant.inviteStatus === 'Pending' && booking && !['Completed','Cancelled','Rejected'].includes(booking.status)"
+                            class="pp-respond"
+                        >
+                          <PrimeButton
+                              :label="t('bookings.acceptParticipation')"
+                              icon="pi pi-check"
+                              size="small"
+                              class="btn-accept-participation"
+                              :loading="respondingParticipantId === participant.id"
+                              @click="handleRespondToParticipation(participant.id, true)"
+                          />
+                          <PrimeButton
+                              :label="t('bookings.declineParticipation')"
+                              icon="pi pi-times"
+                              size="small"
+                              severity="secondary"
+                              outlined
+                              :loading="respondingParticipantId === participant.id"
+                              @click="handleRespondToParticipation(participant.id, false)"
+                          />
                         </div>
                       </div>
                     </div>
-                    <div class="participant-status">
-                      <PrimeTag
-                          :value="participant.inviteStatus"
-                          :severity="getInviteStatusSeverity(participant.inviteStatus)"
-                          class="invite-tag"
-                      />
-                      <span v-if="participant.isPresent" class="check-in-badge">
-                        <i class="pi pi-check-circle" /> {{ t('bookings.checkIn') }}
-                      </span>
-                    </div>
-                    <div class="participant-actions">
-                      <!-- QR Code button -->
-                      <button v-if="participant.qrCode" class="btn-icon-sm" @click="showQR(participant.qrCode!)">
+
+                    <div class="pp-right">
+                      <button
+                          v-if="participant.qrCode"
+                          type="button"
+                          class="pp-qr-btn"
+                          :title="t('bookings.qrCode')"
+                          @click="showQR(participant)"
+                      >
                         <i class="pi pi-qrcode" />
                       </button>
-                      <!-- Bottoni Accept/Decline (--6.4 DRF): visibili solo al partecipante interno corrente in stato Pending -->
-                      <template v-if="isCurrentUserParticipant(participant) && participant.inviteStatus === 'Pending' && booking && !['Completed','Cancelled','Rejected'].includes(booking.status)">
-                        <PrimeButton
-                            :label="t('bookings.acceptParticipation')"
-                            icon="pi pi-check"
-                            size="small"
-                            class="btn-accept-participation"
-                            :loading="respondingParticipantId === participant.id"
-                            @click="handleRespondToParticipation(participant.id, true)"
-                        />
-                        <PrimeButton
-                            :label="t('bookings.declineParticipation')"
-                            icon="pi pi-times"
-                            size="small"
-                            severity="secondary"
-                            outlined
-                            :loading="respondingParticipantId === participant.id"
-                            @click="handleRespondToParticipation(participant.id, false)"
-                        />
-                      </template>
+                      <span class="pp-status" :class="`pp-status-${getInviteStatusSeverity(participant.inviteStatus)}`">
+                        <span class="pp-status-dot" />
+                        {{ t('bookings.inviteStatus.' + participant.inviteStatus.toLowerCase()) || participant.inviteStatus }}
+                      </span>
                     </div>
-                  </div>
-                </div>
+                  </li>
+                </ul>
+                </template>
               </div>
             </div>
 
-            <!-- Card: Custom Fields -->
-            <div v-if="bookingCustomFieldEntries.length > 0" class="card">
-              <div class="card-header">
-                <i class="pi pi-sliders-h" />
-                <span>{{ t('bookings.customFields') }}</span>
-              </div>
-              <div class="card-body">
-                <div class="custom-fields-hero">
-                  <div class="custom-fields-hero-copy">
-                    <p class="custom-fields-kicker">{{ t('bookings.customFieldsKicker') }}</p>
-                    <h3 class="custom-fields-title">{{ t('bookings.customFieldsHeroTitle') }}</h3>
-                    <p class="custom-fields-description">{{ t('bookings.customFieldsHeroDesc') }}</p>
-                  </div>
-                  <span class="custom-fields-count">{{ bookingCustomFieldEntries.length }}</span>
-                </div>
-
-                <div class="custom-fields-grid">
-                  <article
-                      v-for="entry in bookingCustomFieldEntries"
-                      :key="entry.key"
-                      class="field-card"
-                  >
-                    <span class="field-card-eyebrow">{{ t('bookings.customFieldEyebrow') }}</span>
-                    <div class="field-card-head">
-                      <span class="field-key">{{ entry.label }}</span>
-                      <span class="field-type">{{ entry.typeLabel }}</span>
-                    </div>
-                    <div v-if="entry.displayItems.length > 1" class="field-value-list">
-                      <span class="field-value-label">{{ t('bookings.selectedValues') }}</span>
-                      <div class="field-value-wrap">
-                        <span
-                            v-for="item in entry.displayItems"
-                            :key="`${entry.key}-${item}`"
-                            class="field-value-chip"
-                        >
-                          {{ item }}
-                        </span>
-                      </div>
-                    </div>
-                    <div v-else class="field-value-block" :class="{ empty: entry.displayItems.length === 0 }">
-                      <span class="field-value-label">{{ t('bookings.valueLabel') }}</span>
-                      <span class="field-value">{{ entry.displayItems[0] || t('bookings.notFilled') }}</span>
-                    </div>
-                  </article>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Right Column (Sidebar) -->
@@ -444,190 +513,200 @@
 
       <!-- ========== DIALOGS ========== -->
 
-      <!-- QR Code Dialog -->
-      <PrimeDialog
+      <!-- QR Code Dialog (premium) -->
+      <AppDialog
           v-model:visible="showQRDialog"
           :header="t('bookings.qrCode')"
-          modal
-          :style="{ width: '320px' }"
+          icon="pi pi-qrcode"
+          severity="primary"
+          size="md"
+          class="qr-dialog"
           @show="renderQRCode"
       >
-        <div class="qr-container">
-          <canvas ref="qrCanvas" class="qr-canvas"></canvas>
-          <p class="qr-code-text">{{ selectedQRCode }}</p>
-          <PrimeButton :label="t('bookings.downloadQr')" icon="pi pi-download" @click="downloadQR" size="small" class="w-full" />
+        <div class="qr-premium">
+          <!-- Scanner-style framed QR -->
+          <div class="qr-frame">
+            <span class="qr-corner qr-corner-tl" />
+            <span class="qr-corner qr-corner-tr" />
+            <span class="qr-corner qr-corner-bl" />
+            <span class="qr-corner qr-corner-br" />
+            <canvas ref="qrCanvas" class="qr-canvas-premium"></canvas>
+          </div>
+
+          <!-- Participant context -->
+          <div v-if="selectedQRParticipant" class="qr-participant">
+            <div
+                class="qr-avatar"
+                :style="{ background: avatarColorFor(getParticipantDisplayName(selectedQRParticipant)) }"
+            >
+              {{ participantInitials(getParticipantDisplayName(selectedQRParticipant)) }}
+            </div>
+            <div class="qr-participant-text">
+              <span class="qr-participant-name">{{ getParticipantDisplayName(selectedQRParticipant) }}</span>
+              <span class="qr-participant-meta">
+                <span class="qr-participant-role" :class="selectedQRParticipant.isInternal ? 'qr-role-internal' : 'qr-role-visitor'">
+                  {{ getRoleLabel(selectedQRParticipant) }}
+                </span>
+                <template v-if="getParticipantEmail(selectedQRParticipant)">
+                  <span class="qr-meta-dot">·</span>
+                  <span class="qr-participant-email">{{ getParticipantEmail(selectedQRParticipant) }}</span>
+                </template>
+              </span>
+            </div>
+          </div>
+
+          <!-- Copyable code -->
+          <div class="qr-code-row">
+            <div class="qr-code-input">
+              <span class="qr-code-label">{{ t('bookings.qrCodeLabel') }}</span>
+              <code class="qr-code-text-mono">{{ selectedQRCode }}</code>
+            </div>
+            <button
+                type="button"
+                class="qr-copy-btn"
+                :title="t('common.copy')"
+                @click="copyQRCode"
+            >
+              <i class="pi pi-copy" />
+            </button>
+          </div>
+
+          <!-- Hint -->
+          <div class="qr-hint">
+            <i class="pi pi-info-circle" />
+            <span>{{ t('bookings.qrHint') }}</span>
+          </div>
         </div>
-      </PrimeDialog>
+
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showQRDialog = false">
+            <i class="pi pi-times" />{{ t('common.close') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" @click="downloadQR">
+            <i class="pi pi-download" />{{ t('bookings.downloadQr') }}
+          </button>
+        </template>
+      </AppDialog>
 
       <!-- Confirm Draft Dialog -->
-      <PrimeDialog
+      <AppDialog
           v-model:visible="showConfirmDraftDialog"
           :header="t('bookings.confirmDraftTitle')"
-          modal
-          :style="{ width: '450px' }"
+          icon="pi pi-send"
+          severity="primary"
+          size="sm"
       >
-        <div class="dialog-body">
-          <div class="dialog-icon approve">
-            <i class="pi pi-send" />
-          </div>
-          <p class="dialog-msg">{{ t('bookings.confirmDraftMsg') }}</p>
-        </div>
+        <p class="dialog-msg">{{ t('bookings.confirmDraftMsg') }}</p>
         <template #footer>
-          <PrimeButton
-              :label="t('common.cancel')"
-              icon="pi pi-times"
-              text
-              @click="showConfirmDraftDialog = false"
-          />
-          <PrimeButton
-              :label="t('bookings.confirmDraft')"
-              icon="pi pi-send"
-              :loading="actionLoading"
-              class="dialog-btn-save"
-              @click="handleConfirmDraft"
-          />
+          <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="actionLoading" @click="showConfirmDraftDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="actionLoading" @click="handleConfirmDraft">
+            <i :class="actionLoading ? 'pi pi-spin pi-spinner' : 'pi pi-send'" />{{ t('bookings.confirmDraft') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
       <!-- Approve Dialog -->
-      <PrimeDialog
+      <AppDialog
           v-model:visible="showApproveDialog"
           :header="t('bookings.approveTitle')"
-          modal
-          :style="{ width: '450px' }"
+          icon="pi pi-check-circle"
+          severity="success"
+          size="sm"
       >
-        <div class="dialog-body">
-          <div class="dialog-icon approve">
-            <i class="pi pi-check-circle" />
-          </div>
-          <p>{{ t('bookings.confirmApprove') }}</p>
-        </div>
+        <p>{{ t('bookings.confirmApprove') }}</p>
         <template #footer>
-          <PrimeButton
-              :label="t('common.cancel')"
-              severity="secondary"
-              text
-              @click="showApproveDialog = false"
-              :disabled="actionLoading"
-          />
-          <PrimeButton
-              :label="t('bookings.approve')"
-              icon="pi pi-check"
-              severity="success"
-              @click="handleApprove"
-              :loading="actionLoading"
-          />
+          <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="actionLoading" @click="showApproveDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="actionLoading" @click="handleApprove">
+            <i :class="actionLoading ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('bookings.approve') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
       <!-- Reject Dialog -->
-      <PrimeDialog
+      <AppDialog
           v-model:visible="showRejectDialog"
           :header="t('bookings.rejectTitle')"
-          modal
-          :style="{ width: '500px' }"
+          icon="pi pi-times-circle"
+          severity="danger"
+          size="md"
       >
-        <div class="dialog-body">
-          <div class="dialog-icon reject">
-            <i class="pi pi-times-circle" />
-          </div>
-          <p>{{ t('bookings.confirmReject') }}</p>
-          <div class="form-field">
-            <label>{{ t('bookings.rejectionReason') }} ({{ t('common.optional') }})</label>
-            <textarea
-                v-model="rejectionReason"
-                class="reason-textarea"
-                rows="3"
-                :placeholder="t('bookings.rejectionReasonPlaceholder')"
-            ></textarea>
-          </div>
+        <p>{{ t('bookings.confirmReject') }}</p>
+        <div class="form-field" style="margin-top: 0.75rem;">
+          <label>{{ t('bookings.rejectionReason') }} ({{ t('common.optional') }})</label>
+          <textarea
+              v-model="rejectionReason"
+              class="reason-textarea"
+              rows="3"
+              :placeholder="t('bookings.rejectionReasonPlaceholder')"
+          ></textarea>
         </div>
         <template #footer>
-          <PrimeButton
-              :label="t('common.cancel')"
-              severity="secondary"
-              text
-              @click="showRejectDialog = false"
-              :disabled="actionLoading"
-          />
-          <PrimeButton
-              :label="t('bookings.reject')"
-              icon="pi pi-times"
-              severity="danger"
-              @click="handleReject"
-              :loading="actionLoading"
-          />
+          <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="actionLoading" @click="showRejectDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-delete" :disabled="actionLoading" @click="handleReject">
+            <i :class="actionLoading ? 'pi pi-spin pi-spinner' : 'pi pi-times'" />{{ t('bookings.reject') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
       <!-- Delete Dialog -->
       <!-- Dialog cancellazione - con scope per prenotazioni ricorrenti (--6A.4 DRF) -->
-      <PrimeDialog
+      <AppDialog
           v-model:visible="showDeleteDialog"
           :header="t('bookings.confirmDeleteHeader')"
-          modal
-          :style="{ width: '480px' }"
+          icon="pi pi-trash"
+          severity="danger"
+          size="md"
       >
-        <div class="dialog-body">
-          <div class="dialog-icon delete">
-            <i class="pi pi-trash" />
-          </div>
-          <p>{{ t('bookings.confirmDelete') }}</p>
-          <p class="dialog-warning">{{ t('bookings.deleteWarning') }}</p>
+        <p>{{ t('bookings.confirmDelete') }}</p>
+        <p class="dialog-warning">{{ t('bookings.deleteWarning') }}</p>
 
-          <!-- Selezione scope - visibile solo per prenotazioni ricorrenti -->
-          <div v-if="booking?.masterBookingId || booking?.isRecurring" class="recurring-scope-selector">
-            <p class="scope-label">{{ t('bookings.recurringScope.question') }}</p>
-            <div class="scope-options">
-              <label
-                  v-for="opt in recurringScopeOptions"
-                  :key="opt.value"
-                  class="scope-option"
-                  :class="{ active: selectedCancelScope === opt.value }"
-              >
-                <input
-                    type="radio"
-                    :value="opt.value"
-                    v-model="selectedCancelScope"
-                    class="scope-radio"
-                />
-                <span class="scope-option-text">
-                  <strong>{{ opt.label }}</strong>
-                  <small>{{ opt.description }}</small>
-                </span>
-              </label>
-            </div>
+        <!-- Selezione scope - visibile solo per prenotazioni ricorrenti -->
+        <div v-if="booking?.masterBookingId || booking?.isRecurring" class="recurring-scope-selector">
+          <p class="scope-label">{{ t('bookings.recurringScope.question') }}</p>
+          <div class="scope-options">
+            <label
+                v-for="opt in recurringScopeOptions"
+                :key="opt.value"
+                class="scope-option"
+                :class="{ active: selectedCancelScope === opt.value }"
+            >
+              <input
+                  type="radio"
+                  :value="opt.value"
+                  v-model="selectedCancelScope"
+                  class="scope-radio"
+              />
+              <span class="scope-option-text">
+                <strong>{{ opt.label }}</strong>
+                <small>{{ opt.description }}</small>
+              </span>
+            </label>
           </div>
         </div>
         <template #footer>
-          <PrimeButton
-              :label="t('common.cancel')"
-              severity="secondary"
-              text
-              @click="showDeleteDialog = false"
-              :disabled="actionLoading"
-          />
-          <PrimeButton
-              :label="t('common.delete')"
-              icon="pi pi-trash"
-              severity="danger"
-              @click="handleDelete"
-              :loading="actionLoading"
-          />
+          <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="actionLoading" @click="showDeleteDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-delete" :disabled="actionLoading" @click="handleDelete">
+            <i :class="actionLoading ? 'pi pi-spin pi-spinner' : 'pi pi-trash'" />{{ t('common.delete') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
-      <PrimeDialog
+      <AppDialog
           v-model:visible="showAddParticipantDialog"
           :header="t('bookings.addParticipant.header')"
-          modal
-          :style="{ width: 'min(560px, 94vw)' }"
+          icon="pi pi-user-plus"
+          severity="primary"
+          size="md"
       >
-        <div class="dialog-body dialog-body-form">
-          <p class="dialog-intro">
-            {{ t('bookings.addParticipant.intro') }}
-          </p>
-
+        <div class="dlg-form">
           <div class="participant-type-toggle" role="tablist" :aria-label="t('bookings.addParticipant.participantTypeAriaLabel')">
             <button
                 type="button"
@@ -651,8 +730,8 @@
             </button>
           </div>
 
-          <div v-if="addParticipantForm.kind === 'internal'" class="form-field">
-            <label for="booking-participant-user">{{ t('bookings.addParticipant.internalUserLabel') }}</label>
+          <div v-if="addParticipantForm.kind === 'internal'" class="dlg-field">
+            <label class="dlg-label" for="booking-participant-user">{{ t('bookings.addParticipant.internalUserLabel') }}</label>
             <select
                 id="booking-participant-user"
                 v-model="addParticipantForm.userId"
@@ -673,30 +752,86 @@
           </div>
 
           <template v-else>
-            <div class="form-field">
-              <label for="booking-participant-firstname">{{ t('bookings.addParticipant.visitorFirstName') }}</label>
-              <input
-                  id="booking-participant-firstname"
-                  v-model="addParticipantForm.visitorFirstName"
-                  type="text"
-                  class="participant-input"
-                  :placeholder="t('bookings.addParticipant.visitorFirstNamePlaceholder')"
-                  autocomplete="given-name"
-              />
+            <!-- ── Tipologia visitatore (prima di tutto) ── -->
+            <div class="dlg-field">
+              <label class="dlg-label" for="booking-participant-type">{{ t('bookings.addParticipant.visitorType') }}</label>
+              <select
+                  id="booking-participant-type"
+                  v-model="addParticipantForm.visitorTypeId"
+                  class="participant-select"
+              >
+                <option value="">{{ t('bookings.addParticipant.noVisitorType') }}</option>
+                <option
+                    v-for="vt in visitorTypesStore.visitorTypes"
+                    :key="vt.id"
+                    :value="vt.id"
+                >{{ vt.name }}</option>
+              </select>
             </div>
-            <div class="form-field">
-              <label for="booking-participant-lastname">{{ t('bookings.addParticipant.visitorLastName') }}</label>
-              <input
-                  id="booking-participant-lastname"
-                  v-model="addParticipantForm.visitorLastName"
-                  type="text"
-                  class="participant-input"
-                  :placeholder="t('bookings.addParticipant.visitorLastNamePlaceholder')"
-                  autocomplete="family-name"
-              />
+
+            <!-- ── Cerca in rubrica ── -->
+            <div class="dlg-field">
+              <label class="dlg-label">{{ t('bookings.addParticipant.searchDirectory') }}</label>
+              <div class="dir-search-wrap">
+                <div class="dir-search-input">
+                  <i class="pi pi-search" />
+                  <input
+                    type="text"
+                    v-model="visitorSearchQuery"
+                    :placeholder="t('bookings.addParticipant.searchDirectoryPlaceholder')"
+                    @input="onVisitorSearchInput"
+                    autocomplete="off"
+                  />
+                  <i v-if="visitorSearchLoading" class="pi pi-spin pi-spinner dir-search-spinner" />
+                  <button
+                    v-if="visitorSearchQuery"
+                    type="button"
+                    class="dir-search-clear"
+                    @click="visitorSearchQuery = ''; visitorSearchResults = []; showVisitorDropdown = false"
+                  ><i class="pi pi-times" /></button>
+                </div>
+                <div v-if="showVisitorDropdown" class="dir-search-dropdown">
+                  <button
+                    v-for="v in visitorSearchResults"
+                    :key="v.id"
+                    type="button"
+                    class="dir-search-result"
+                    @click="selectVisitorFromDirectory(v)"
+                  >
+                    <span class="dir-result-name">{{ v.firstName }} {{ v.lastName }}</span>
+                    <span v-if="v.email" class="dir-result-email">{{ v.email }}</span>
+                  </button>
+                </div>
+              </div>
+              <p class="field-help">{{ t('bookings.addParticipant.directoryHint') }}</p>
             </div>
-            <div class="form-field">
-              <label for="booking-participant-email">{{ t('bookings.addParticipant.visitorEmail') }}</label>
+
+            <div class="dlg-fields-2">
+              <div class="dlg-field">
+                <label class="dlg-label" for="booking-participant-firstname">{{ t('bookings.addParticipant.visitorFirstName') }}</label>
+                <input
+                    id="booking-participant-firstname"
+                    v-model="addParticipantForm.visitorFirstName"
+                    type="text"
+                    class="participant-input"
+                    :placeholder="t('bookings.addParticipant.visitorFirstNamePlaceholder')"
+                    autocomplete="given-name"
+                />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label" for="booking-participant-lastname">{{ t('bookings.addParticipant.visitorLastName') }}</label>
+                <input
+                    id="booking-participant-lastname"
+                    v-model="addParticipantForm.visitorLastName"
+                    type="text"
+                    class="participant-input"
+                    :placeholder="t('bookings.addParticipant.visitorLastNamePlaceholder')"
+                    autocomplete="family-name"
+                />
+              </div>
+            </div>
+            <div class="dlg-field">
+              <label class="dlg-label" for="booking-participant-email">{{ t('bookings.addParticipant.visitorEmail') }}</label>
               <input
                   id="booking-participant-email"
                   v-model="addParticipantForm.visitorEmail"
@@ -707,37 +842,30 @@
               />
             </div>
 
-            <!-- ── Capogruppo (DRF §4.3 + glossario) ──
-                 "Capogruppo: il visitatore designato a firmare i documenti
-                  di sicurezza/privacy all'arrivo".
-                 Si applica SOLO ai visitatori esterni — i partecipanti
-                 interni del tenant non hanno questo concetto. -->
+            <!-- ── Capogruppo -->
             <label class="checkbox-inline">
               <input v-model="addParticipantForm.isGroupLeader" type="checkbox" />
               <span>{{ t('bookings.capogruppo') }}</span>
             </label>
-            <p class="field-help" style="margin-top: -0.5rem;">
+            <p class="field-help" style="margin-top: -0.25rem;">
               {{ t('bookings.capogruppoHelp') }}
             </p>
           </template>
         </div>
         <template #footer>
-          <PrimeButton
-              :label="t('common.cancel')"
-              severity="secondary"
-              text
-              @click="closeAddParticipantDialog"
-              :disabled="addingParticipant"
-          />
-          <PrimeButton
-              label="Aggiungi"
-              icon="pi pi-user-plus"
-              @click="handleAddParticipant"
-              :loading="addingParticipant"
-              :disabled="addParticipantForm.kind === 'internal' && availableInternalUsers.length === 0"
-          />
+          <button type="button" class="dialog-btn dialog-btn-cancel" :disabled="addingParticipant" @click="closeAddParticipantDialog">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="dialog-btn dialog-btn-save"
+            :disabled="addingParticipant || (addParticipantForm.kind === 'internal' && availableInternalUsers.length === 0)"
+            @click="handleAddParticipant"
+          >
+            <i :class="addingParticipant ? 'pi pi-spin pi-spinner' : 'pi pi-user-plus'" />{{ t('common.add') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
     </div>
   </MainLayout>
@@ -750,23 +878,26 @@ import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
 import QRCode from 'qrcode'
 import MainLayout from '@/layouts/MainLayout.vue'
-import PrimeButton from 'primevue/button'
-import PrimeDialog from 'primevue/dialog'
-import PrimeTag from 'primevue/tag'
+import PageHeader from '@/components/common/PageHeader.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
+
 import PrimeProgressSpinner from 'primevue/progressspinner'
 import { useBookingsStore } from '@/stores/bookings.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useResourcesStore } from '@/stores/resources.store'
 import { usePlantsStore } from '@/stores/plants.store'
 import { useUsersStore } from '@/stores/users.store'
+import { useVisitorTypesStore } from '@/stores/visitor-types.store'
 import { customFieldsApi } from '@/api/custom-fields.api'
+import { visitorsApi } from '@/api/visitors.api'
+import type { VisitorSearchResult } from '@/types/visitor'
 import { BookingStatus as BookingStatusEnum, InviteStatus as InviteStatusEnum } from '@/types/enums'
 import type { InviteStatus } from '@/types/enums'
 import { RecurringScope } from '@/types/booking'
 import type { AddBookingParticipantDto, BookingParticipant } from '@/types/booking'
 import type { FieldLinkResponse } from '@/types/custom-field'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
@@ -776,6 +907,7 @@ const authStore   = useAuthStore()
 const resourcesStore = useResourcesStore()
 const plantsStore = usePlantsStore()
 const usersStore = useUsersStore()
+const visitorTypesStore = useVisitorTypesStore()
 
 // State
 const loading = ref(false)
@@ -787,9 +919,16 @@ const showDeleteDialog = ref(false)
 const showAddParticipantDialog = ref(false)
 const showQRDialog = ref(false)
 const selectedQRCode = ref('')
+const selectedQRParticipant = ref<BookingParticipant | null>(null)
 const rejectionReason = ref('')
 const addingParticipant = ref(false)
 const respondingParticipantId = ref<string | null>(null)
+
+// Filtri rapidi sulla lista partecipanti — utili all'organizzatore per
+// vedere a colpo d'occhio chi si è registrato e che tipologia hanno.
+const participantStatusFilter = ref<'all' | string>('all')
+const participantTypeFilter   = ref<'all' | string>('all')
+const participantSearch       = ref('')
 
 // Scope cancellazione ricorrenze (--6A.4 DRF)
 const selectedCancelScope = ref<RecurringScope>(RecurringScope.ThisOnly)
@@ -816,8 +955,31 @@ const addParticipantForm = ref({
   visitorFirstName: '',
   visitorLastName: '',
   visitorEmail: '',
+  visitorTypeId: '',
   isGroupLeader: false,
+  visitorContactId: '',
 })
+
+// Rubrica search state
+const visitorSearchQuery = ref('')
+const visitorSearchResults = ref<VisitorSearchResult[]>([])
+const visitorSearchLoading = ref(false)
+const showVisitorDropdown = ref(false)
+let visitorSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+// Custom fields collapsible state
+const showResourceCF = ref(false)
+const expandedParticipantCF = ref(new Set<string>())
+
+function toggleParticipantCF(participantId: string): void {
+  const s = expandedParticipantCF.value
+  if (s.has(participantId)) {
+    s.delete(participantId)
+  } else {
+    s.add(participantId)
+  }
+  expandedParticipantCF.value = new Set(s)
+}
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
 type DetailFieldMeta = {
   label: string
@@ -834,13 +996,30 @@ type DetailFieldEntry = {
 
 const resourceFieldMeta = ref<Record<string, DetailFieldMeta>>({})
 const visitorFieldMeta = ref<Record<string, DetailFieldMeta>>({})
+const visitorFieldsByType = ref<Record<string, FieldLinkResponse[]>>({})
+// Lista deduplicata dei field defs raccolti dalle risorse del booking
+// (resource + resource type). Usata per costruire le entry del card
+// "Campi personalizzati" garantendo che la label sia sempre il titolo
+// del campo (mai l'UUID).
+const resourceFieldDefs = ref<FieldLinkResponse[]>([])
 
 // Computed
 const booking = computed(() => bookingsStore.currentBooking)
 const firstResource = computed(() => booking.value?.resources?.[0] ?? null)
-const bookingCustomFieldEntries = computed<DetailFieldEntry[]>(() =>
-    createDetailFieldEntries(booking.value?.resourceCustomFieldValues, resourceFieldMeta.value)
-)
+const bookingCustomFieldEntries = computed<DetailFieldEntry[]>(() => {
+  if (resourceFieldDefs.value.length === 0) return []
+  const values = parseCustomFieldRecord(booking.value?.resourceCustomFieldValues)
+  return resourceFieldDefs.value.map((field) => {
+    const items = formatFieldItems(values[field.customFieldId])
+    return {
+      key: field.customFieldId,
+      label: field.label,
+      typeLabel: getFieldTypeLabel(field.fieldType),
+      displayItems: items,
+      display: items.join(', '),
+    }
+  })
+})
 
 // Helpers per status chip inline
 function getStatusStyle(status: string): Record<string, string> {
@@ -934,6 +1113,91 @@ const availableInternalUsers = computed(() => {
   return usersStore.users.filter((user) => user.isActive && !selectedIds.has(user.id))
 })
 
+/* ── Quick filters partecipanti ──────────────────────────────────────── */
+type FilterChip = { key: string; label: string; count: number }
+
+const statusFilterOptions = computed<FilterChip[]>(() => {
+  const all = booking.value?.participants ?? []
+  const counts: Record<string, number> = {}
+  for (const p of all) counts[p.inviteStatus] = (counts[p.inviteStatus] ?? 0) + 1
+
+  const chips: FilterChip[] = [{ key: 'all', label: t('common.all'), count: all.length }]
+  const order: Array<{ key: string; label: string }> = [
+    { key: InviteStatusEnum.Registered, label: t('bookings.inviteStatus.registered') },
+    { key: InviteStatusEnum.Pending,    label: t('bookings.inviteStatus.pending') },
+    { key: InviteStatusEnum.Declined,   label: t('bookings.inviteStatus.declined') },
+    { key: InviteStatusEnum.Expired,    label: t('bookings.inviteStatus.expired') },
+  ]
+  for (const o of order) {
+    if ((counts[o.key] ?? 0) > 0) chips.push({ key: o.key, label: o.label, count: counts[o.key] })
+  }
+  return chips
+})
+
+const typeFilterOptions = computed<FilterChip[]>(() => {
+  const all = booking.value?.participants ?? []
+  const internalCount = all.filter((p) => p.isInternal).length
+  const byType = new Map<string, FilterChip>()
+  for (const p of all) {
+    if (p.isInternal) continue
+    const key = p.visitorTypeId ?? '__no_type'
+    const label = key === '__no_type'
+        ? t('bookings.visitor')
+        : (getVisitorTypeName(p.visitorTypeId!) || t('bookings.visitor'))
+    const e = byType.get(key)
+    if (e) e.count++
+    else byType.set(key, { key, label, count: 1 })
+  }
+
+  const chips: FilterChip[] = [{ key: 'all', label: t('common.all'), count: all.length }]
+  if (internalCount > 0) chips.push({ key: '__internal', label: t('bookings.internal'), count: internalCount })
+  // Ordina visitor types per count DESC
+  for (const c of [...byType.values()].sort((a, b) => b.count - a.count)) chips.push(c)
+  return chips
+})
+
+const filteredParticipants = computed(() => {
+  let list = booking.value?.participants ?? []
+  if (participantStatusFilter.value !== 'all') {
+    list = list.filter((p) => p.inviteStatus === participantStatusFilter.value)
+  }
+  if (participantTypeFilter.value !== 'all') {
+    const tf = participantTypeFilter.value
+    if (tf === '__internal')      list = list.filter((p) => p.isInternal)
+    else if (tf === '__no_type')  list = list.filter((p) => !p.isInternal && !p.visitorTypeId)
+    else                          list = list.filter((p) => p.visitorTypeId === tf)
+  }
+  const q = participantSearch.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter((p) => {
+      const name = getParticipantDisplayName(p).toLowerCase()
+      const email = getParticipantEmail(p).toLowerCase()
+      return name.includes(q) || email.includes(q)
+    })
+  }
+  return list
+})
+
+const hasActiveParticipantFilter = computed(() =>
+    participantStatusFilter.value !== 'all'
+    || participantTypeFilter.value !== 'all'
+    || participantSearch.value.trim().length > 0
+)
+
+function resetParticipantFilters(): void {
+  participantStatusFilter.value = 'all'
+  participantTypeFilter.value = 'all'
+  participantSearch.value = ''
+}
+
+/** Colore-dot per le pill tipo (coerente con palette avatar). */
+function typeFilterColor(key: string): string {
+  if (key === 'all') return '#cbd5e1'
+  if (key === '__internal') return '#4f46e5'
+  if (key === '__no_type') return '#94a3b8'
+  return avatarColorFor(key)
+}
+
 // Helpers
 function parseCustomFieldRecord(value: unknown): Record<string, unknown> {
   if (!value) return {}
@@ -977,7 +1241,7 @@ function formatFieldItems(value: unknown): string[] {
     return [value.toString()]
   }
   if (value instanceof Date) {
-    return [value.toLocaleDateString('it-IT')]
+    return [value.toLocaleDateString(locale.value)]
   }
   if (typeof value === 'string') {
     return value.trim().length > 0 ? [value] : []
@@ -988,26 +1252,31 @@ function formatFieldItems(value: unknown): string[] {
   return []
 }
 
-function createDetailFieldEntries(
-    rawValues: unknown,
-    metaMap: Record<string, DetailFieldMeta>
-): DetailFieldEntry[] {
-  const values = parseCustomFieldRecord(rawValues)
 
-  return Object.entries(values).map(([key, value]) => {
-    const items = formatFieldItems(value)
+
+/**
+ * Per i partecipanti, costruiamo le entry partendo dai field DEFS del
+ * visitor type del partecipante (così le label sono SEMPRE definite e
+ * mostriamo anche i campi non compilati). Se il visitor type non è stato
+ * caricato (o il partecipante è interno → nessun custom field), torna [].
+ */
+function getParticipantCustomFieldEntries(participant: BookingParticipant): DetailFieldEntry[] {
+  if (!participant.visitorTypeId) return []
+  const fieldDefs = visitorFieldsByType.value[participant.visitorTypeId] ?? []
+  if (fieldDefs.length === 0) return []
+
+  const values = parseCustomFieldRecord(participant.customFieldValues)
+
+  return fieldDefs.map((field) => {
+    const items = formatFieldItems(values[field.customFieldId])
     return {
-      key,
-      label: metaMap[key]?.label || key,
-      typeLabel: getFieldTypeLabel(metaMap[key]?.type),
+      key: field.customFieldId,
+      label: field.label,
+      typeLabel: getFieldTypeLabel(field.fieldType),
       displayItems: items,
       display: items.join(', '),
     }
   })
-}
-
-function getParticipantCustomFieldEntries(participant: BookingParticipant): DetailFieldEntry[] {
-  return createDetailFieldEntries(participant.customFieldValues, visitorFieldMeta.value)
 }
 
 function getUserRecord(userId?: string) {
@@ -1034,12 +1303,51 @@ function getParticipantDisplayName(participant: BookingParticipant): string {
   return fullName || participant.userId || '–'
 }
 
+function participantInitials(name: string): string {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+// Stessa palette di CalendarView per uniformità: tinte solide su base
+// indigo/viola (NO gradient verdi/arancioni). Hash deterministico sul nome.
+const AVATAR_COLORS = [
+  '#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed', '#2563eb', '#0d9488',
+]
+
+function avatarColorFor(seed: string): string {
+  if (!seed) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
 function getParticipantEmail(participant: BookingParticipant): string {
   if (participant.isInternal) {
     return getUserRecord(participant.userId)?.email || ''
   }
 
   return participant.visitorEmail || ''
+}
+
+function getVisitorTypeName(typeId?: string | null): string {
+  if (!typeId) return ''
+  return visitorTypesStore.visitorTypeById(typeId)?.name ?? ''
+}
+
+/**
+ * Etichetta del badge ruolo: per i visitatori mostra il NOME DEL TIPO
+ * (es. "Cliente", "Fornitore") che è informazione più utile del generico
+ * "Visitatore". Fallback su "Visitatore" solo se il tipo è assente.
+ */
+function getRoleLabel(participant: BookingParticipant): string {
+  if (participant.isInternal) return t('bookings.internal')
+  const typeName = getVisitorTypeName(participant.visitorTypeId)
+  return typeName || t('bookings.visitor')
 }
 
 function getPlantName(plantId: string): string {
@@ -1062,9 +1370,10 @@ function getInviteStatusSeverity(status: InviteStatus | string): string {
 
 function formatDateTime(dateStr: string | undefined): string {
   if (!dateStr) return '–'
-  return new Date(dateStr).toLocaleString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
+  return new Date(dateStr).toLocaleString(locale.value, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
@@ -1072,16 +1381,16 @@ function formatDateTime(dateStr: string | undefined): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('it-IT', {
+  return new Date(dateStr).toLocaleDateString(locale.value, {
     weekday: 'short',
-    day: '2-digit',
+    day: 'numeric',
     month: 'short',
     year: 'numeric',
   })
 }
 
 function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString('it-IT', {
+  return new Date(dateStr).toLocaleTimeString(locale.value, {
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -1112,11 +1421,15 @@ async function loadCustomFieldMetadata(): Promise<void> {
 
   const resourceMetaEntries: Record<string, DetailFieldMeta> = {}
   const visitorMetaEntries: Record<string, DetailFieldMeta> = {}
+  // Dedup per customFieldId: lo stesso campo può essere collegato sia
+  // alla resource sia al suo resource type — ne teniamo una sola entry.
+  const resourceFieldDefMap = new Map<string, FieldLinkResponse>()
 
   for (const resourceBooking of booking.value.resources) {
     try {
       const resourceLinks = await customFieldsApi.getResourceLinks(resourceBooking.resourceId)
       Object.assign(resourceMetaEntries, mapFieldMeta(resourceLinks))
+      for (const link of resourceLinks) resourceFieldDefMap.set(link.customFieldId, link)
     } catch (error) {
       console.error(`Failed to load resource custom field metadata for ${resourceBooking.resourceId}:`, error)
     }
@@ -1127,21 +1440,26 @@ async function loadCustomFieldMetadata(): Promise<void> {
     try {
       const resourceTypeLinks = await customFieldsApi.getResourceTypeLinks(resource.resourceTypeId)
       Object.assign(resourceMetaEntries, mapFieldMeta(resourceTypeLinks))
+      for (const link of resourceTypeLinks) {
+        if (!resourceFieldDefMap.has(link.customFieldId)) resourceFieldDefMap.set(link.customFieldId, link)
+      }
     } catch (error) {
       console.error(`Failed to load resource type custom field metadata for ${resource.resourceTypeId}:`, error)
     }
   }
 
   const visitorTypeIds = new Set(
-      [
-        booking.value.visitorTypeId,
-        ...booking.value.participants.map((participant) => participant.visitorTypeId),
-      ].filter((value): value is string => !!value)
+      booking.value.participants
+          .map((participant) => participant.visitorTypeId)
+          .filter((value): value is string => !!value)
   )
+
+  const fieldsByType: Record<string, FieldLinkResponse[]> = {}
 
   for (const visitorTypeId of visitorTypeIds) {
     try {
       const visitorTypeLinks = await customFieldsApi.getVisitorTypeLinks(visitorTypeId)
+      fieldsByType[visitorTypeId] = visitorTypeLinks
       Object.assign(visitorMetaEntries, mapFieldMeta(visitorTypeLinks))
     } catch (error) {
       console.error(`Failed to load visitor type custom field metadata for ${visitorTypeId}:`, error)
@@ -1150,12 +1468,36 @@ async function loadCustomFieldMetadata(): Promise<void> {
 
   resourceFieldMeta.value = resourceMetaEntries
   visitorFieldMeta.value = visitorMetaEntries
+  visitorFieldsByType.value = fieldsByType
+  resourceFieldDefs.value = Array.from(resourceFieldDefMap.values())
 }
 
-async function showQR(qrCode: string) {
-  selectedQRCode.value = qrCode
+async function showQR(participant: BookingParticipant) {
+  if (!participant.qrCode) return
+  selectedQRCode.value = participant.qrCode
+  selectedQRParticipant.value = participant
   showQRDialog.value = true
   await renderQRCode()
+}
+
+async function copyQRCode(): Promise<void> {
+  if (!selectedQRCode.value) return
+  try {
+    await navigator.clipboard.writeText(selectedQRCode.value)
+    toast.add({
+      severity: 'success',
+      summary: t('common.copied'),
+      detail: t('bookings.qrCodeCopied'),
+      life: 2000,
+    })
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: t('common.error'),
+      detail: t('common.copyError'),
+      life: 3000,
+    })
+  }
 }
 
 async function renderQRCode(): Promise<void> {
@@ -1175,10 +1517,6 @@ async function renderQRCode(): Promise<void> {
   }
 }
 
-function goBack() {
-  router.back()
-}
-
 function resetAddParticipantForm(): void {
   addParticipantForm.value = {
     kind: 'external',
@@ -1186,8 +1524,46 @@ function resetAddParticipantForm(): void {
     visitorFirstName: '',
     visitorLastName: '',
     visitorEmail: '',
+    visitorTypeId: '',
     isGroupLeader: false,
+    visitorContactId: '',
   }
+  visitorSearchQuery.value = ''
+  visitorSearchResults.value = []
+  showVisitorDropdown.value = false
+}
+
+function onVisitorSearchInput() {
+  if (visitorSearchTimer) clearTimeout(visitorSearchTimer)
+  const q = visitorSearchQuery.value.trim()
+  if (q.length < 2) {
+    visitorSearchResults.value = []
+    showVisitorDropdown.value = false
+    return
+  }
+  visitorSearchTimer = setTimeout(async () => {
+    visitorSearchLoading.value = true
+    try {
+      visitorSearchResults.value = await visitorsApi.search(q, 8)
+      showVisitorDropdown.value = visitorSearchResults.value.length > 0
+    } catch {
+      visitorSearchResults.value = []
+      showVisitorDropdown.value = false
+    } finally {
+      visitorSearchLoading.value = false
+    }
+  }, 300)
+}
+
+function selectVisitorFromDirectory(v: VisitorSearchResult) {
+  addParticipantForm.value.visitorFirstName = v.firstName
+  addParticipantForm.value.visitorLastName = v.lastName
+  addParticipantForm.value.visitorEmail = v.email || ''
+  addParticipantForm.value.visitorTypeId = v.visitorTypeId || ''
+  addParticipantForm.value.visitorContactId = v.id
+  visitorSearchQuery.value = ''
+  visitorSearchResults.value = []
+  showVisitorDropdown.value = false
 }
 
 async function openAddParticipantDialog(): Promise<void> {
@@ -1222,6 +1598,9 @@ function downloadQR(): void {
 watch(showQRDialog, async (isVisible) => {
   if (isVisible) {
     await renderQRCode()
+  } else {
+    selectedQRParticipant.value = null
+    selectedQRCode.value = ''
   }
 })
 
@@ -1397,8 +1776,8 @@ async function handleAddParticipant(): Promise<void> {
   if (isInternal && !addParticipantForm.value.userId) {
     toast.add({
       severity: 'warn',
-      summary: 'Partecipante incompleto',
-      detail: 'Seleziona un utente interno da aggiungere.',
+      summary: t('bookings.participantIncomplete'),
+      detail: t('bookings.selectInternalUserToAdd'),
       life: 3500,
     })
     return
@@ -1410,8 +1789,8 @@ async function handleAddParticipant(): Promise<void> {
         || !normalizedEmail) {
       toast.add({
         severity: 'warn',
-        summary: 'Partecipante incompleto',
-        detail: 'Inserisci nome, cognome ed email del visitatore.',
+        summary: t('bookings.participantIncomplete'),
+        detail: t('bookings.fillVisitorFields'),
         life: 3500,
       })
       return
@@ -1420,8 +1799,8 @@ async function handleAddParticipant(): Promise<void> {
     if (!normalizedEmail.includes('@')) {
       toast.add({
         severity: 'warn',
-        summary: 'Email non valida',
-        detail: 'Controlla l’indirizzo email del visitatore.',
+        summary: t('bookings.participantIncomplete'),
+        detail: t('bookings.invalidVisitorEmail'),
         life: 3500,
       })
       return
@@ -1445,8 +1824,9 @@ async function handleAddParticipant(): Promise<void> {
           visitorFirstName: addParticipantForm.value.visitorFirstName.trim(),
           visitorLastName: addParticipantForm.value.visitorLastName.trim(),
           visitorEmail: normalizedEmail,
-          visitorTypeId: booking.value?.visitorTypeId,
+          visitorTypeId: addParticipantForm.value.visitorTypeId || undefined,
           isGroupLeader: addParticipantForm.value.isGroupLeader,
+          visitorContactId: addParticipantForm.value.visitorContactId || undefined,
         }
 
     const id = route.params.id as string
@@ -1486,6 +1866,7 @@ onMounted(async () => {
       resourcesStore.fetchAllResources(),
       plantsStore.fetchAll(),
       usersStore.fetchAll(),
+      visitorTypesStore.fetchAllVisitorTypes(),
     ])
 
     // Carica i metadati dei campi personalizzati

@@ -213,7 +213,7 @@
                   {{ t('visitorTypes.activeHelp') }}
                 </div>
               </div>
-              <Checkbox v-model="formData.isActive" input-id="isActive" binary />
+              <PrimeToggleSwitch v-model="formData.isActive" input-id="isActive" />
             </div>
           </div>
 
@@ -371,6 +371,7 @@ import Tag from 'primevue/tag'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Checkbox from 'primevue/checkbox'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
 import Select from 'primevue/select'
 import MultiSelect from 'primevue/multiselect'
 import InputNumber from 'primevue/inputnumber'

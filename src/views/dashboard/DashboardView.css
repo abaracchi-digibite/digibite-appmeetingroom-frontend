@@ -3,7 +3,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.85rem;
 }
 
 /* ------ Header ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -54,7 +54,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid var(--border-default);
-  border-top-color: #2563EB;
+  border-top-color: #4f46e5;
   border-radius: 50%;
   animation: app-spinner-spin 0.8s linear infinite;
 }
@@ -99,17 +99,17 @@
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .kpi-card {
   display: flex;
   align-items: center;
-  gap: 1.125rem;
+  gap: 0.9rem;
   background: var(--bg-card);
   border: 1px solid var(--border-default);
-  border-radius: 14px;
-  padding: 1.375rem 1.25rem;
+  border-radius: 12px;
+  padding: 0.95rem 1.1rem;
   transition: transform 0.2s, box-shadow 0.2s;
   overflow: hidden;
   position: relative;
@@ -125,11 +125,10 @@
   border-radius: 14px 0 0 14px;
 }
 
-/* Accessible colors: blue, teal, amber, violet - distinguishable for all types of colorblindness */
-.kpi-card.blue::before   { background: #2563EB; }
+/* Accessible colors: violet (brand), teal, amber - distinguishable for all types of colorblindness */
+.kpi-card.violet::before { background: #4f46e5; }
 .kpi-card.teal::before   { background: #0D9488; }
 .kpi-card.amber::before  { background: #D97706; }
-.kpi-card.violet::before { background: #7C3AED; }
 
 .kpi-card:hover {
   transform: translateY(-3px);
@@ -137,20 +136,19 @@
 }
 
 .kpi-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 13px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.375rem;
+  font-size: 1.2rem;
   flex-shrink: 0;
 }
 
-.kpi-card.blue .kpi-icon   { background: rgba(37,99,235,0.1);  color: #2563EB; }
+.kpi-card.violet .kpi-icon { background: rgba(79,70,229,0.12); color: #4f46e5; }
 .kpi-card.teal .kpi-icon   { background: rgba(13,148,136,0.1); color: #0D9488; }
 .kpi-card.amber .kpi-icon  { background: rgba(217,119,6,0.1);  color: #D97706; }
-.kpi-card.violet .kpi-icon { background: rgba(124,58,237,0.1); color: #7C3AED; }
 
 .kpi-right { flex: 1; min-width: 0; }
 
@@ -164,11 +162,11 @@
 }
 
 .kpi-value {
-  font-size: 2rem;
+  font-size: 1.65rem;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
-  margin: 0 0 0.375rem;
+  margin: 0 0 0.25rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -190,21 +188,21 @@
 .mid-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 /* ------ Bottom Grid --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
 .bottom-grid {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 /* ------ Shared Card --------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
 .dash-card {
   background: var(--bg-card);
   border: 1px solid var(--border-default);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -212,7 +210,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 1.125rem 1.375rem;
+  padding: 0.85rem 1.1rem;
   border-bottom: 1px solid var(--border-default);
   gap: 1rem;
 }
@@ -253,18 +251,18 @@
 }
 
 .period-tab.active {
-  background: #2563EB;
+  background: #4f46e5;
   color: #ffffff;
 }
 
 .period-tab:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid #a5b4fc;
   outline-offset: 2px;
 }
 
 .chart-wrap {
-  padding: 1.25rem;
-  height: 420px;
+  padding: 0.75rem 1rem 1rem;
+  height: 320px;
   display: flex;
   align-items: stretch;
   justify-content: stretch;
@@ -291,8 +289,8 @@
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.675rem;
-  background: rgba(37,99,235,0.1);
-  color: #2563EB;
+  background: rgba(79,70,229,0.12);
+  color: #4f46e5;
   border-radius: 20px;
   font-size: 0.72rem;
   font-weight: 700;
@@ -302,9 +300,9 @@
 .today-list {
   display: flex;
   flex-direction: column;
-  padding: 0.625rem 1rem;
-  gap: 0.375rem;
-  min-height: 180px;
+  padding: 0.5rem 0.75rem;
+  gap: 0.25rem;
+  min-height: 140px;
 }
 
 .today-item {
@@ -357,19 +355,22 @@
   gap: 0.2rem;
 }
 
+/* Solo icona di stato (testo rimosso per evitare overlap con il titolo
+   sulla colonna stretta da 360px). Lo stato è già comunicato dalla barra
+   colorata a sinistra + icona; il label completo è disponibile via
+   tooltip/aria-label. */
 .today-status-wrap {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   flex-shrink: 0;
 }
 
-.today-status {
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.175rem 0.45rem;
-  border-radius: 20px;
-  white-space: nowrap;
+.today-status-wrap .pi {
+  font-size: 0.95rem;
 }
 
 /* Status classes: accessible (color + bold text, WCAG AA) */
@@ -393,7 +394,7 @@
   flex: 1;
 }
 
-.today-empty i { font-size: 2rem; color: #0D9488; }
+.today-empty i { font-size: 2rem; }
 
 .today-more {
   display: flex;
@@ -404,12 +405,12 @@
   border-top: 1px solid var(--border-default);
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #2563EB;
+  color: #4f46e5;
   text-decoration: none;
   transition: background 0.2s;
 }
 .today-more:hover { background: var(--bg-page); }
-.today-more:focus-visible { outline: 2px solid #93c5fd; outline-offset: -2px; }
+.today-more:focus-visible { outline: 2px solid #a5b4fc; outline-offset: -2px; }
 
 /* ------ Resources Card ------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 .resources-list {
@@ -500,7 +501,7 @@
   gap: 0.375rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #2563EB;
+  color: #4f46e5;
   text-decoration: none;
   flex-shrink: 0;
 }
@@ -581,14 +582,10 @@
   font-size: 0.8rem;
   transition: all 0.2s;
 }
-.b-view:hover { background: #2563EB; border-color: #2563EB; color: #ffffff; }
-.b-view:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+.b-view:hover { background: #4f46e5; border-color: #4f46e5; color: #ffffff; }
+.b-view:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 
 /* ------ Upcoming Bookings ----------------------------------------------------- */
-.upcoming-card {
-  margin-top: 1rem;
-}
-
 .upcoming-timeline {
   display: flex;
   flex-direction: column;
@@ -652,7 +649,7 @@
 }
 
 .upcoming-item:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid #a5b4fc;
   outline-offset: 2px;
 }
 
@@ -688,3 +685,24 @@
   .upcoming-item .b-status { display: none; }
 }
 
+
+/* ========== DARK MODE OVERRIDES ========== */
+/* Status pill text: colori troppo scuri su bg dark */
+.dark .status-pendingapproval { color: #fbbf24; }
+.dark .status-draft           { color: #94a3b8; }
+.dark .status-cancelled,
+.dark .status-rejected        { color: #f87171; }
+.dark .status-completed       { color: #a78bfa; }
+
+.dark .booking-status-icon.status-icon-pendingapproval { color: #fbbf24; }
+.dark .booking-status-icon.status-icon-draft           { color: #94a3b8; }
+.dark .booking-status-icon.status-icon-cancelled,
+.dark .booking-status-icon.status-icon-rejected        { color: #f87171; }
+.dark .booking-status-icon.status-icon-completed       { color: #a78bfa; }
+
+/* B-status stessa cosa */
+.dark .b-status.status-pendingapproval { color: #fbbf24; }
+.dark .b-status.status-draft           { color: #94a3b8; }
+.dark .b-status.status-cancelled,
+.dark .b-status.status-rejected        { color: #f87171; }
+.dark .b-status.status-completed       { color: #a78bfa; }

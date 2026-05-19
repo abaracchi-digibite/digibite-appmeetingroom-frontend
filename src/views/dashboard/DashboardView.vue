@@ -2,27 +2,6 @@
   <MainLayout>
     <div class="dashboard">
 
-      <!-- ------ Header --------------------------------------------------------------------------------------------------------------------------------------------------------------------- -->
-      <div class="dash-header">
-        <div class="dash-header-left">
-          <!-- <h1 class="dash-title">{{ t('dashboard.title') }}</h1> -->
-<!--          <p class="dash-greeting">-->
-<!--            {{ t('auth.welcomeBack') }}, <strong>{{ userName }}</strong> –-->
-<!--            <span class="dash-date">{{ todayLabel }}</span>-->
-<!--          </p>-->
-        </div>
-        <div class="dash-header-actions">
-          <router-link :to="{ name: 'Calendar' }" class="btn-secondary" :aria-label="t('dashboard.goToCalendar')">
-            <i class="pi pi-calendar" aria-hidden="true" />
-            {{ t('calendar.title') }}
-          </router-link>
-          <router-link :to="{ name: 'BookingWizard' }" class="btn-primary" :aria-label="t('dashboard.createBooking')">
-            <i class="pi pi-plus" aria-hidden="true" />
-            {{ t('calendar.newBooking') }}
-          </router-link>
-        </div>
-      </div>
-
       <!-- ------ Loading State ------------------------------------------------------------------------------------------------------------------------------------------------ -->
       <div v-if="isLoading" class="loading-overlay" role="status" aria-live="polite">
         <div class="spinner" aria-hidden="true" />
@@ -130,9 +109,8 @@
                     <i class="pi pi-map-marker" aria-hidden="true" />{{ item.room }}
                   </p>
                 </div>
-                <div class="today-status-wrap">
+                <div class="today-status-wrap" :title="item.statusLabel" :aria-label="item.statusLabel">
                   <i :class="`pi ${item.statusIcon}`" :style="{ color: item.statusColor }" aria-hidden="true" />
-                  <span class="today-status" :class="item.statusClass">{{ item.statusLabel }}</span>
                 </div>
               </div>
               <div v-if="todaySchedule.length === 0 && !isLoading" class="today-empty" role="status">
@@ -151,7 +129,6 @@
           <div class="dash-card-header">
             <div>
               <h2 class="dash-card-title">{{ t('dashboard.upcomingBookings') }}</h2>
-              <p class="dash-card-sub">{{ t('dashboard.upcomingSubtitle') }}</p>
             </div>
             <div class="period-tabs" role="tablist" :aria-label="t('dashboard.upcomingPeriod')">
               <button
@@ -305,9 +282,7 @@ import { BookingStatus, ResourceStatus } from '@/types/enums'
 import type { Booking } from '@/types/booking'
 import type { Resource } from '@/types/resource'
 
-const { t } = useI18n()
-const translateCount = (key: string, count: number) =>
-  (t as unknown as (path: string, plural: number, options: { count: number }) => string)(key, count, { count })
+const { t, locale } = useI18n()
 const uiStore = useUiStore()
 const bookingsStore = useBookingsStore()
 const resourcesStore = useResourcesStore()
@@ -329,19 +304,19 @@ const isDarkMode = computed(() => uiStore.isDarkMode)
 
 // ------ Periods ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const selectedPeriod = ref('30d')
-const periods = [
-  { key: '7d', label: '7g' },
-  { key: '30d', label: '30g' },
-  { key: '90d', label: '90g' },
-]
+const periods = computed(() => [
+  { key: '7d', label: t('dashboard.period7d') },
+  { key: '30d', label: t('dashboard.period30d') },
+  { key: '90d', label: t('dashboard.period90d') },
+])
 
 // Periodi della sezione "Prossime prenotazioni"
 const upcomingPeriod = ref('14d')
-const upcomingPeriods = [
-  { key: '7d', label: '7g' },
-  { key: '14d', label: '14g' },
-  { key: '30d', label: '30g' },
-]
+const upcomingPeriods = computed(() => [
+  { key: '7d', label: t('dashboard.period7d') },
+  { key: '14d', label: t('dashboard.period14d') },
+  { key: '30d', label: t('dashboard.period30d') },
+])
 function upcomingDays(key: string): number {
   return key === '7d' ? 7 : key === '14d' ? 14 : 30
 }
@@ -375,7 +350,7 @@ function isoDateInDays(days: number): string {
 
 function formatDayHeader(iso: string): string {
   const d = new Date(`${iso}T00:00:00`)
-  return d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short' })
+  return d.toLocaleDateString(locale.value, { weekday: 'short', day: '2-digit', month: 'short' })
 }
 
 function getResourceName(resourceId: string): string {
@@ -383,13 +358,13 @@ function getResourceName(resourceId: string): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('it-IT', {
+  return new Date(iso).toLocaleDateString(locale.value, {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   })
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
 }
 
 // ------ Status helpers ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -436,7 +411,7 @@ function getStatusColorHex(status: BookingStatus): string {
 const kpiCards = computed(() => {
   const totalInPeriod = periodBookings.value.filter(b => b.status !== BookingStatus.Draft).length
   const activeRes = allResources.value.filter(r => r.status === ResourceStatus.Available).length
-  const totalRes = allResources.value.length
+
   const todayCount = todayBookings.value.filter(b => b.status !== BookingStatus.Draft).length
 
   // Next upcoming booking today
@@ -449,13 +424,13 @@ const kpiCards = computed(() => {
   return [
     {
       key: 'total',
-      color: 'blue',
+      color: 'violet',
       icon: 'pi-bookmark',
-      label: t('dashboard.totalBookings'),
+      label: t('common.lastNDays', { days: periodDays(selectedPeriod.value) }),
       value: String(totalInPeriod),
-      delta: t('common.lastNDays', { days: periodDays(selectedPeriod.value) }),
-      deltaType: 'neutral',
-      deltaIcon: 'pi-calendar',
+      delta: ' ',
+      deltaType: ' ',
+      deltaIcon: ' ',
     },
     {
       key: 'resources',
@@ -463,9 +438,9 @@ const kpiCards = computed(() => {
       icon: 'pi-box',
       label: t('dashboard.activeResources'),
       value: String(activeRes),
-      delta: translateCount('common.totalResources', totalRes),
-      deltaType: 'neutral',
-      deltaIcon: 'pi-check-circle',
+      delta: ' ',
+      deltaType: ' ',
+      deltaIcon: ' ',
     },
     {
       key: 'today',
@@ -626,14 +601,14 @@ const trendData = computed(() => {
     const weekCount = Math.ceil(days / 7)
     for (let i = weekCount - 1; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i * 7)
-      const key = `W${d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}`
+      const key = `W${d.toLocaleDateString(locale.value, { day: '2-digit', month: 'short' })}`
       dateMap.set(key, { total: 0, confirmed: 0 })
     }
   } else {
     // Monthly buckets
     for (let i = 2; i >= 0; i--) {
       const d = new Date(); d.setMonth(d.getMonth() - i)
-      const key = d.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
+      const key = d.toLocaleDateString(locale.value, { month: 'short', year: 'numeric' })
       dateMap.set(key, { total: 0, confirmed: 0 })
     }
   }
@@ -652,7 +627,7 @@ const trendData = computed(() => {
       const arr = Array.from(dateMap.keys())
       key = arr[arr.length - 1] // fallback
       for (const k of arr) {
-        if (k.includes(d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }))) {
+        if (k.includes(d.toLocaleDateString(locale.value, { day: '2-digit', month: 'short' }))) {
           key = k; break
         }
       }
@@ -662,7 +637,7 @@ const trendData = computed(() => {
       const idx = keys.length - 1 - weekIndex
       if (idx >= 0 && idx < keys.length) key = keys[idx]
     } else {
-      key = d.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })
+      key = d.toLocaleDateString(locale.value, { month: 'short', year: 'numeric' })
     }
 
     const bucket = dateMap.get(key)
@@ -684,13 +659,13 @@ const trendData = computed(() => {
       {
         label: t('dashboard.totalBookings'),
         data: totalData,
-        borderColor: '#2563EB',
-        backgroundColor: 'rgba(37,99,235,0.1)',
+        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(79,70,229,0.1)',
         borderWidth: 2.5,
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#2563EB',
+        pointRadius: 5,
+        pointBackgroundColor: '#4f46e5',
         pointBorderColor: isDarkMode.value ? '#1e293b' : '#ffffff',
         pointBorderWidth: 2,
         // Accessible: dashed line for second dataset
@@ -701,11 +676,10 @@ const trendData = computed(() => {
         borderColor: '#0D9488',
         backgroundColor: 'rgba(13,148,136,0.08)',
         borderWidth: 2.5,
-        borderDash: [6, 3],  // dashed --- distinguishable for colorblind
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
-        pointStyle: 'rectRot',  // different shape
+        pointRadius: 6,
+        pointStyle: 'rectRot',
         pointBackgroundColor: '#0D9488',
         pointBorderColor: isDarkMode.value ? '#1e293b' : '#ffffff',
         pointBorderWidth: 2,

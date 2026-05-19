@@ -30,6 +30,10 @@ export default defineConfig({
         target: 'http://localhost:5121',
         changeOrigin: false,
       },
+      '/tenant-assets': {
+        target: 'http://localhost:5121',
+        changeOrigin: false,
+      },
     },
   },
   preview: {

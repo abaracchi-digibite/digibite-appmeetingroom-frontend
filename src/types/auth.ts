@@ -24,5 +24,6 @@ export interface CurrentUser {
   userId: string
   tenantId: string
   email: string
+  fullName?: string | null
   roles: string[]
 }

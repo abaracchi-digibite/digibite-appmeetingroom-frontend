@@ -2,39 +2,24 @@
   <MainLayout>
     <div class="tenant-detail">
 
-      <!-- Back + Header -->
-      <div class="top-nav">
-        <button class="back-btn" @click="goBack">
-          <i class="pi pi-arrow-left" />
-          <span>{{ t('superadmin.tenants.title') }}</span>
-        </button>
-      </div>
-
-      <div class="page-header">
-        <div class="header-left">
-          <div class="header-avatar" :style="{ background: avatarGradient }">
-            {{ tenant?.name?.charAt(0)?.toUpperCase() || '?' }}
-          </div>
-          <div>
-            <!-- <h1 class="header-title">{{ tenant?.name || '...' }}</h1> -->
-            <div class="header-meta">
-              <span v-if="tenant?.slug" class="slug-badge">{{ tenant.slug }}</span>
-              <span class="status-chip" :class="'status-' + (tenant?.status || '').toLowerCase()">
-                <i :class="statusIcon(tenant?.status)" />
-                {{ tenant?.status }}
-              </span>
-              <span v-if="tenant?.createdAt" class="meta-date">
-                <i class="pi pi-calendar" />
-                Creato il {{ formatDate(tenant.createdAt) }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="header-actions">
+      <PageHeader :title="tenant?.name || '...'" show-back-button>
+        <template #subtitle>
+          <span class="header-meta">
+            <span v-if="tenant?.slug" class="slug-badge">{{ tenant.slug }}</span>
+            <span class="status-chip" :class="'status-' + (tenant?.status || '').toLowerCase()">
+              <i :class="statusIcon(tenant?.status)" />
+              {{ tenant?.status }}
+            </span>
+            <span v-if="tenant?.createdAt" class="meta-date">
+              <i class="pi pi-calendar" />
+              {{ t('common.createdAt') }} {{ formatDate(tenant.createdAt) }}
+            </span>
+          </span>
+        </template>
+        <template #actions>
           <button class="action-chip action-impersonate" @click="handleImpersonate(tenant!)">
             <i class="pi pi-sign-in" /> {{ t('superadmin.impersonate') }}
           </button>
-
           <button
             v-if="tenant?.status === TenantStatus.Active"
             class="action-chip action-suspend"
@@ -52,8 +37,8 @@
           <button class="action-chip action-delete" @click="deleteTenantAction">
             <i class="pi pi-trash" /> {{ t('common.delete') }}
           </button>
-        </div>
-      </div>
+        </template>
+      </PageHeader>
 
       <!-- Content Grid -->
       <div class="content-grid">
@@ -204,12 +189,12 @@
       </div>
 
       <!-- Impersonation Role Dialog -->
-      <Dialog
+      <AppDialog
           v-model:visible="showImpersonateDialog"
           :header="t('superadmin.impersonateAs')"
-          :modal="true"
-          :style="{ width: '420px' }"
-          :breakpoints="{ '768px': '95vw' }"
+          icon="pi pi-sign-in"
+          severity="warning"
+          size="sm"
       >
         <div class="impersonate-body">
           <div class="impersonate-tenant-info">
@@ -281,18 +266,14 @@
           </div>
         </div>
         <template #footer>
-          <div class="dialog-actions">
-            <Button :label="t('common.cancel')" severity="secondary" outlined @click="showImpersonateDialog = false" />
-            <Button
-                :label="t('superadmin.impersonate')"
-                icon="pi pi-sign-in"
-                :loading="impersonateLoading"
-                @click="confirmImpersonate"
-                class="btn-impersonate"
-            />
-          </div>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showImpersonateDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="impersonateLoading" @click="confirmImpersonate">
+            <i :class="impersonateLoading ? 'pi pi-spin pi-spinner' : 'pi pi-sign-in'" />{{ t('superadmin.impersonate') }}
+          </button>
         </template>
-      </Dialog>
+      </AppDialog>
 
     </div>
     <Toast />
@@ -306,6 +287,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useTenantsStore } from '@/stores/tenants.store'
 import MainLayout from '@/layouts/MainLayout.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import type {Tenant, UpdateTenantDto} from '@/types/tenant'
 import type { SubscriptionPlan } from '@/types/subscription-plan'
 import { TenantStatus } from '@/types/enums'
@@ -318,9 +301,8 @@ import ColorPicker from 'primevue/colorpicker'
 import Toast from 'primevue/toast'
 import {authApi, type ImpersonationRole, type ImpersonationTarget} from "@/api/auth.api.ts";
 import {useAuthStore} from "@/stores";
-import Dialog from "primevue/dialog";
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
@@ -351,12 +333,6 @@ const tenant = computed(() => {
   return tenantsStore.tenantById(id)
 })
 
-const avatarGradient = computed(() => {
-  const c1 = formData.value.primaryColor || '#4f46e5'
-  const c2 = formData.value.secondaryColor || '#7c3aed'
-  return `linear-gradient(135deg, ${c1}, ${c2})`
-})
-
 const planOptions = computed(() => availablePlans.value.map((p) => ({ label: p.name, value: p.id })))
 const currentPlanName = computed(() => {
   if (!tenant.value?.subscriptionPlanId) return null
@@ -374,7 +350,7 @@ function statusIcon(status?: string): string {
 }
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '–'
-  try { return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }) } catch { return iso }
+  try { return new Date(iso).toLocaleDateString(locale.value, { day: '2-digit', month: 'long', year: 'numeric' }) } catch { return iso }
 }
 
 const goBack = () => router.push('/superadmin/tenants')
@@ -383,9 +359,9 @@ const saveTenant = async () => {
   try {
     const id = route.params.id as string
     await tenantsStore.updateTenant(id, formData.value)
-    toast.add({ severity: 'success', summary: 'Salvato', detail: 'Tenant aggiornato con successo', life: 3000 })
+    toast.add({ severity: 'success', summary: t('common.saved'), detail: t('superadmin.tenantSaved'), life: 3000 })
   } catch {
-    toast.add({ severity: 'error', summary: 'Errore', detail: 'Errore nel salvataggio', life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.error'), detail: t('superadmin.tenantSaveError'), life: 3000 })
   }
 }
 
@@ -447,9 +423,9 @@ async function loadImpersonationRoles(): Promise<void> {
     impersonateRoles.value = await authApi.listImpersonationRoles()
   } catch {
     impersonateRoles.value = [
-      { key: 'Tenant.Owner',       scope: 'Tenant', displayName: 'Tenant Owner',       description: '', requiresTargetId: false },
-      { key: 'Tenant.Contributor', scope: 'Tenant', displayName: 'Tenant Contributor', description: '', requiresTargetId: false },
-      { key: 'Tenant.Reader',      scope: 'Tenant', displayName: 'Tenant Reader',      description: '', requiresTargetId: false },
+      { key: 'Tenant.Owner',       scope: 'Tenant', displayName: t('superadmin.roleTenantOwner'),       description: '', requiresTargetId: false },
+      { key: 'Tenant.Contributor', scope: 'Tenant', displayName: t('superadmin.roleTenantContributor'), description: '', requiresTargetId: false },
+      { key: 'Tenant.Reader',      scope: 'Tenant', displayName: t('superadmin.roleTenantViewer'),      description: '', requiresTargetId: false },
     ]
   }
 }

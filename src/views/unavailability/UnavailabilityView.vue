@@ -312,12 +312,12 @@
         </div>
       </template>
 
-      <Dialog
+      <AppDialog
           v-model:visible="showBlockDialog"
-          modal
           :header="editingBlockId ? t('unavailability.editBlock') : t('unavailability.createBlock')"
-          :style="{ width: 'min(52rem, calc(100vw - 2rem))' }"
-          class="unav-dialog"
+          :icon="editingBlockId ? 'pi pi-pencil' : 'pi pi-ban'"
+          severity="warning"
+          size="lg"
       >
         <form class="unav-form" @submit.prevent="saveBlock">
 
@@ -467,23 +467,24 @@
             <Textarea id="blockNotes" v-model.trim="blockForm.notes" rows="3" autoResize class="w-full" :placeholder="t('unavailability.notesPlaceholder')" />
           </div>
 
-          <!-- ── Azioni ────────────────────────────────────────────── -->
-          <div class="unav-actions">
-            <button type="button" class="btn-secondary" @click="showBlockDialog = false">{{ t('common.cancel') }}</button>
-            <button type="submit" class="btn-primary" :disabled="submitLoading">
-              <i v-if="submitLoading" class="pi pi-spin pi-spinner" />
-              <span>{{ t('common.save') }}</span>
-            </button>
-          </div>
         </form>
-      </Dialog>
 
-      <Dialog
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showBlockDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="submitLoading" @click="saveBlock">
+            <i :class="submitLoading ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.save') }}
+          </button>
+        </template>
+      </AppDialog>
+
+      <AppDialog
           v-model:visible="showHolidayDialog"
-          modal
           :header="editingHolidayId ? t('unavailability.editHoliday') : t('unavailability.createHoliday')"
-          :style="{ width: 'min(42rem, calc(100vw - 2rem))' }"
-          class="unav-dialog"
+          :icon="editingHolidayId ? 'pi pi-pencil' : 'pi pi-star'"
+          severity="primary"
+          size="md"
       >
         <form class="unav-form" @submit.prevent="saveHoliday">
 
@@ -541,16 +542,17 @@
             </div>
           </div>
 
-          <!-- ── Azioni ────────────────────────────────────────────── -->
-          <div class="unav-actions">
-            <button type="button" class="btn-secondary" @click="showHolidayDialog = false">{{ t('common.cancel') }}</button>
-            <button type="submit" class="btn-primary" :disabled="submitLoading">
-              <i v-if="submitLoading" class="pi pi-spin pi-spinner" />
-              <span>{{ t('common.save') }}</span>
-            </button>
-          </div>
         </form>
-      </Dialog>
+
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showHolidayDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="submitLoading" @click="saveHoliday">
+            <i :class="submitLoading ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.save') }}
+          </button>
+        </template>
+      </AppDialog>
     </div>
   </MainLayout>
 </template>
@@ -563,7 +565,7 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import Checkbox from 'primevue/checkbox'
 import Column from 'primevue/column'
 import DataTable from 'primevue/datatable'
-import Dialog from 'primevue/dialog'
+import AppDialog from '@/components/common/AppDialog.vue'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import PrimeMultiSelect from 'primevue/multiselect'
@@ -613,7 +615,7 @@ interface HolidayFormState {
   isActive: boolean
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const unavailabilityStore = useUnavailabilityStore()
 const resourcesStore = useResourcesStore()
@@ -628,7 +630,7 @@ const submitLoading = ref(false)
 
 // View / filter state
 const searchQuery = ref('')
-const statusFilter = ref<boolean[]>([true]) // default: solo attivi
+const statusFilter = ref<boolean[]>([]) // allineato alle altre list page: vuoto = mostra tutti
 const activeTab = ref<'blocks' | 'holidays'>(
   (localStorage.getItem('unavailability_active_tab') as 'blocks' | 'holidays') ?? 'blocks'
 )
@@ -646,8 +648,8 @@ watch(activeTab, (val) => {
 })
 
 const statusFilterOptions = computed(() => [
-  { label: t('unavailability.statusActive'),   value: true },
-  { label: t('unavailability.statusInactive'), value: false },
+  { label: t('common.active'),   value: true },
+  { label: t('common.inactive'), value: false },
 ])
 
 const blockForm = reactive<BlockFormState>(createDefaultBlockForm())
@@ -1316,7 +1318,7 @@ function formatHolidayEnd(holiday: Holiday): string {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('it-IT', {
+  return new Intl.DateTimeFormat(locale.value, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -1324,7 +1326,7 @@ function formatDate(value: string): string {
 }
 
 function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('it-IT', {
+  return new Intl.DateTimeFormat(locale.value, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

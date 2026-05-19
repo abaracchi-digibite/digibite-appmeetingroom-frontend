@@ -2,22 +2,17 @@
   <MainLayout>
     <div class="plans-page">
 
-      <!-- Header -->
-      <div class="page-header">
-        <div class="header-left">
-          <div class="header-icon">
-            <i class="pi pi-credit-card" />
-          </div>
-          <div>
-            <!-- <h1 class="header-title">{{ t('superadmin.plans.title') }}</h1> -->
-            <p class="header-subtitle">{{ t('superadmin.plans.subtitle') }}</p>
-          </div>
-        </div>
-        <button class="btn-create" @click="openCreateDialog">
-          <i class="pi pi-plus" />
-          <span>{{ t('superadmin.plans.createNew') }}</span>
-        </button>
-      </div>
+      <PageHeader
+        :title="t('superadmin.plans.title')"
+        :subtitle="t('superadmin.plans.subtitle')"
+      >
+        <template #actions>
+          <button type="button" class="btn-create" @click="openCreateDialog">
+            <i class="pi pi-plus" />
+            <span>{{ t('superadmin.plans.createNew') }}</span>
+          </button>
+        </template>
+      </PageHeader>
 
       <!-- Stats Strip -->
       <div class="stats-strip">
@@ -217,6 +212,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
 import MainLayout from '@/layouts/MainLayout.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { plansApi } from '@/api/plans.api'
 import type { SubscriptionPlan, CreateSubscriptionPlanDto } from '@/types/subscription-plan'

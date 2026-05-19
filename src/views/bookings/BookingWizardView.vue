@@ -62,7 +62,7 @@
           <div class="step-body">
             <!-- Booking title -->
             <div class="form-group">
-              <label class="field-label required">{{ t('bookings.title') }}</label>
+              <label class="field-label required">{{ t('wizard.titleLabel') }}</label>
               <PrimeInputText
                   v-model="formData.title"
                   :placeholder="t('wizard.titlePlaceholder')"
@@ -94,7 +94,6 @@
             <template v-else>
               <div class="form-group" style="margin-top: 1.75rem;">
                 <label class="field-label required">{{ t('wizard.resourcesLabel') }}</label>
-                <p class="field-sub">{{ t('wizard.resourcesHint') }}</p>
               </div>
 
               <!-- loading resources -->
@@ -109,53 +108,69 @@
                 <p>{{ t('wizard.noResources') }}</p>
               </div>
 
-              <!-- resource cards -->
-              <div v-else class="resources-grid">
-                <div
-                    v-for="resource in availableResources"
-                    :key="resource.id"
-                    class="resource-card"
-                    :class="{ selected: selectedResourceIds.includes(resource.id) }"
-                    role="checkbox"
-                    :aria-checked="selectedResourceIds.includes(resource.id)"
-                    tabindex="0"
-                    @click="toggleResource(resource.id)"
-                    @keydown.enter="toggleResource(resource.id)"
-                    @keydown.space.prevent="toggleResource(resource.id)"
-                >
-                  <div class="resource-card-inner">
-                    <div class="rc-icon-wrap">
-                      <i class="pi pi-building rc-icon" />
-                    </div>
-                    <div class="rc-body">
-                      <h4 class="rc-name">{{ resource.name }}</h4>
-                      <div class="rc-meta">
-                        <span v-if="resource.capacity" class="rc-cap">
-                          <i class="pi pi-users" />
-                          {{ resource.capacity }} {{ t('common.people') }}
-                        </span>
-                        <span class="rc-type">{{ getResourceTypeName(resource.resourceTypeId) }}</span>
-                        <!-- Stato OPERATIVO della risorsa (DRF §A3 — Disponibile/In Manutenzione).
-                             ATTENZIONE: questo NON indica se la risorsa è libera nella fascia
-                             oraria scelta — quel check avviene nello step "Data e fasce orarie"
-                             tramite checkSlotAvailability. Per evitare ambiguità con la "disponibilità
-                             temporale" usiamo l'etichetta "Operativa". -->
-                        <span
-                            class="rc-status"
-                            :class="resource.status === ResourceStatus.Available ? 'status-ok' : 'status-warn'"
-                            :title="resource.status === ResourceStatus.Available ? t('wizard.resourceOperationalHelp') : ''"
-                        >
-                          {{ resource.status === ResourceStatus.Available
-                              ? t('wizard.resourceOperational')
-                              : t('wizard.resourceInMaintenance') }}
-                        </span>
+              <!-- filter bar -->
+              <div v-else class="res-filters">
+                <div class="res-filter-search">
+                  <i class="pi pi-search" />
+                  <input
+                      v-model="resourceNameFilter"
+                      type="text"
+                      :placeholder="t('wizard.filterByName')"
+                  />
+                  <button v-if="resourceNameFilter" type="button" class="res-filter-clear" @click="resourceNameFilter = ''">
+                    <i class="pi pi-times" />
+                  </button>
+                </div>
+                <select v-model="resourceTypeFilter" class="res-filter-type">
+                  <option value="">{{ t('wizard.allTypes') }}</option>
+                  <option v-for="rt in availableResourceTypes" :key="rt.id" :value="rt.id">{{ rt.name }}</option>
+                </select>
+              </div>
+
+              <!-- resource table -->
+              <div v-if="filteredResources.length > 0" class="res-table">
+                <template v-for="group in groupedResources" :key="group.typeId">
+                  <div class="res-type-header">
+                    <span class="rc-type">{{ group.typeName }}</span>
+                  </div>
+                  <div
+                      v-for="resource in group.resources"
+                      :key="resource.id"
+                      class="res-row"
+                      :class="{ selected: selectedResourceIds.includes(resource.id) }"
+                      role="checkbox"
+                      :aria-checked="selectedResourceIds.includes(resource.id)"
+                      tabindex="0"
+                      @click="toggleResource(resource.id)"
+                      @keydown.enter="toggleResource(resource.id)"
+                      @keydown.space.prevent="toggleResource(resource.id)"
+                  >
+                    <div class="res-row-check">
+                      <div class="res-check-box" :class="{ checked: selectedResourceIds.includes(resource.id) }">
+                        <i v-if="selectedResourceIds.includes(resource.id)" class="pi pi-check" />
                       </div>
                     </div>
-                    <div class="rc-check" :class="{ visible: selectedResourceIds.includes(resource.id) }">
-                      <i class="pi pi-check" />
+                    <div class="res-row-name">{{ resource.name }}</div>
+                    <div class="res-row-cap">
+                      <span v-if="resource.capacity" class="rc-cap">
+                        <i class="pi pi-users" />{{ resource.capacity }}
+                      </span>
+                    </div>
+                    <div class="res-row-status">
+                      <span
+                          class="rc-status"
+                          :class="resource.status === ResourceStatus.Available ? 'status-ok' : 'status-warn'"
+                          :title="resource.status === ResourceStatus.Available ? t('wizard.resourceOperationalHelp') : ''"
+                      >
+                        {{ resource.status === ResourceStatus.Available ? t('wizard.resourceOperational') : t('wizard.resourceInMaintenance') }}
+                      </span>
                     </div>
                   </div>
-                </div>
+                </template>
+              </div>
+              <div v-else class="empty-hint">
+                <div class="empty-hint-icon"><i class="pi pi-search" /></div>
+                <p>{{ t('wizard.noResourcesMatch') }}</p>
               </div>
 
               <!-- selection summary -->
@@ -203,48 +218,46 @@
             </div>
 
             <div v-if="selectedResourceIds.length > 0 && formData.date" class="time-slots-section">
-              <h3 class="section-title">
-                <i class="pi pi-clock" />
-                {{ t('wizard.timeSlots') }}
-              </h3>
-              <div class="time-slot-cards">
+              <div class="ts-grid">
                 <div
                     v-for="resourceId in selectedResourceIds"
                     :key="resourceId"
-                    class="time-slot-card"
+                    class="ts-item"
+                    :class="{
+                      'ts-item-ok': availabilityStatus[resourceId] === 'ok',
+                      'ts-item-warn': availabilityStatus[resourceId] === 'warning',
+                    }"
                 >
-                  <div class="tsc-header">
-                    <div class="tsc-name">
-                      <i class="pi pi-building" />
-                      {{ getResourceName(resourceId) }}
-                    </div>
-                    <div class="availability-indicator">
+                  <div class="ts-item-name">
+                    <i class="pi pi-building" />
+                    <span>{{ getResourceName(resourceId) }}</span>
+                    <span class="ts-item-avail">
                       <i v-if="availabilityStatus[resourceId] === 'checking'" class="pi pi-spin pi-spinner" />
-                      <i v-else-if="availabilityStatus[resourceId] === 'ok'" class="pi pi-check-circle" style="color: #10b981;" />
-                      <i v-else-if="availabilityStatus[resourceId] === 'warning'" class="pi pi-exclamation-circle" style="color: #f59e0b;" />
-                    </div>
+                      <i v-else-if="availabilityStatus[resourceId] === 'ok'" class="pi pi-check-circle" />
+                      <i v-else-if="availabilityStatus[resourceId] === 'warning'" class="pi pi-exclamation-circle" />
+                    </span>
                   </div>
-                  <div class="tsc-inputs">
-                    <div class="form-group">
-                      <label class="field-label required">{{ t('wizard.startTime') }}</label>
-                      <input
-                          v-model="formData.timeSlots[resourceId].startTime"
-                          type="time"
-                          class="time-input"
-                          @blur="checkSlotAvailability(resourceId)"
-                      />
-                    </div>
-                    <div class="tsc-separator">-</div>
-                    <div class="form-group">
-                      <label class="field-label required">{{ t('wizard.endTime') }}</label>
-                      <input
-                          v-model="formData.timeSlots[resourceId].endTime"
-                          type="time"
-                          class="time-input"
-                          @blur="checkSlotAvailability(resourceId)"
-                      />
-                    </div>
+                  <div class="ts-item-inputs">
+                    <input
+                        v-model="formData.timeSlots[resourceId].startTime"
+                        type="time"
+                        class="time-input"
+                        :class="{ 'time-input-warn': availabilityStatus[resourceId] === 'warning' }"
+                        @blur="checkSlotAvailability(resourceId)"
+                    />
+                    <span class="ts-sep">—</span>
+                    <input
+                        v-model="formData.timeSlots[resourceId].endTime"
+                        type="time"
+                        class="time-input"
+                        :class="{ 'time-input-warn': availabilityStatus[resourceId] === 'warning' }"
+                        @blur="checkSlotAvailability(resourceId)"
+                    />
                   </div>
+                  <p v-if="availabilityStatus[resourceId] === 'warning'" class="ts-item-error">
+                    <i class="pi pi-ban" />
+                    {{ t('wizard.slotNotAvailable') }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -327,8 +340,12 @@
                       {{ day.short }}
                     </button>
                   </div>
+                </div>
+
+                <!-- Toggle weekend (solo Giorni) -->
+                <div v-if="formData.frequency === 'DAILY'" class="form-group">
                   <label class="weekend-toggle">
-                    <input type="checkbox" v-model="includeWeekends" />
+                    <input type="checkbox" v-model="formData.dailyIncludeWeekends" />
                     <span>{{ t('wizard.includeWeekends') }}</span>
                   </label>
                 </div>
@@ -451,22 +468,6 @@
 
           <div class="step-body">
             <div class="form-group">
-              <label class="field-label required">{{ t('wizard.visitorType') }}</label>
-              <PrimeSelect
-                  v-model="formData.visitorTypeId"
-                  :options="visitorTypeOptions"
-                  option-label="label"
-                  option-value="value"
-                  :placeholder="t('wizard.selectVisitorType')"
-                  class="w-full"
-              />
-              <p v-if="visitorTypeOptions.length === 0" class="field-warning">
-                <i class="pi pi-exclamation-triangle" />
-                {{ t('wizard.noVisitorTypes') }}
-              </p>
-            </div>
-
-            <div class="form-group" style="margin-top: 1.75rem;">
               <label class="field-label required">{{ t('wizard.inviteMode') }}</label>
               <p class="field-sub">{{ t('wizard.inviteModeHint') }}</p>
               <div class="invite-mode-grid">
@@ -684,6 +685,27 @@
                     </div>
                   </div>
 
+                  <hr class="dlg-divider" />
+
+                  <div class="dlg-section">
+                    <div class="dlg-section-title">
+                      <i class="pi pi-users" /> {{ t('wizard.visitorType') }}
+                    </div>
+                    <div class="dlg-field">
+                      <label class="dlg-label">{{ t('wizard.visitorType') }} <span class="req">*</span></label>
+                      <PrimeSelect
+                        v-model="directoryVisitorTypeId"
+                        :options="visitorTypeOptions"
+                        option-label="label"
+                        option-value="value"
+                        :placeholder="t('wizard.selectVisitorType')"
+                        class="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <hr class="dlg-divider" />
+
                   <div class="dlg-section dlg-section-status">
                     <div class="dlg-status-row">
                       <div>
@@ -702,7 +724,7 @@
                   <button
                     type="button"
                     class="dialog-btn dialog-btn-save"
-                    :disabled="!isDirectoryPickValid"
+                    :disabled="!isDirectoryPickValid || !directoryVisitorTypeId"
                     @click="confirmDirectoryAdd"
                   >
                     <i class="pi pi-check" /> {{ t('common.add') }}
@@ -720,11 +742,24 @@
                 size="lg"
               >
               <div class="dlg-form">
+                <!-- Sezione Tipologia Visitatore (obbligatoria, per partecipante) -->
+                <div class="dlg-section">
+                  <div class="dlg-field">
+                    <label class="dlg-label">{{ t('wizard.visitorType') }} <span class="req">*</span></label>
+                    <PrimeSelect
+                      v-model="newVisitor.visitorTypeId"
+                      :options="visitorTypeOptions"
+                      option-label="label"
+                      option-value="value"
+                      :placeholder="t('wizard.selectVisitorType')"
+                      class="w-full"
+                    />
+                    <small class="dlg-help">{{ t('wizard.visitorTypePerParticipantHint') }}</small>
+                  </div>
+                </div>
+
                 <!-- Sezione Anagrafica -->
                 <div class="dlg-section">
-                  <div class="dlg-section-title">
-                    <i class="pi pi-id-card" /> {{ t('wizard.visitorRequestedInfo') }}
-                  </div>
                   <div class="dlg-fields-2">
                     <div class="dlg-field">
                       <label class="dlg-label">{{ t('wizard.visitorFirstName') }} <span class="req">*</span></label>
@@ -744,13 +779,10 @@
                     </div>
                   </div>
                 </div>
+
+                <hr v-if="visitorTypeCustomFields.length > 0" class="dlg-divider" />
                 <!-- Custom fields from visitor type -->
                 <div v-if="visitorTypeCustomFields.length > 0" class="dlg-section">
-                  <div class="dlg-section-title">
-                    <i class="pi pi-list-check" />
-                    {{ t('wizard.customFieldsVisitorType') }}
-                    <span class="dlg-section-count">{{ visitorTypeCustomFields.length }}</span>
-                  </div>
                   <div class="dlg-fields-2">
                       <div
                           v-for="field in visitorTypeCustomFields"
@@ -760,28 +792,15 @@
                         <div class="custom-field-card-head">
                           <div class="field-card-title-wrap">
                             <label class="field-label field-label-card" :class="{ required: field.isRequired }">{{ field.label }}</label>
-                            <p class="field-card-caption">{{ t('wizard.visitorFieldCaption') }}</p>
                           </div>
 
-                        </div>
-                        <div v-if="field.sourceTags.length > 0" class="field-origin-row">
-                          <span class="field-origin-label">{{ t('wizard.fieldOrigin') }}</span>
-                          <div class="field-origin-tags">
-                            <span
-                                v-for="sourceTag in field.sourceTags"
-                                :key="`${field.id}-${sourceTag}`"
-                                class="field-origin-tag"
-                            >
-                              {{ sourceTag }}
-                            </span>
-                          </div>
                         </div>
 
                         <PrimeInputText
                             v-if="['Text', 'Email', 'Phone'].includes(field.fieldType)"
                             v-model="(newVisitor.customFields as Record<string, any>)[getFieldValueKey(field)]"
                             :type="field.fieldType === 'Email' ? 'email' : field.fieldType === 'Phone' ? 'tel' : 'text'"
-                            :placeholder="field.placeholder || 'Inserisci un valore'"
+                            :placeholder="field.placeholder || t('wizard.enterTextPlaceholder')"
                             class="w-full"
                         />
                         <PrimeInputNumber
@@ -835,6 +854,8 @@
                       </div>
                     </div>
                   </div>
+
+                <hr class="dlg-divider" />
                 <!-- ── Capogruppo (status row) ── -->
                 <div class="dlg-section dlg-section-status">
                   <div class="dlg-status-row">
@@ -846,6 +867,7 @@
                   </div>
                 </div>
 
+                <hr v-if="!newVisitor.contactId" class="dlg-divider" />
                 <!-- ── Salva in rubrica (status row, solo se non già da rubrica) ── -->
                 <div v-if="!newVisitor.contactId" class="dlg-section dlg-section-status">
                   <div class="dlg-status-row">
@@ -911,23 +933,6 @@
                         <label class="field-label field-label-card" :class="{ required: field.isRequired }">
                           {{ field.label }}
                         </label>
-                        <p class="field-card-caption">{{ t('wizard.bookingFieldCaption') }}</p>
-                      </div>
-                      <div class="field-card-badges">
-                        <span class="field-type-badge">{{ getFieldTypeLabel(field.fieldType) }}</span>
-                        <span v-if="field.isRequired" class="field-required-badge">{{ t('resourceTypes.required') }}</span>
-                      </div>
-                    </div>
-                    <div v-if="field.sourceTags.length > 0" class="field-origin-row">
-                      <span class="field-origin-label">{{ t('wizard.fieldOrigin') }}</span>
-                      <div class="field-origin-tags">
-                        <span
-                            v-for="sourceTag in field.sourceTags"
-                            :key="`${field.id}-${sourceTag}`"
-                            class="field-origin-tag"
-                        >
-                          {{ sourceTag }}
-                        </span>
                       </div>
                     </div>
 
@@ -1088,10 +1093,6 @@
                   <span class="sr-value">{{ formData.participants.length }}</span>
                 </div>
                 <div class="summary-row">
-                  <span class="sr-label">{{ t('wizard.visitorType') }}</span>
-                  <span class="sr-value">{{ getVisitorTypeName(formData.visitorTypeId) }}</span>
-                </div>
-                <div class="summary-row">
                   <span class="sr-label">{{ t('wizard.inviteMode') }}</span>
                   <span class="sr-value">{{ getInviteModeName(formData.inviteMode) }}</span>
                 </div>
@@ -1179,47 +1180,44 @@
     </div>
 
     <!-- Dialog: Vuoi salvare come bozza prima di uscire? -->
-    <PrimeDialog
+    <AppDialog
         v-model:visible="showDraftPromptOnLeave"
         :header="t('wizard.unsavedTitle')"
-        modal
+        icon="pi pi-exclamation-circle"
+        severity="warning"
+        size="md"
         :closable="false"
-        :style="{ width: '460px' }"
+        class="unsaved-dialog"
     >
-      <div style="padding: 0.5rem 0 1rem;">
-        <p style="margin: 0; font-size: 0.9375rem; color: var(--text-primary, #111827);">
-          {{ t('wizard.unsavedMsg') }}
-        </p>
-      </div>
+      <p class="unsaved-msg">{{ t('wizard.unsavedMsg') }}</p>
+
       <template #footer>
-        <PrimeButton
-            :label="t('wizard.unsavedDiscard')"
-            severity="secondary"
-            text
-            @click="pendingNavigationResolve?.('discard')"
-        />
-        <PrimeButton
-            :label="t('common.cancel')"
-            severity="secondary"
-            outlined
-            @click="pendingNavigationResolve?.('cancel')"
-        />
-        <PrimeButton
-            :label="t('wizard.saveAsDraft')"
-            icon="pi pi-file-edit"
-            @click="pendingNavigationResolve?.('draft')"
-            style="background:#6366f1;border-color:#6366f1;color:#fff;"
-        />
+        <div class="unsaved-footer">
+          <button type="button" class="u-btn u-btn-discard" @click="pendingNavigationResolve?.('discard')">
+            <i class="pi pi-trash" />
+            <span>{{ t('wizard.unsavedDiscard') }}</span>
+          </button>
+          <div class="unsaved-footer-right">
+            <button type="button" class="u-btn u-btn-ghost" @click="pendingNavigationResolve?.('cancel')">
+              {{ t('common.cancel') }}
+            </button>
+            <button type="button" class="u-btn u-btn-primary" @click="pendingNavigationResolve?.('draft')">
+              <i class="pi pi-file-edit" />
+              <span>{{ t('wizard.saveAsDraft') }}</span>
+            </button>
+          </div>
+        </div>
       </template>
-    </PrimeDialog>
+    </AppDialog>
 
     <!-- Dialog: email già censita in rubrica (duplicate check) -->
-    <PrimeDialog
+    <AppDialog
         v-model:visible="showDuplicateEmailDialog"
         :header="t('wizard.duplicateEmailTitle')"
-        modal
+        icon="pi pi-info-circle"
+        severity="info"
+        size="md"
         :closable="false"
-        :style="{ width: '480px' }"
     >
       <div class="duplicate-email-body">
         <p>{{ t('wizard.duplicateEmailIntro') }}</p>
@@ -1232,19 +1230,14 @@
         <p class="field-help">{{ t('wizard.duplicateEmailQuestion') }}</p>
       </div>
       <template #footer>
-        <PrimeButton
-            :label="t('wizard.duplicateEmailKeepExisting')"
-            severity="secondary"
-            outlined
-            @click="resolveDuplicateEmail(false)"
-        />
-        <PrimeButton
-            :label="t('wizard.duplicateEmailSaveAnyway')"
-            icon="pi pi-bookmark"
-            @click="resolveDuplicateEmail(true)"
-        />
+        <button type="button" class="dialog-btn dialog-btn-cancel" @click="resolveDuplicateEmail(false)">
+          <i class="pi pi-times" />{{ t('wizard.duplicateEmailKeepExisting') }}
+        </button>
+        <button type="button" class="dialog-btn dialog-btn-save" @click="resolveDuplicateEmail(true)">
+          <i class="pi pi-bookmark" />{{ t('wizard.duplicateEmailSaveAnyway') }}
+        </button>
       </template>
-    </PrimeDialog>
+    </AppDialog>
   </MainLayout>
 </template>
 
@@ -1259,7 +1252,6 @@ import PrimeDatePicker from 'primevue/datepicker'
 import PrimeInputText from 'primevue/inputtext'
 import PrimeInputNumber from 'primevue/inputnumber'
 import PrimeAutoComplete from 'primevue/autocomplete'
-import PrimeDialog from 'primevue/dialog'
 import PrimeCheckbox from 'primevue/checkbox'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { useToast } from 'primevue/usetoast'
@@ -1281,7 +1273,7 @@ import type { FieldLinkResponse } from '@/types/custom-field'
 import type { Holiday, UnavailabilityBlock } from '@/types/unavailability'
 
 // ------ Stores & router ------------------------------------------------------------------------------------------------------------------------------------------------------
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const translateCount = (key: string, count: number) =>
     (t as unknown as (path: string, plural: number, options: { count: number }) => string)(key, count, { count })
 const toast = useToast()
@@ -1319,6 +1311,7 @@ const showDirectoryDialog = ref(false)
 const editingVisitorIndex = ref<number | null>(null)
 const directoryPicked = ref<VisitorSearchResult | string | null>(null)
 const directoryIsGroupLeader = ref(false)
+const directoryVisitorTypeId = ref<string>('')
 
 const isDirectoryPickValid = computed(() =>
   directoryPicked.value !== null && typeof directoryPicked.value !== 'string'
@@ -1332,6 +1325,8 @@ type WizardVisitor = {
   lastName: string
   email: string
   phone?: string
+  /** Tipologia visitatore di questo singolo partecipante (obbligatoria). */
+  visitorTypeId: string
   customFields: Record<string, unknown>
   isGroupLeader: boolean
   contactId?: string         // id del contatto rubrica se selezionato dall'autocomplete
@@ -1343,6 +1338,7 @@ const emptyVisitor = (): WizardVisitor => ({
   lastName: '',
   email: '',
   phone: '',
+  visitorTypeId: '',
   customFields: {},
   isGroupLeader: false,
   contactId: undefined,
@@ -1373,6 +1369,8 @@ async function searchDirectory(event: { query: string }): Promise<void> {
 const internalParticipantLabels = ref<Record<string, string>>({})
 const plantResources = ref<Resource[]>([])
 const loadingPlantResources = ref(false)
+const resourceNameFilter = ref('')
+const resourceTypeFilter = ref('')
 type WizardFieldOption = { label: string; value: string }
 type WizardCustomField = {
   id: string
@@ -1463,6 +1461,9 @@ const recurrencePreviewText = computed((): string => {
         .join(', ')
     text += ` — ${dayLabels}`
   }
+  if (freq === 'DAILY' && !formData.value.dailyIncludeWeekends) {
+    text += ` (${t('wizard.excludeWeekendsLabel')})`
+  }
   text += ` ${t('wizard.recurrenceUntil')} ${until}`
   return text
 })
@@ -1505,9 +1506,11 @@ const formData = ref({
   frequency: 'WEEKLY',
   recurrenceInterval: 1,
   recurringDays: [] as string[],
+  // Solo per ricorrenza DAILY: se false esclude SA/SU dalle occorrenze.
+  // Mappato lato backend con daysOfWeek=['MO','TU','WE','TH','FR'].
+  dailyIncludeWeekends: true,
   recurrenceEndDate: null as Date | null,
   participants: [] as CreateBookingParticipantDto[],
-  visitorTypeId: '',
   inviteMode: InviteMode.NominativeComplete, // Fase 1: solo Modalit- 3 - abilitata
   maxVisitors: 0,
   linkExpiryDate: null as Date | null,
@@ -1524,8 +1527,45 @@ const plantOptions = computed(() =>
     }))
 )
 
-// Resources filtered by selected plant
-const availableResources = computed(() => plantResources.value)
+// Resources filtered by selected plant + esclude quelle il cui ResourceType è disattivo
+// (regola globale: se "Cinema" è disattivo, "Cinema 1" non è prenotabile).
+const availableResources = computed(() =>
+  plantResources.value.filter((r) => {
+    const rt = resourcesStore.resourceTypeById(r.resourceTypeId)
+    return !rt || rt.isActive !== false
+  })
+)
+
+const availableResourceTypes = computed(() => {
+  const typeIds = new Set(availableResources.value.map((r) => r.resourceTypeId))
+  return [...typeIds]
+    .map((id) => ({ id, name: getResourceTypeName(id) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'it'))
+})
+
+const filteredResources = computed(() => {
+  let list = availableResources.value
+  if (resourceNameFilter.value.trim()) {
+    const q = resourceNameFilter.value.toLowerCase()
+    list = list.filter((r) => r.name.toLowerCase().includes(q))
+  }
+  if (resourceTypeFilter.value) {
+    list = list.filter((r) => r.resourceTypeId === resourceTypeFilter.value)
+  }
+  return [...list].sort((a, b) => a.name.localeCompare(b.name, 'it'))
+})
+
+const groupedResources = computed(() => {
+  const groups = new Map<string, { typeId: string; typeName: string; resources: typeof filteredResources.value }>()
+  for (const resource of filteredResources.value) {
+    const typeName = getResourceTypeName(resource.resourceTypeId)
+    if (!groups.has(resource.resourceTypeId)) {
+      groups.set(resource.resourceTypeId, { typeId: resource.resourceTypeId, typeName, resources: [] })
+    }
+    groups.get(resource.resourceTypeId)!.resources.push(resource)
+  }
+  return [...groups.values()].sort((a, b) => a.typeName.localeCompare(b.typeName, 'it'))
+})
 
 // Visitor types - from dedicated store
 const visitorTypeOptions = computed(() =>
@@ -1639,23 +1679,6 @@ function getFieldOptions(field: WizardCustomField): WizardFieldOption[] {
   return field.options
 }
 
-function getFieldTypeLabel(fieldType: string): string {
-  const map: Record<string, string> = {
-    Text:           t('customFields.types.text'),
-    Number:         t('customFields.types.number'),
-    Email:          t('customFields.types.email'),
-    Phone:          t('customFields.types.phone'),
-    Date:           t('customFields.types.date'),
-    Checkbox:       t('customFields.types.checkbox'),
-    Boolean:        t('customFields.types.boolean'),
-    SingleChoice:   t('customFields.types.singleChoice'),
-    MultipleChoice: t('customFields.types.multipleChoice'),
-    Dropdown:       t('customFields.types.dropdown'),
-  }
-
-  return map[fieldType] ?? fieldType
-}
-
 function getMultipleChoiceValues(
     values: Record<string, unknown>,
     field: WizardCustomField
@@ -1703,14 +1726,15 @@ function isBookingFieldMissing(field: WizardCustomField): boolean {
   return showFieldErrors.value && field.isRequired && !isFieldFilled(field, formData.value.customFieldValues)
 }
 
+/**
+ * Carica i custom fields del visitorTypeId del partecipante che sto inserendo nel modal
+ * (newVisitor) — non più globale al booking. Triggerato dal watch su newVisitor.visitorTypeId.
+ */
 async function loadVisitorTypeCustomFields(): Promise<void> {
-  if (!formData.value.visitorTypeId) {
+  const typeId = newVisitor.value.visitorTypeId
+  if (!typeId) {
     visitorTypeCustomFields.value = []
     newVisitor.value.customFields = {}
-    formData.value.visitors = formData.value.visitors.map((visitor) => ({
-      ...visitor,
-      customFields: {},
-    }))
     return
   }
 
@@ -1721,18 +1745,18 @@ async function loadVisitorTypeCustomFields(): Promise<void> {
       fields.filter((f) => !(f as { isSystem?: boolean }).isSystem)
 
   try {
-    const links = await customFieldsApi.getVisitorTypeLinks(formData.value.visitorTypeId)
+    const links = await customFieldsApi.getVisitorTypeLinks(typeId)
     if (links.length > 0) {
-      const visitorTypeName = getVisitorTypeName(formData.value.visitorTypeId)
+      const visitorTypeName = getVisitorTypeName(typeId)
       visitorTypeCustomFields.value = mergeWizardFields(links.map((field) => normalizeLinkedField(field, visitorTypeName)))
     } else {
-      const visitorType = visitorTypesStore.visitorTypeById(formData.value.visitorTypeId)
+      const visitorType = visitorTypesStore.visitorTypeById(typeId)
       const legacy = stripSystemFields(visitorType?.customFields ?? [])
       visitorTypeCustomFields.value = mergeWizardFields(legacy.map(normalizeLegacyField))
     }
   } catch (error) {
     console.error('Failed to load visitor type custom fields:', error)
-    const visitorType = visitorTypesStore.visitorTypeById(formData.value.visitorTypeId)
+    const visitorType = visitorTypesStore.visitorTypeById(typeId)
     const legacy = stripSystemFields(visitorType?.customFields ?? [])
     visitorTypeCustomFields.value = mergeWizardFields(legacy.map(normalizeLegacyField))
   }
@@ -1741,10 +1765,6 @@ async function loadVisitorTypeCustomFields(): Promise<void> {
       newVisitor.value.customFields,
       visitorTypeCustomFields.value
   )
-  formData.value.visitors = formData.value.visitors.map((visitor) => ({
-    ...visitor,
-    customFields: sanitizeCustomFieldValues(visitor.customFields, visitorTypeCustomFields.value),
-  }))
 }
 
 async function loadBookingCustomFields(): Promise<void> {
@@ -1775,7 +1795,7 @@ async function loadBookingCustomFields(): Promise<void> {
 
     try {
       const resourceTypeLinks = await customFieldsApi.getResourceTypeLinks(resource.resourceTypeId)
-      const resourceTypeName = resourcesStore.resourceTypeById(resource.resourceTypeId)?.name || 'Tipologia risorsa'
+      const resourceTypeName = resourcesStore.resourceTypeById(resource.resourceTypeId)?.name || t('resourceTypes.title')
       if (resourceTypeLinks.length > 0) {
         collectedFields.push(...resourceTypeLinks.map((field) => normalizeLinkedField(field, resourceTypeName)))
       } else {
@@ -1803,7 +1823,7 @@ const canProceed = computed(() => {
     case 1: return !!formData.value.date && !isSelectedDateBlocked.value && selectedResourceIds.value.every(
         (id) => formData.value.timeSlots[id]?.startTime && formData.value.timeSlots[id]?.endTime
     )
-    case 4: return !!formData.value.visitorTypeId && !!formData.value.inviteMode
+    case 4: return !!formData.value.inviteMode
     case 6: return !hasMissingRequiredFields(bookingCustomFields.value, formData.value.customFieldValues)
     default: return true
   }
@@ -1813,7 +1833,6 @@ const canSubmit = computed(() =>
     !!formData.value.plantId &&
     selectedResourceIds.value.length > 0 &&
     !!formData.value.date &&
-    !!formData.value.visitorTypeId &&
     !hasMissingRequiredFields(bookingCustomFields.value, formData.value.customFieldValues)
 )
 
@@ -1848,7 +1867,7 @@ watch(
 )
 
 watch(
-    () => formData.value.visitorTypeId,
+    () => newVisitor.value.visitorTypeId,
     async () => {
       await loadVisitorTypeCustomFields()
     }
@@ -1885,7 +1904,7 @@ function getInviteModeName(mode: string): string {
 
 function formatDate(date: Date | null): string {
   if (!date) return '–'
-  return date.toLocaleDateString('it-IT')
+  return date.toLocaleDateString(locale.value)
 }
 
 function isDateBlockedForBooking(date: Date | null): boolean {
@@ -2130,6 +2149,8 @@ function toggleResource(resourceId: string): void {
 function onPlantChange(): void {
   selectedResourceIds.value = []
   formData.value.timeSlots = {}
+  resourceNameFilter.value = ''
+  resourceTypeFilter.value = ''
 }
 
 // ------ Recurrence ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2138,23 +2159,6 @@ function toggleDay(day: string): void {
   if (idx > -1) formData.value.recurringDays.splice(idx, 1)
   else formData.value.recurringDays.push(day)
 }
-
-// Shortcut "Includi weekend" per la ricorrenza settimanale: aggiunge/rimuove SA+SU
-// dai giorni selezionati. Lo stato è derivato dall'array dei giorni.
-const includeWeekends = computed<boolean>({
-  get: () =>
-    formData.value.recurringDays.includes('SA') &&
-    formData.value.recurringDays.includes('SU'),
-  set: (value: boolean) => {
-    const days = formData.value.recurringDays
-    if (value) {
-      if (!days.includes('SA')) days.push('SA')
-      if (!days.includes('SU')) days.push('SU')
-    } else {
-      formData.value.recurringDays = days.filter((d) => d !== 'SA' && d !== 'SU')
-    }
-  },
-})
 
 // ------ Participants ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2260,6 +2264,8 @@ function resolveDuplicateEmail(saveAnyway: boolean): void {
  */
 async function confirmAddVisitor(): Promise<void> {
   if (!newVisitor.value.firstName || !newVisitor.value.lastName || !newVisitor.value.email) return
+  // VisitorType è obbligatoria a livello di singolo partecipante.
+  if (!newVisitor.value.visitorTypeId) return
   if (hasMissingRequiredFields(visitorTypeCustomFields.value, newVisitor.value.customFields)) return
 
   // Se l'utente vuole salvare in rubrica (e non sta riusando un contatto esistente),
@@ -2290,6 +2296,7 @@ async function confirmAddVisitor(): Promise<void> {
     lastName:  newVisitor.value.lastName.trim(),
     email:     newVisitor.value.email.trim(),
     phone:     newVisitor.value.phone?.trim() || undefined,
+    visitorTypeId: newVisitor.value.visitorTypeId,
     customFields: { ...newVisitor.value.customFields },
     isGroupLeader: newVisitor.value.isGroupLeader,
     contactId: newVisitor.value.contactId,
@@ -2340,6 +2347,7 @@ function openManualDialog(): void {
 function openDirectoryDialog(): void {
   directoryPicked.value = null
   directoryIsGroupLeader.value = false
+  directoryVisitorTypeId.value = ''
   directorySuggestions.value = []
   showDirectoryDialog.value = true
 }
@@ -2347,16 +2355,24 @@ function openDirectoryDialog(): void {
 function cancelDirectoryAdd(): void {
   directoryPicked.value = null
   directoryIsGroupLeader.value = false
+  directoryVisitorTypeId.value = ''
   showDirectoryDialog.value = false
 }
 
-function confirmDirectoryAdd(): void {
+async function confirmDirectoryAdd(): Promise<void> {
   if (!directoryPicked.value || typeof directoryPicked.value === 'string') return
+  if (!directoryVisitorTypeId.value) return
 
   const contact = directoryPicked.value
+  const typeId = directoryVisitorTypeId.value
+
+  // Carichiamo i custom fields del visitor type scelto per QUESTO partecipante,
+  // in modo da sanitizzare correttamente i valori salvati nel contatto.
+  newVisitor.value.visitorTypeId = typeId
+  await loadVisitorTypeCustomFields()
 
   // Custom fields salvati sul contatto (JSON serializzato lato BE).
-  // Copiamo SOLO i valori delle chiavi richieste dal visitor type della prenotazione corrente.
+  // Copiamo SOLO i valori delle chiavi richieste dal visitor type del partecipante.
   const savedFromContact = parseRecord(contact.customFieldValues)
   const matchedCustomFields: Record<string, unknown> = {}
   for (const field of visitorTypeCustomFields.value) {
@@ -2375,6 +2391,7 @@ function confirmDirectoryAdd(): void {
     lastName: contact.lastName,
     email: contact.email ?? '',
     phone: contact.phone ?? '',
+    visitorTypeId: typeId,
     customFields: matchedCustomFields,
     isGroupLeader: directoryIsGroupLeader.value,
     contactId: contact.id,
@@ -2388,6 +2405,7 @@ function confirmDirectoryAdd(): void {
     editingVisitorIndex.value = null
     directoryPicked.value = null
     directoryIsGroupLeader.value = false
+    directoryVisitorTypeId.value = ''
     showDirectoryDialog.value = false
     showAddVisitorDialog.value = true
     return
@@ -2402,6 +2420,7 @@ function confirmDirectoryAdd(): void {
 
   directoryPicked.value = null
   directoryIsGroupLeader.value = false
+  directoryVisitorTypeId.value = ''
   showDirectoryDialog.value = false
 }
 
@@ -2413,6 +2432,7 @@ function openEditVisitor(idx: number): void {
     lastName: v.lastName,
     email: v.email,
     phone: v.phone ?? '',
+    visitorTypeId: v.visitorTypeId,
     customFields: { ...(v.customFields ?? {}) },
     isGroupLeader: !!v.isGroupLeader,
     contactId: v.contactId,
@@ -2468,7 +2488,7 @@ function buildBookingDto(saveAsDraft: boolean): CreateBookingDto {
         visitorFirstName: v.firstName,
         visitorLastName:  v.lastName,
         visitorEmail:     v.email,
-        visitorTypeId:    formData.value.visitorTypeId,
+        visitorTypeId:    v.visitorTypeId,
         visitorContactId: v.contactId,
         saveToDirectory:  v.saveToDirectory,
         customFieldValues: Object.keys(v.customFields).length > 0 ? v.customFields : undefined,
@@ -2483,16 +2503,14 @@ function buildBookingDto(saveAsDraft: boolean): CreateBookingDto {
       participants.push({
         isInternal: false,
         visitorEmail: email,
-        visitorTypeId: formData.value.visitorTypeId,
       })
     })
   }
 
   const dto: CreateBookingDto = {
-    title:        formData.value.title || `Prenotazione del ${formatDate(formData.value.date)}`,
+    title:        formData.value.title || t('wizard.titleAutoDate', { date: formatDate(formData.value.date) }),
     organizerId:  authStore.user?.userId ?? '',
     inviteMode:   formData.value.inviteMode as any,
-    visitorTypeId: formData.value.visitorTypeId,
     isRecurring:  formData.value.isRecurring,
     resources,
     participants,
@@ -2510,6 +2528,10 @@ function buildBookingDto(saveAsDraft: boolean): CreateBookingDto {
     }
     if (formData.value.frequency === 'WEEKLY' && formData.value.recurringDays.length > 0) {
       rule.daysOfWeek = formData.value.recurringDays
+    }
+    // DAILY senza weekend → filtro lun-ven via daysOfWeek (gestito dal backend)
+    if (formData.value.frequency === 'DAILY' && !formData.value.dailyIncludeWeekends) {
+      rule.daysOfWeek = ['MO', 'TU', 'WE', 'TH', 'FR']
     }
     dto.recurrenceRule = JSON.stringify(rule)
   }
@@ -2707,30 +2729,32 @@ function handleVisibilityChange(): void {
   }
 }
 
-onBeforeRouteLeave(async (_to, _from, next) => {
-  if (isSubmittingNavigation.value || !hasUnsavedWork()) { next(); return }
+onBeforeRouteLeave(() => {
+  if (isSubmittingNavigation.value || !hasUnsavedWork()) return true
 
-  showDraftPromptOnLeave.value = true
-  pendingNavigationResolve.value = async (choice) => {
-    showDraftPromptOnLeave.value = false
-    pendingNavigationResolve.value = null
+  return new Promise<boolean>((resolve) => {
+    showDraftPromptOnLeave.value = true
+    pendingNavigationResolve.value = async (choice) => {
+      showDraftPromptOnLeave.value = false
+      pendingNavigationResolve.value = null
 
-    if (choice === 'cancel') {
-      next(false)
-      return
-    }
-
-    if (choice === 'draft') {
-      try {
-        await submitBooking(true, { redirectToDetail: false })
-      } catch {
-        next(false)
+      if (choice === 'cancel') {
+        resolve(false)
         return
       }
-    }
 
-    next()
-  }
+      if (choice === 'draft') {
+        try {
+          await submitBooking(true, { redirectToDetail: false })
+        } catch {
+          resolve(false)
+          return
+        }
+      }
+
+      resolve(true)
+    }
+  })
 })
 
 watch(
@@ -2781,20 +2805,28 @@ onMounted(async () => {
     const titleParam = route.query.title as string | undefined
     if (titleParam) formData.value.title = titleParam
 
-    const resourceIdParam = route.query.resourceId as string | undefined
-    if (resourceIdParam) {
-      const resource = resourcesStore.resourceById(resourceIdParam)
-      if (resource) {
-        formData.value.plantId = resource.plantId
-        selectedResourceIds.value = [resourceIdParam]
-        if (startDateParam) {
-          const startDt = new Date(startDateParam)
-          const endDt = new Date(startDt.getTime() + 60 * 60 * 1000)
-          formData.value.timeSlots[resourceIdParam] = {
-            startTime: startDt.toTimeString().slice(0, 5),
-            endTime: endDt.toTimeString().slice(0, 5),
-          }
-        }
+    const resourceIdRaw = route.query.resourceId
+    const resourceIdParams = Array.isArray(resourceIdRaw)
+      ? (resourceIdRaw.filter(Boolean) as string[])
+      : resourceIdRaw ? [resourceIdRaw as string] : []
+    if (resourceIdParams.length > 0) {
+      const firstResource = resourcesStore.resourceById(resourceIdParams[0])
+      if (firstResource) formData.value.plantId = firstResource.plantId
+
+      let startTime = '09:00'
+      let endTime = '10:00'
+      if (startDateParam) {
+        const startDt = new Date(startDateParam)
+        const endDt = new Date(startDt.getTime() + 60 * 60 * 1000)
+        startTime = startDt.toTimeString().slice(0, 5)
+        endTime = endDt.toTimeString().slice(0, 5)
+      }
+
+      for (const id of resourceIdParams) {
+        const resource = resourcesStore.resourceById(id)
+        if (!resource) continue
+        if (!selectedResourceIds.value.includes(id)) selectedResourceIds.value.push(id)
+        formData.value.timeSlots[id] = { startTime, endTime }
       }
     }
   } catch (e) {
@@ -2835,7 +2867,6 @@ async function prefillFromDraft(draftId: string): Promise<void> {
     bookingsStore.setCurrentBooking(draft)
 
     formData.value.title = draft.title ?? ''
-    formData.value.visitorTypeId = draft.visitorTypeId ?? ''
     formData.value.inviteMode = draft.inviteMode ?? InviteMode.NominativeComplete
     formData.value.isRecurring = !!draft.isRecurring
     formData.value.customFieldValues = parseRecord(draft.resourceCustomFieldValues)
@@ -2889,6 +2920,14 @@ async function prefillFromDraft(draftId: string): Promise<void> {
         formData.value.recurrenceInterval = recurrence.interval ?? 1
         formData.value.recurringDays = Array.isArray(recurrence.daysOfWeek) ? recurrence.daysOfWeek : []
         formData.value.recurrenceEndDate = recurrence.endDate ? new Date(recurrence.endDate) : null
+        // Per DAILY: se il rule ha daysOfWeek lun-ven significa "esclusi weekend".
+        if (formData.value.frequency === 'DAILY') {
+          const days = formData.value.recurringDays
+          formData.value.dailyIncludeWeekends =
+              days.length === 0 || days.includes('SA') || days.includes('SU')
+          // Per DAILY non usiamo recurringDays come selezione utente.
+          formData.value.recurringDays = []
+        }
       } catch (error) {
         console.error('Failed to parse draft recurrence rule:', error)
       }
@@ -2915,6 +2954,7 @@ async function prefillFromDraft(draftId: string): Promise<void> {
             lastName:  participant.visitorLastName ?? '',
             email:     participant.visitorEmail ?? '',
             phone:     '',
+            visitorTypeId: participant.visitorTypeId ?? '',
             customFields: parseRecord(participant.customFieldValues),
             isGroupLeader: participant.isGroupLeader === true,
             // Se il partecipante era già linkato a un contatto rubrica, lo preserviamo
@@ -2949,3 +2989,99 @@ async function prefillFromDraft(draftId: string): Promise<void> {
 </script>
 
 <style scoped src="./BookingWizardView.css"></style>
+
+<style>
+/* ==== Unsaved-changes dialog (premium, compact) ====
+   Stili non-scoped: il contenuto del dialog viene teleportato fuori dal
+   componente da PrimeVue, quindi lo scope CSS non si applicherebbe. */
+.unsaved-msg {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.unsaved-footer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.unsaved-footer-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.u-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+  min-height: 2.2rem;
+  white-space: nowrap;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.u-btn i { font-size: 0.85rem; }
+
+.u-btn-discard {
+  background: transparent;
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.u-btn-discard:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #991b1b;
+}
+
+.u-btn-ghost {
+  background: transparent;
+  color: #475569;
+}
+.u-btn-ghost:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.u-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  box-shadow: 0 4px 10px -3px rgba(79, 70, 229, 0.4);
+}
+.u-btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -4px rgba(79, 70, 229, 0.5);
+}
+.u-btn-primary:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .unsaved-footer { flex-direction: column-reverse; align-items: stretch; }
+  .unsaved-footer-right { width: 100%; flex-direction: column-reverse; }
+  .u-btn { justify-content: center; width: 100%; }
+}
+
+/* Dark mode — unsaved-footer buttons */
+.dark .u-btn-ghost {
+  color: var(--text-secondary);
+}
+
+.dark .u-btn-ghost:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+</style>

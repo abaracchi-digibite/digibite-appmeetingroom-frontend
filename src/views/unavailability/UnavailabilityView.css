@@ -108,13 +108,23 @@
 }
 
 .unav-section {
-  border: 1px solid var(--border-default, #e5e7eb);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  border: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  background: var(--bg-card, #ffffff);
+  gap: 0.55rem;
+  background: transparent;
+}
+
+/* Divider automatico fra sezioni del modal blocco/holiday */
+.unav-section + .unav-section {
+  border-top: 1px solid var(--border-default, #e5e7eb);
+  padding-top: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.dark .unav-section + .unav-section {
+  border-top-color: var(--border-default, #334155);
 }
 
 .unav-section-last {
@@ -252,8 +262,9 @@
 
 .day-btn {
   appearance: none;
-  width: 32px;
+  min-width: 44px;
   height: 32px;
+  padding: 0 0.6rem;
   border: 1px solid var(--border-default, #e5e7eb);
   border-radius: 8px;
   background: var(--bg-card, #ffffff);
@@ -262,6 +273,9 @@
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .day-btn:hover:not(.selected) {
@@ -347,3 +361,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+/* #c7d2fe (indigo-200) è troppo chiaro su sfondi scuri — sostituire con indigo più brillante */
+.dark .list-btn-secondary:hover,
+.dark .btn-secondary:hover { border-color: rgba(129, 140, 248, 0.5); }
+
+.dark .day-btn:hover:not(.selected) { border-color: rgba(129, 140, 248, 0.5); }
+
+.dark .unav-recurrence-preview { color: #818cf8; }
+
+/* ========== DARK MODE OVERRIDES ========== */
+/* Hover border: #c7d2fe (indigo-200) troppo chiaro su sfondo scuro */
+.dark .list-btn-secondary:hover { border-color: rgba(129,140,248,0.5); }
+.dark .btn-secondary:hover       { border-color: rgba(129,140,248,0.5); }
+.dark .day-btn:hover:not(.selected) { border-color: rgba(129,140,248,0.5); }
+.dark .unav-recurrence-preview { color: #818cf8; }

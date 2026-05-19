@@ -50,3 +50,20 @@
   background: #764ba2;
 }
 
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .not-found-content {
+  background: var(--bg-card);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.dark .not-found-heading { color: var(--text-primary); }
+.dark .not-found-description { color: var(--text-secondary); }
+
+
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .not-found-content {
+  background: var(--bg-card);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.dark .not-found-heading  { color: var(--text-primary); }
+.dark .not-found-description { color: var(--text-secondary); }

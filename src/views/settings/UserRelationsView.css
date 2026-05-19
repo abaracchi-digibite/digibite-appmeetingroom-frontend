@@ -1,35 +1,19 @@
 @import '@/assets/styles/list-page.css';
 
-/* ── Assign Dialog (preservato dal vecchio design) ───────────────── */
-.assign-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* Read-only object display (used for tenant chip in assign dialog) */
+.assign-readonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed var(--border-default, #e5e7eb);
+  border-radius: 8px;
+  background: var(--bg-page, #f8fafc);
+  color: var(--text-muted, #64748b);
+  font-size: 0.875rem;
 }
 
-.assign-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.85rem 1rem;
-}
-
-.assign-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.assign-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary, #0f172a);
-}
-
-.assign-label.required::after {
-  content: ' *';
-  color: #ef4444;
-}
-
+/* Free-text input for booking ID (objectType === 'booking') */
 .assign-input {
   height: 36px;
   border: 1px solid var(--border-default, #e5e7eb);
@@ -47,43 +31,13 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-.assign-readonly {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px dashed var(--border-default, #e5e7eb);
-  border-radius: 8px;
-  background: var(--bg-page, #f8fafc);
-  color: var(--text-muted, #64748b);
-  font-size: 0.875rem;
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .assign-input {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-default);
 }
-
-.assign-error {
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #b91c1c;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  margin: 0;
-}
-
-.assign-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-  margin-top: 0.25rem;
-}
-
-.relations-primary-btn {
-  appearance: none;
-  background: #4f46e5 !important;
-  border: 1px solid #4f46e5 !important;
-}
-
-@media (max-width: 640px) {
-  .assign-grid {
-    grid-template-columns: 1fr;
-  }
+.dark .assign-input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129,140,248,0.15);
 }

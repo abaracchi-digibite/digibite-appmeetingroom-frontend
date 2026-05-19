@@ -46,7 +46,7 @@
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">{{ t('resourceTypes.multiBooking') }}</label>
                 <div class="flex items-center gap-2">
-                  <Checkbox v-model="formData.allowMultiBooking" input-id="allowMultiBooking" binary />
+                  <PrimeToggleSwitch v-model="formData.allowMultiBooking" input-id="allowMultiBooking" />
                   <label for="allowMultiBooking" class="text-sm">{{ t('resourceTypes.enabled') }}</label>
                 </div>
               </div>
@@ -249,6 +249,7 @@ import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import Card from 'primevue/card'
 import Checkbox from 'primevue/checkbox'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
 import { FieldVisibility } from '@/types/enums'
 import type { UpdateResourceTypeDto } from '@/types/resource'
 import type { CustomFieldDef, FieldLinkResponse } from '@/types/custom-field'

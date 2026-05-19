@@ -177,3 +177,6 @@
   background: rgba(99,102,241,0.06);
   color: #4f46e5;
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .dlg-quota-card:hover { border-color: rgba(129,140,248,0.5); }

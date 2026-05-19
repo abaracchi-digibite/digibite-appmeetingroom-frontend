@@ -3,12 +3,12 @@
     <div class="not-found-container">
       <div class="not-found-content">
         <!-- <h1 class="not-found-title">404</h1> -->
-        <h2 class="not-found-heading">{{ $t('errors.pageNotFound', 'Page Not Found') }}</h2>
+        <h2 class="not-found-heading">{{ $t('errors.pageNotFound') }}</h2>
         <p class="not-found-description">
-          {{ $t('errors.pageNotFoundDescription', 'The page you are looking for does not exist.') }}
+          {{ $t('errors.pageNotFoundDescription') }}
         </p>
         <RouterLink to="/dashboard" class="not-found-button">
-          {{ $t('common.backToDashboard', 'Back to Dashboard') }}
+          {{ $t('common.backToDashboard') }}
         </RouterLink>
       </div>
     </div>

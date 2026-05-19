@@ -40,6 +40,25 @@ export const useResourcesStore = defineStore('resources', () => {
       resources.value.filter((r) => r.resourceTypeId === typeId)
   )
 
+  /**
+   * Risorse prenotabili: escludono quelle il cui ResourceType è disattivato
+   * (isActive = false). Da usare in tutte le view di prenotazione (wizard,
+   * calendar quick-book, public page) — NON in admin/management list.
+   */
+  const bookableResources = computed(() =>
+    resources.value.filter((r) => {
+      const rt = resourceTypes.value.find((t) => t.id === r.resourceTypeId)
+      // Se il type non è caricato (es. prima della fetch) lasciamo passare:
+      // il backend filtra comunque su query "for booking".
+      return !rt || rt.isActive !== false
+    })
+  )
+
+  /** Resource types attivi soltanto. Usabile per dropdown filtri/wizard. */
+  const activeResourceTypes = computed(() =>
+    resourceTypes.value.filter((rt) => rt.isActive !== false)
+  )
+
   // Resource Actions
   const fetchAllResources = useStoreAction(
     loading,
@@ -287,6 +306,8 @@ export const useResourcesStore = defineStore('resources', () => {
     resourceTypeById,
     resourcesByPlant,
     resourcesByType,
+    bookableResources,
+    activeResourceTypes,
 
     // Resource Actions
     fetchAllResources,

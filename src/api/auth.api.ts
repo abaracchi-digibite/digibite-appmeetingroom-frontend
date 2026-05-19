@@ -92,6 +92,13 @@ export const authApi = {
   },
 
   /**
+   * Change the current user's password
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiClient.post('/auth/change-password', { currentPassword, newPassword })
+  },
+
+  /**
    * Impersonate a tenant with a specific role (SuperAdmin only).
    * For scoped roles (Site / Resource / ResourceType / Booking) a targetId is required.
    */

@@ -21,10 +21,8 @@
         </div>
 
         <div class="list-row-secondary">
-          <div class="list-filter-inline">
-            <span class="list-count-flat">{{ filteredVisitors.length }} {{ t('common.results') }}</span>
-          </div>
           <div class="list-row-secondary-right">
+            <span class="list-count-flat">{{ filteredVisitors.length }} {{ t('common.results') }}</span>
             <div class="list-view-flat">
               <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
                 <i class="pi pi-list" />
@@ -125,55 +123,67 @@
       </div>
 
       <!-- ── Create / Edit dialog ─────────────────────────────────── -->
-      <PrimeDialog
+      <AppDialog
         v-model:visible="showDialog"
         :header="isEditing ? t('visitors.edit') : t('visitors.create')"
-        modal
-        :style="{ width: '520px' }"
+        :icon="isEditing ? 'pi pi-pencil' : 'pi pi-id-card'"
+        severity="primary"
+        size="md"
       >
         <div class="dlg-form">
-          <div class="dlg-grid">
-            <div class="dlg-field">
-              <label class="dlg-label required">{{ t('wizard.visitorFirstName') }}</label>
-              <PrimeInputText v-model="formData.firstName" class="w-full" />
-            </div>
-            <div class="dlg-field">
-              <label class="dlg-label required">{{ t('wizard.visitorLastName') }}</label>
-              <PrimeInputText v-model="formData.lastName" class="w-full" />
-            </div>
-            <div class="dlg-field dlg-field-full">
-              <label class="dlg-label">{{ t('common.email') }}</label>
-              <PrimeInputText v-model="formData.email" type="email" class="w-full" placeholder="email@esempio.com" />
-            </div>
-            <div class="dlg-field dlg-field-full">
-              <label class="dlg-label">{{ t('wizard.visitorPhone') }}</label>
-              <PrimeInputText v-model="formData.phone" type="tel" class="w-full" placeholder="+39 …" />
-            </div>
-            <div class="dlg-field dlg-field-full">
-              <label class="dlg-label">{{ t('visitors.notes') }}</label>
-              <PrimeTextarea v-model="formData.notes" rows="3" class="w-full" />
+          <div class="dlg-section">
+            <div class="dlg-fields-2">
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('wizard.visitorFirstName') }} *</label>
+                <PrimeInputText v-model="formData.firstName" class="w-full" />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('wizard.visitorLastName') }} *</label>
+                <PrimeInputText v-model="formData.lastName" class="w-full" />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('common.email') }}</label>
+                <PrimeInputText v-model="formData.email" type="email" class="w-full" :placeholder="t('visitors.emailPlaceholder')" />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('wizard.visitorPhone') }}</label>
+                <PrimeInputText v-model="formData.phone" type="tel" class="w-full" :placeholder="t('visitors.phonePlaceholder')" />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('visitors.notes') }}</label>
+                <PrimeTextarea v-model="formData.notes" rows="3" class="w-full" />
+              </div>
             </div>
           </div>
         </div>
         <template #footer>
-          <PrimeButton :label="t('common.cancel')" severity="secondary" outlined @click="showDialog = false" />
-          <PrimeButton :label="t('common.save')" icon="pi pi-check" :loading="saving" @click="save" />
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="saving" @click="save">
+            <i :class="saving ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.save') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
 
       <!-- Delete confirmation -->
-      <PrimeDialog
+      <AppDialog
         v-model:visible="showDeleteDialog"
         :header="t('visitors.deleteTitle')"
-        modal
-        :style="{ width: '420px' }"
+        icon="pi pi-exclamation-triangle"
+        severity="danger"
+        size="sm"
       >
         <p>{{ t('visitors.deleteConfirm', { name: deleteTarget ? `${deleteTarget.firstName} ${deleteTarget.lastName}` : '' }) }}</p>
         <template #footer>
-          <PrimeButton :label="t('common.cancel')" severity="secondary" outlined @click="showDeleteDialog = false" />
-          <PrimeButton :label="t('common.delete')" icon="pi pi-trash" severity="danger" :loading="deleting" @click="performDelete" />
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showDeleteDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-delete" :disabled="deleting" @click="performDelete">
+            <i :class="deleting ? 'pi pi-spin pi-spinner' : 'pi pi-trash'" />{{ t('common.delete') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
     </div>
   </MainLayout>
 </template>
@@ -182,17 +192,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MainLayout from '@/layouts/MainLayout.vue'
-import PrimeButton from 'primevue/button'
+import AppDialog from '@/components/common/AppDialog.vue'
 import PrimeDataTable from 'primevue/datatable'
 import PrimeColumn from 'primevue/column'
 import PrimeInputText from 'primevue/inputtext'
-import PrimeDialog from 'primevue/dialog'
 import PrimeTextarea from 'primevue/textarea'
 import { useToast } from 'primevue/usetoast'
 import { visitorsApi } from '@/api/visitors.api'
 import type { Visitor, CreateVisitorDto, UpdateVisitorDto } from '@/types/visitor'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 
 const visitors = ref<Visitor[]>([])
@@ -232,7 +241,7 @@ const setViewMode = (mode: 'card' | 'table') => {
 
 function formatDate(iso: string): string {
   try {
-    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(iso).toLocaleDateString(locale.value, { day: '2-digit', month: 'short', year: 'numeric' })
   } catch { return iso }
 }
 
@@ -338,32 +347,5 @@ onMounted(() => { void fetchAll() })
 <style scoped>
 @import '@/assets/styles/list-page.css';
 
-.dlg-form {
-  padding: 0.5rem 0;
-}
-
-.dlg-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.85rem 1rem;
-}
-
-.dlg-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.dlg-field-full { grid-column: 1 / -1; }
-
-.dlg-label {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--text-primary, #0f172a);
-}
-
-.dlg-label.required::after {
-  content: ' *';
-  color: #ef4444;
-}
+.list-row-secondary-right { margin-left: auto; }
 </style>

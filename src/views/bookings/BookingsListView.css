@@ -127,3 +127,19 @@
 .btn-text:hover {
   color: #4338ca;
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+/* .status-chip usa già rgba() con alpha bassa – ok su dark.
+   Solo border-color hardcoded del date-filter da correggere */
+.dark .list-filter-date {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.dark .list-filter-date:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129,140,248,0.12);
+}
+/* btn-text: color troppo scuro */
+.dark .btn-text { color: #818cf8; }
+.dark .btn-text:hover { color: #a5b4fc; }

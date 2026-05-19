@@ -35,6 +35,7 @@ const TenantDetailView = () => import('@/views/superadmin/TenantDetailView.vue')
 const SubscriptionPlansView = () => import('@/views/superadmin/SubscriptionPlansView.vue')
 const SuperAdminDashboard = () => import('@/views/superadmin/SuperAdminDashboard.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
+const ForbiddenView = () => import('@/views/ForbiddenView.vue')
 const SettingsView = () => import('@/views/settings/SettingsView.vue')
 const UserRelationsView = () => import('@/views/settings/UserRelationsView.vue')
 // SSO
@@ -52,11 +53,18 @@ const isValidUUID = (id: string): boolean => {
   return UUID_REGEX.test(id)
 }
 
+/**
+ * Ruolo minimo Tenant richiesto per accedere a una route (DRF §3.2).
+ * Gerarchia: Owner > Contributor > Reader. Platform.Owner passa sempre.
+ */
+export type MinTenantRole = 'Reader' | 'Contributor' | 'Owner'
+
 export interface RouteMeta {
   title: string
   breadcrumb: string
   requiresAuth?: boolean
   requiresSuperAdmin?: boolean
+  minRole?: MinTenantRole
   layout?: 'auth' | 'main'
 }
 
@@ -66,6 +74,7 @@ declare module 'vue-router' {
     breadcrumb: string
     requiresAuth?: boolean
     requiresSuperAdmin?: boolean
+    minRole?: MinTenantRole
     layout?: 'auth' | 'main'
   }
 }
@@ -180,6 +189,7 @@ const routes: RouteRecordRaw[] = [
       title: 'bookings.new',
       breadcrumb: 'bookings.new',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -208,6 +218,7 @@ const routes: RouteRecordRaw[] = [
       title: 'nav.checkin',
       breadcrumb: 'nav.checkin',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -303,6 +314,7 @@ const routes: RouteRecordRaw[] = [
       title: 'visitorTypes.title',
       breadcrumb: 'nav.visitorTypes',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -314,6 +326,7 @@ const routes: RouteRecordRaw[] = [
       title: 'visitorTypes.title',
       breadcrumb: 'visitorTypes.title',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
     beforeEnter: (to) => {
@@ -331,6 +344,7 @@ const routes: RouteRecordRaw[] = [
       title: 'visitors.title',
       breadcrumb: 'nav.visitors',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -342,6 +356,7 @@ const routes: RouteRecordRaw[] = [
       title: 'notifications.title',
       breadcrumb: 'nav.notifications',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -353,6 +368,7 @@ const routes: RouteRecordRaw[] = [
       title: 'unavailability.title',
       breadcrumb: 'nav.unavailability',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -364,6 +380,7 @@ const routes: RouteRecordRaw[] = [
       title: 'userGroups.title',
       breadcrumb: 'nav.userGroups',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -375,6 +392,7 @@ const routes: RouteRecordRaw[] = [
       title: 'userGroups.title',
       breadcrumb: 'userGroups.title',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
     beforeEnter: (to) => {
@@ -392,6 +410,7 @@ const routes: RouteRecordRaw[] = [
       title: 'users.title',
       breadcrumb: 'nav.users',
       requiresAuth: true,
+      minRole: 'Contributor',
       layout: 'main',
     },
   },
@@ -403,6 +422,7 @@ const routes: RouteRecordRaw[] = [
       title: 'customFields.pageTitle',
       breadcrumb: 'customFields.pageTitle',
       requiresAuth: true,
+      minRole: 'Owner',
       layout: 'main',
     },
   },
@@ -414,6 +434,7 @@ const routes: RouteRecordRaw[] = [
       title: 'auditLog.title',
       breadcrumb: 'nav.auditLog',
       requiresAuth: true,
+      minRole: 'Owner',
       layout: 'main',
     },
   },
@@ -504,6 +525,7 @@ const routes: RouteRecordRaw[] = [
       title: 'sso.settings.title',
       breadcrumb: 'sso.settings.title',
       requiresAuth: true,
+      minRole: 'Owner',
       layout: 'main',
     },
   },
@@ -515,6 +537,7 @@ const routes: RouteRecordRaw[] = [
       title: 'permissions.title',
       breadcrumb: 'permissions.title',
       requiresAuth: true,
+      minRole: 'Owner',
       layout: 'main',
     },
   },
@@ -525,6 +548,17 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Not Found',
       breadcrumb: 'Not Found',
+      layout: 'main',
+    },
+  },
+  {
+    path: '/403',
+    name: 'Forbidden',
+    component: ForbiddenView,
+    meta: {
+      title: 'errors.forbiddenTitle',
+      breadcrumb: 'errors.forbiddenTitle',
+      requiresAuth: true,
       layout: 'main',
     },
   },
@@ -626,6 +660,15 @@ router.beforeEach(
         name: 'Login',
         query: { redirect: to.fullPath },
       })
+      return
+    }
+
+    // Check minimum tenant role (DRF §3.2). Platform.Owner passa sempre.
+    // Implementato come "deny by default" sulle pagine che dichiarano minRole:
+    // se l'utente non raggiunge il livello richiesto, redirect a /403.
+    const minRole = to.meta.minRole
+    if (minRole && isAuthenticated && !authStore.hasMinTenantRole(minRole)) {
+      next({ name: 'Forbidden' })
       return
     }
 

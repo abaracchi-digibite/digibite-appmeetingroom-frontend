@@ -11,6 +11,7 @@ export interface ResourceType {
   color?: string
   defaultTimeSlots?: string
   allowMultiBooking: boolean
+  isActive: boolean
   customFields?: CustomField[]
   createdAt: string
   updatedAt: string
@@ -23,6 +24,7 @@ export interface CreateResourceTypeDto {
   color?: string
   defaultTimeSlots?: string
   allowMultiBooking?: boolean
+  isActive?: boolean
 }
 
 export interface UpdateResourceTypeDto {
@@ -32,6 +34,7 @@ export interface UpdateResourceTypeDto {
   color?: string
   defaultTimeSlots?: string
   allowMultiBooking?: boolean
+  isActive?: boolean
 }
 
 export interface CustomField {
@@ -75,6 +78,12 @@ export interface UpdateCustomFieldDto {
   notificationTriggerValue?: string
 }
 
+/** Finestra oraria di disponibilità (HH:mm – HH:mm). */
+export interface AvailabilityWindow {
+  from: string
+  to: string
+}
+
 export interface Resource {
   id: string
   tenantId: string
@@ -88,6 +97,12 @@ export interface Resource {
   maintenanceEndDate?: string
   allowMultiBookingOverride?: boolean
   timeSlotsOverride?: string
+  /**
+   * Lista di finestre orarie di disponibilità giornaliera.
+   * Vuota = nessun vincolo (si applica l'orario operativo del plant).
+   * Es: [{from:'09:00',to:'13:00'},{from:'14:00',to:'18:00'}]
+   */
+  availableTimeWindows: AvailabilityWindow[]
   requiresApproval: boolean
   approvalCondition?: string
   approvalTimeoutHours?: number
@@ -117,6 +132,8 @@ export interface CreateResourceDto {
   requiresRejectionReason?: boolean
   publicPageEnabled?: boolean
   publicPagePin?: string
+  /** Lista di finestre orarie. Vuota o assente = nessun vincolo. */
+  availableTimeWindows?: AvailabilityWindow[]
 }
 
 export interface UpdateResourceDto {
@@ -138,4 +155,11 @@ export interface UpdateResourceDto {
   publicPageEnabled?: boolean
   publicPagePin?: string
   clearPublicPagePin?: boolean
+  /**
+   * Lista di finestre orarie. Convenzione UpdateDto:
+   *   - undefined = lascia invariato
+   *   - []        = rimuovi tutte le finestre (nessun vincolo)
+   *   - [...]     = sostituisci le finestre
+   */
+  availableTimeWindows?: AvailabilityWindow[]
 }

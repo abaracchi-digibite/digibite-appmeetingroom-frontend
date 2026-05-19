@@ -81,6 +81,10 @@
   --color-black: #000000;
   --color-gray: #6b7280;
 
+  /* Brand accent (used in logo gradient, superadmin label, secondary brand surfaces).
+     Hardcoded as #7c3aed in many view CSS — being migrated to this token. */
+  --color-brand-accent: #7c3aed;
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -162,10 +166,10 @@
   padding: 0.5rem;
 }
 
-.fc .fc-event {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
+/* NIENTE override globale di background-color/border-color sugli eventi:
+   ogni view setta i propri colori inline in base allo stato/tipo della
+   prenotazione (CalendarView.calendarEvents passa backgroundColor e
+   borderColor per ogni evento). Una regola globale qui sovrascriverebbe. */
 
 .fc .fc-event-title {
   padding: 0.25rem 0.5rem;
@@ -205,6 +209,19 @@ body {
 
 #app {
   @apply w-full h-full;
+}
+
+/* App root (merged from former App.css) */
+.app-root {
+  min-height: 100vh;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-root.dark {
+  background-color: #0f172a;
+  color: #e2e8f0;
 }
 
 /* Ensure Inter propagates to all PrimeVue components */

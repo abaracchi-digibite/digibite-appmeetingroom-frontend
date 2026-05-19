@@ -1,280 +1,164 @@
 ﻿<template>
   <MainLayout>
-    <div class="sites-container">
-      <!-- Toolbar -->
-      <div class="toolbar-section mb-4 p-4 rounded-lg" style="background-color: var(--bg-card);">
-        <div class="flex flex-col gap-4">
-          <div class="flex gap-3 flex-wrap items-center">
-            <IconField class="flex-1 min-w-64">
-              <InputIcon class="pi pi-search" />
-              <InputText
-                v-model="searchQuery"
-                :placeholder="t('common.search')"
-                class="w-full search-input"
-                @input="onSearchChange"
-              />
-            </IconField>
+    <div class="list-page">
 
-            <!-- View toggle -->
-            <div class="flex gap-1 p-1 rounded-lg" style="background: var(--bg-page); border: 1px solid var(--border-default);">
-              <button
-                class="px-2 py-1 rounded-md text-sm transition-all"
-                :class="viewMode === 'table' ? 'bg-white shadow text-indigo-600 font-medium' : 'text-slate-500 hover:text-slate-700'"
-                :style="viewMode === 'table' ? 'background: var(--bg-card);' : ''"
-                @click="setViewMode('table')"
-                :title="t('common.viewTable')"
-              >
-                <i class="pi pi-list text-sm" />
-              </button>
-              <button
-                class="px-2 py-1 rounded-md text-sm transition-all"
-                :class="viewMode === 'card' ? 'bg-white shadow text-indigo-600 font-medium' : 'text-slate-500 hover:text-slate-700'"
-                :style="viewMode === 'card' ? 'background: var(--bg-card);' : ''"
-                @click="setViewMode('card')"
-                :title="t('common.viewCards')"
-              >
-                <i class="pi pi-th-large text-sm" />
-              </button>
-            </div>
+      <!-- Error: mostrato solo se NESSUN dato è caricato -->
+      <div v-if="plantsStore.error && filteredPlants.length === 0 && !plantsStore.loading" class="list-error">
+        <i class="pi pi-exclamation-circle" />
+        <span>{{ t('common.loadFailed') }}</span>
+      </div>
 
-            <Button
-              :label="t('plants.createNew')"
-              icon="pi pi-plus"
-              @click="showCreateDialog = true"
-              size="small"
-              class="btn-new"
+      <!-- ── Toolbar ──────────────────────────────────────────────── -->
+      <div class="list-toolbar-flat">
+        <div class="list-row-primary">
+          <div class="list-search-flat">
+            <i class="pi pi-search list-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="list-search-input-flat"
+              :placeholder="t('common.search')"
             />
           </div>
+          <button type="button" class="list-btn-primary" @click="showCreateDialog = true">
+            <i class="pi pi-plus" />
+            <span>{{ t('plants.createNew') }}</span>
+          </button>
+        </div>
 
-          <!-- Filters -->
-          <div class="flex gap-3 flex-wrap items-center">
-            <div class="flex items-center gap-2">
-              <label class="text-sm font-medium text-slate-700">{{ t('common.status') }}:</label>
-              <Dropdown
+        <div class="list-row-secondary">
+          <div class="list-filters-group">
+            <div class="list-filter-inline">
+              <label class="list-filter-label-inline">{{ t('common.status') }}</label>
+              <MultiSelect
                 v-model="statusFilter"
                 :options="statusOptions"
                 option-label="label"
                 option-value="value"
-                :placeholder="t('common.filter')"
-                class="filter-dropdown"
-                @change="onFilterChange"
+                :placeholder="t('common.all')"
+                display="chip"
+                :max-selected-labels="1"
+                :selected-items-label="`{0} ${t('common.selected')}`"
+                class="list-filter-select"
               />
             </div>
-            <div class="ml-auto text-sm text-slate-600">
-              {{ filteredPlants.length }} {{ t('common.results') }}
+          </div>
+
+          <div class="list-row-secondary-right">
+            <span class="list-count-flat">{{ filteredPlants.length }} {{ t('common.results') }}</span>
+            <div class="list-view-flat">
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'table' }" :title="t('common.viewTable')" @click="setViewMode('table')">
+                <i class="pi pi-list" />
+              </button>
+              <button type="button" class="list-view-icon" :class="{ active: viewMode === 'card' }" :title="t('common.viewCards')" @click="setViewMode('card')">
+                <i class="pi pi-th-large" />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Error State -->
-      <div v-if="plantsStore.error" class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-center mb-6 flex items-center gap-2 justify-center">
-        <i class="pi pi-exclamation-circle"></i>
-        {{ t('errors.loadFailed') }}
+      <!-- ── Loading / Empty ──────────────────────────────────────── -->
+      <div v-if="plantsStore.loading" class="list-loading">
+        <i class="pi pi-spin pi-spinner" />
+        <span>{{ t('common.loading') }}</span>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="plantsStore.loading" class="flex justify-center items-center h-96">
-        <div class="text-center">
-          <i class="pi pi-spin pi-spinner text-4xl mb-4" style="color: #2563EB;"></i>
-          <p class="text-slate-600">{{ t('common.loading') }}</p>
-        </div>
+      <div v-else-if="filteredPlants.length === 0" class="list-empty">
+        <i class="pi pi-inbox" />
+        <p>{{ t('common.noResults') }}</p>
       </div>
 
-      <!-- Empty State -->
-      <div v-else-if="filteredPlants.length === 0" class="flex justify-center items-center h-96 rounded-lg" style="background-color: var(--bg-page);">
-        <div class="text-center">
-          <i class="pi pi-inbox text-6xl mb-4" style="color: #9CA3AF;"></i>
-          <p class="text-slate-600 text-lg">{{ t('common.noResults') }}</p>
-        </div>
-      </div>
+      <!-- ── Tabella ──────────────────────────────────────────────── -->
+      <div v-else-if="viewMode === 'table'" class="list-table-wrapper">
+        <DataTable :value="filteredPlants" responsiveLayout="scroll" stripedRows class="list-table">
+          <Column field="name" :header="t('plants.name')" :sortable="true" style="width: 25%">
+            <template #body="{ data }">
+              <span class="list-cell-strong">{{ data.name }}</span>
+            </template>
+          </Column>
 
-      <!-- Cards Grid or Table View -->
-      <div v-else>
-        <!-- Card View -->
-        <div v-if="viewMode === 'card'" class="cards-grid">
-          <div
-            v-for="site in filteredPlants"
-            :key="site.id"
-            class="card"
-            style="background-color: var(--bg-card); border: 1px solid var(--border-default);"
-          >
-            <!-- Card Header Colored Strip -->
-            <div class="card-header">
-              <div class="flex items-start justify-between">
-                <div class="icon-badge mr-2">
-                  {{ getPlantInitials(site.name) }}
-                </div>
-                <div>
-                  <h3 class="card-title">{{ site.name }}</h3>
-                  <p class="text-xs text-slate-500 mt-1">{{ t('common.idLabel') }} {{ site.id?.substring(0, 8) }}</p>
-                </div>
-              </div>
-            </div>
+          <Column field="city" :header="t('plants.city')" :sortable="true" style="width: 18%">
+            <template #body="{ data }">
+              <span class="list-cell-muted">{{ data.city || '—' }}</span>
+            </template>
+          </Column>
 
-            <!-- Card Content -->
-            <div class="card-content">
-              <!-- Address -->
-              <div class="info-row" v-if="site.address">
-                <i class="pi pi-map-marker info-icon"></i>
-                <div class="info-text">
-                  <p class="text-xs text-slate-500 uppercase tracking-wide">{{ t('plants.address') }}</p>
-                  <p class="text-sm font-medium text-slate-900">{{ site.address }}</p>
-                </div>
-              </div>
+          <Column field="country" :header="t('plants.country')" :sortable="true" style="width: 18%">
+            <template #body="{ data }">
+              <span class="list-cell-muted">{{ data.country || '—' }}</span>
+            </template>
+          </Column>
 
-              <!-- City & Country -->
-              <div class="info-row" v-if="site.city || site.country">
-                <i class="pi pi-flag info-icon"></i>
-                <div class="info-text">
-                  <p class="text-xs text-slate-500 uppercase tracking-wide">{{ t('common.location') }}</p>
-                  <p class="text-sm font-medium text-slate-900">
-                    <span v-if="site.city">{{ site.city }}</span>
-                    <span v-if="site.city && site.country">, </span>
-                    <span v-if="site.country">{{ site.country }}</span>
-                  </p>
-                </div>
-              </div>
+          <Column field="timeZone" :header="t('plants.timezone')" :sortable="true" style="width: 14%">
+            <template #body="{ data }">
+              <span class="list-cell-muted">{{ data.timeZone }}</span>
+            </template>
+          </Column>
 
-              <!-- Timezone -->
-              <div class="info-row" v-if="site.timeZone">
-                <i class="pi pi-clock info-icon"></i>
-                <div class="info-text">
-                  <p class="text-xs text-slate-500 uppercase tracking-wide">{{ t('plants.timezone') }}</p>
-                  <p class="text-sm font-medium text-slate-900">{{ site.timeZone }}</p>
-                </div>
-              </div>
+          <Column field="isActive" :header="t('common.status')" :sortable="true" style="width: 12%">
+            <template #body="{ data }">
+              <Tag :value="data.isActive ? t('plants.active') : t('common.inactive')" :severity="data.isActive ? 'success' : 'danger'" />
+            </template>
+          </Column>
 
-              <!-- Operating Hours -->
-              <div class="info-row" v-if="site.defaultOperatingHours">
-                <i class="pi pi-sun info-icon"></i>
-                <div class="info-text">
-                  <p class="text-xs text-slate-500 uppercase tracking-wide">{{ t('plants.operatingHours') }}</p>
-                  <p class="text-sm font-medium text-slate-900">{{ site.defaultOperatingHours }}</p>
-                </div>
-              </div>
-
-              <!-- Status Badge -->
-              <div class="mt-4 pt-4 border-t" style="border-color: var(--border-default);">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="status-badge"
-                      :style="{
-                        backgroundColor: site.isActive ? '#D1FAE5' : '#FEE2E2',
-                        color: site.isActive ? '#065F46' : '#7F1D1D',
-                      }"
-                    >
-                      <i :class="site.isActive ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-                      {{ site.isActive ? t('plants.active') : t('common.inactive') }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card Actions -->
-            <div class="card-actions">
-              <Button
-                icon="pi pi-pencil"
-                rounded
-                severity="info"
-                text
-                @click="editPlant(site)"
-                :title="t('common.edit')"
-                class="action-btn"
-              />
-              <Button
-                icon="pi pi-trash"
-                rounded
-                severity="danger"
-                text
-                @click="deletePlant(site.id)"
-                :title="t('common.delete')"
-                class="action-btn"
-              />
-              <Button
-                :icon="site.isActive ? 'pi pi-pause' : 'pi pi-play'"
-                rounded
-                :severity="site.isActive ? 'warning' : 'success'"
-                text
-                @click="toggleStatus(site)"
-                :title="site.isActive ? t('common.pause') : t('common.activate')"
-                class="action-btn"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Table View -->
-        <div v-else>
-          <DataTable :value="filteredPlants" responsiveLayout="scroll" stripedRows showGridlines>
-            <template #empty>
-              <div class="text-center py-8">
-                <i class="pi pi-inbox text-4xl mb-3" style="color: #cbd5e1;"></i>
-                <p style="color: #64748b;">{{ t('common.noData') }}</p>
+          <Column :header="t('common.actions')" style="width: 130px" class="list-col-actions">
+            <template #body="{ data }">
+              <div class="list-row-actions">
+                <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="editPlant(data)">
+                  <i class="pi pi-pencil" />
+                </button>
+                <button type="button" class="list-action-btn list-action-edit" :title="data.isActive ? t('common.pause') : t('common.activate')" @click="toggleStatus(data)">
+                  <i :class="data.isActive ? 'pi pi-pause' : 'pi pi-play'" />
+                </button>
+                <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deletePlant(data.id)">
+                  <i class="pi pi-trash" />
+                </button>
               </div>
             </template>
+          </Column>
+        </DataTable>
+      </div>
 
-            <Column field="name" :header="t('plants.name')" sortable style="width: 25%">
-              <template #body="{ data }">
-                <span style="color: #0f172a; font-weight: 500;">{{ data.name }}</span>
-              </template>
-            </Column>
-
-            <Column field="city" :header="t('plants.city')" sortable style="width: 20%">
-              <template #body="{ data }">
-                <span style="color: #0f172a;">{{ data.city || '-' }}</span>
-              </template>
-            </Column>
-
-            <Column field="country" :header="t('plants.country')" sortable style="width: 20%">
-              <template #body="{ data }">
-                <span style="color: #0f172a;">{{ data.country || '-' }}</span>
-              </template>
-            </Column>
-
-            <Column field="timeZone" :header="t('plants.timezone')" sortable style="width: 15%">
-              <template #body="{ data }">
-                <span style="color: #0f172a;">{{ data.timeZone }}</span>
-              </template>
-            </Column>
-
-            <Column field="isActive" :header="t('common.status')" sortable style="width: 12%">
-              <template #body="{ data }">
-                <Tag :value="data.isActive ? t('plants.active') : t('common.inactive')" :severity="data.isActive ? 'success' : 'danger'" />
-              </template>
-            </Column>
-
-            <Column :header="t('common.actions')" style="width: 180px">
-              <template #body="{ data }">
-                <div class="table-actions">
-                  <Button
-                      icon="pi pi-pencil"
-                      @click="editPlant(data)"
-                      outlined
-                      severity="warning"
-                      size="small"
-                  />
-                  <Button
-                      icon="pi pi-trash"
-                      @click="deletePlant(data.id)"
-                      outlined
-                      severity="danger"
-                      size="small"
-                  />
-                  <Button
-                      :icon="data.isActive ? 'pi pi-pause' : 'pi pi-play'"
-                      @click="toggleStatus(data)"
-                      outlined
-                      :severity="data.isActive ? 'warning' : 'success'"
-                      size="small"
-                  />
-                </div>
-              </template>
-            </Column>
-          </DataTable>
-        </div>
+      <!-- ── Cards ────────────────────────────────────────────────── -->
+      <div v-else class="list-cards-grid">
+        <article v-for="site in filteredPlants" :key="site.id" class="list-card">
+          <div class="list-card-head">
+            <h3 class="list-card-title">{{ site.name }}</h3>
+            <Tag :value="site.isActive ? t('plants.active') : t('common.inactive')" :severity="site.isActive ? 'success' : 'danger'" />
+          </div>
+          <div class="list-card-info">
+            <div v-if="site.address" class="list-card-info-row">
+              <i class="pi pi-map-marker" />
+              <span>{{ site.address }}</span>
+            </div>
+            <div v-if="site.city || site.country" class="list-card-info-row">
+              <i class="pi pi-flag" />
+              <span>
+                <span v-if="site.city">{{ site.city }}</span><span v-if="site.city && site.country">, </span><span v-if="site.country">{{ site.country }}</span>
+              </span>
+            </div>
+            <div v-if="site.timeZone" class="list-card-info-row">
+              <i class="pi pi-clock" />
+              <span>{{ site.timeZone }}</span>
+            </div>
+            <div v-if="site.defaultOperatingHours" class="list-card-info-row">
+              <i class="pi pi-sun" />
+              <span>{{ site.defaultOperatingHours }}</span>
+            </div>
+          </div>
+          <div class="list-card-actions">
+            <button type="button" class="list-action-btn list-action-edit" :title="t('common.edit')" @click="editPlant(site)">
+              <i class="pi pi-pencil" />
+            </button>
+            <button type="button" class="list-action-btn list-action-edit" :title="site.isActive ? t('common.pause') : t('common.activate')" @click="toggleStatus(site)">
+              <i :class="site.isActive ? 'pi pi-pause' : 'pi pi-play'" />
+            </button>
+            <button type="button" class="list-action-btn list-action-delete" :title="t('common.delete')" @click="deletePlant(site.id)">
+              <i class="pi pi-trash" />
+            </button>
+          </div>
+        </article>
       </div>
 
       <!-- Create/Edit Dialog -->
@@ -367,7 +251,7 @@
                 <div class="dlg-status-title">{{ t('plants.active') }}</div>
                 <div class="dlg-status-desc">{{ t('plants.activeHelp') }}</div>
               </div>
-              <Checkbox v-model="formData.isActive" input-id="isActive" binary />
+              <PrimeToggleSwitch v-model="formData.isActive" input-id="isActive" />
             </div>
           </div>
         </form>
@@ -394,14 +278,11 @@ import { required } from '@vuelidate/validators'
 import { usePlantsStore } from '@/stores/plants.store'
 import MainLayout from '@/layouts/MainLayout.vue'
 import type { Plant, CreatePlantDto, UpdatePlantDto } from '@/types/plant'
-import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import AppDialog from '@/components/common/AppDialog.vue'
-import Dropdown from 'primevue/dropdown'
-import Checkbox from 'primevue/checkbox'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
+import PrimeToggleSwitch from 'primevue/toggleswitch'
+import MultiSelect from 'primevue/multiselect'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -409,9 +290,14 @@ import Tag from 'primevue/tag'
 const { t } = useI18n()
 const plantsStore = usePlantsStore()
 
+// Timezone fisso: tutti i plant usano Europe/Rome (decisione di prodotto).
+// Il backend defaulta già a Europe/Rome (Plant.cs); qui forziamo lo stesso
+// valore in create e in edit per garantire coerenza dei timestamp UI/ICS.
+const PLANT_TIMEZONE = 'Europe/Rome'
+
 // State
 const searchQuery = ref('')
-const statusFilter = ref<boolean | null>(null)
+const statusFilter = ref<boolean[]>([])
 const showCreateDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref<string | null>(null)
@@ -429,7 +315,7 @@ const formData = ref<CreatePlantDto>({
   address: '',
   city: '',
   country: '',
-  timeZone: 'UTC',
+  timeZone: PLANT_TIMEZONE,
   isActive: true,
   defaultOperatingHours: '',
   appReceptionPlantId: null,
@@ -457,21 +343,12 @@ const filteredPlants = computed(() => {
     )
   }
 
-  if (statusFilter.value !== null) {
-    result = result.filter((plant) => plant.isActive === statusFilter.value)
+  if (statusFilter.value.length > 0) {
+    result = result.filter((plant) => statusFilter.value.includes(plant.isActive))
   }
 
   return result
 })
-
-// Methods
-const onSearchChange = () => {
-  // Debounce could be added here
-}
-
-const onFilterChange = () => {
-  // Filter is already applied through computed
-}
 
 const editPlant = (plant: Plant) => {
   isEditing.value = true
@@ -481,7 +358,9 @@ const editPlant = (plant: Plant) => {
     address: plant.address,
     city: plant.city,
     country: plant.country,
-    timeZone: plant.timeZone,
+    // Forziamo Europe/Rome anche in modifica: tutti i plant del sistema
+    // operano sullo stesso fuso, e l'eventuale valore storico va normalizzato.
+    timeZone: PLANT_TIMEZONE,
     isActive: plant.isActive,
     defaultOperatingHours: plant.defaultOperatingHours,
     appReceptionPlantId: plant.appReceptionPlantId ?? null,
@@ -536,7 +415,7 @@ const closeDialog = () => {
     address: '',
     city: '',
     country: '',
-    timeZone: 'UTC',
+    timeZone: PLANT_TIMEZONE,
     isActive: true,
     defaultOperatingHours: '',
     appReceptionPlantId: null,
@@ -558,23 +437,6 @@ onMounted(async () => {
   }
 })
 
-const getPlantInitials = (name: string): string => {
-  if (!name) return 'ST'
-
-  const parts = name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase()
-  }
-
-  return parts
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join('')
-}
 </script>
 
 <style scoped src="./SitesListView.css"></style>

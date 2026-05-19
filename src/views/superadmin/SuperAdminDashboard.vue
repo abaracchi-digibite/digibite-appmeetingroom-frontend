@@ -2,21 +2,19 @@
   <MainLayout>
     <div class="sa-dashboard">
 
-      <!-- Header -->
-      <div class="sa-header">
-        <div>
-          <!-- <h1 class="sa-title">{{ t('superadmin.dashboard.title') }}</h1> -->
-          <p class="sa-subtitle">{{ t('superadmin.dashboard.subtitle') }}</p>
-        </div>
-        <div class="sa-actions">
+      <PageHeader
+        :title="t('superadmin.dashboard.title')"
+        :subtitle="t('superadmin.dashboard.subtitle')"
+      >
+        <template #actions>
           <router-link :to="{ name: 'TenantsList' }" class="btn-primary">
             <i class="pi pi-building" /> {{ t('superadmin.dashboard.manageTenants') }}
           </router-link>
           <router-link :to="{ name: 'SubscriptionPlans' }" class="btn-secondary">
             <i class="pi pi-credit-card" /> {{ t('superadmin.dashboard.managePlans') }}
           </router-link>
-        </div>
-      </div>
+        </template>
+      </PageHeader>
 
       <!-- KPI -->
       <div class="kpi-grid">
@@ -92,12 +90,12 @@
       </Card>
 
       <!-- Impersonation Role Dialog -->
-      <Dialog
+      <AppDialog
           v-model:visible="showImpersonateDialog"
           :header="t('superadmin.impersonateAs')"
-          :modal="true"
-          :style="{ width: '420px' }"
-          :breakpoints="{ '768px': '95vw' }"
+          icon="pi pi-sign-in"
+          severity="warning"
+          size="sm"
       >
         <div class="impersonate-body">
           <div class="impersonate-tenant-info">
@@ -169,18 +167,14 @@
           </div>
         </div>
         <template #footer>
-          <div class="dialog-actions">
-            <Button :label="t('common.cancel')" severity="secondary" outlined @click="showImpersonateDialog = false" />
-            <Button
-                :label="t('superadmin.impersonate')"
-                icon="pi pi-sign-in"
-                :loading="impersonateLoading"
-                @click="confirmImpersonate"
-                class="btn-impersonate"
-            />
-          </div>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showImpersonateDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="impersonateLoading" @click="confirmImpersonate">
+            <i :class="impersonateLoading ? 'pi pi-spin pi-spinner' : 'pi pi-sign-in'" />{{ t('superadmin.impersonate') }}
+          </button>
         </template>
-      </Dialog>
+      </AppDialog>
 
       <Toast />
 
@@ -199,13 +193,13 @@ import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
-import Button from 'primevue/button'
 import type {Tenant} from "@/types";
 import {authApi, type ImpersonationRole, type ImpersonationTarget} from "@/api/auth.api.ts";
 import {useAuthStore} from "@/stores";
 import {useToast} from "primevue/usetoast";
 import Select from "primevue/select";
-import Dialog from "primevue/dialog";
+import PageHeader from '@/components/common/PageHeader.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import Toast from "primevue/toast";
 
 const selectedImpersonateRole = ref('Tenant.Owner')
@@ -344,9 +338,9 @@ async function loadImpersonationRoles(): Promise<void> {
     impersonateRoles.value = await authApi.listImpersonationRoles()
   } catch {
     impersonateRoles.value = [
-      { key: 'Tenant.Owner',       scope: 'Tenant', displayName: 'Tenant Owner',       description: '', requiresTargetId: false },
-      { key: 'Tenant.Contributor', scope: 'Tenant', displayName: 'Tenant Contributor', description: '', requiresTargetId: false },
-      { key: 'Tenant.Reader',      scope: 'Tenant', displayName: 'Tenant Reader',      description: '', requiresTargetId: false },
+      { key: 'Tenant.Owner',       scope: 'Tenant', displayName: t('superadmin.roleTenantOwner'),       description: '', requiresTargetId: false },
+      { key: 'Tenant.Contributor', scope: 'Tenant', displayName: t('superadmin.roleTenantContributor'), description: '', requiresTargetId: false },
+      { key: 'Tenant.Reader',      scope: 'Tenant', displayName: t('superadmin.roleTenantViewer'),      description: '', requiresTargetId: false },
     ]
   }
 }

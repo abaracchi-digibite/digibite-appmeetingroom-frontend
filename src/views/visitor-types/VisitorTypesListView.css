@@ -191,3 +191,32 @@
     align-items: flex-start;
   }
 }
+
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .dlg-hint-box {
+  background: rgba(37,99,235,0.1);
+  border-color: rgba(96,165,250,0.3);
+  color: #93c5fd;
+}
+
+.dark .field-chip-optional { background: rgba(100,116,139,0.18); color: var(--text-secondary); }
+.dark .field-chip-vis { background: rgba(13,148,136,0.15); color: #2dd4bf; }
+
+/* ========== DARK MODE OVERRIDES ========== */
+.dark .dlg-hint-box {
+  background: rgba(37,99,235,0.1);
+  border-color: rgba(96,165,250,0.3);
+  color: #93c5fd;
+}
+.dark .dlg-hint-box i { color: #93c5fd; }
+
+.dark .field-row:hover { border-color: rgba(129,140,248,0.5); }
+
+.dark .field-chip-type     { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+.dark .field-chip-required { background: rgba(239,68,68,0.15);  color: #f87171; }
+.dark .field-chip-optional { background: rgba(100,116,139,0.18); color: var(--text-secondary); }
+.dark .field-chip-vis      { background: rgba(13,148,136,0.15); color: #2dd4bf; }
+
+.dark .field-action-btn { color: var(--text-muted); }
+.dark .field-action-edit:hover   { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.dark .field-action-delete:hover { background: rgba(239,68,68,0.15);  color: #f87171; }

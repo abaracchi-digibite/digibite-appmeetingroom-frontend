@@ -73,13 +73,13 @@
             </template>
           </Column>
 
-          <Column field="memberCount" :header="t('common.membersCount')" :sortable="true" style="width: 15%">
+          <Column field="memberCount" :header="t('userGroups.memberCount')" :sortable="true" style="width: 15%">
             <template #body="{ data }">
               <Tag :value="`${data.memberCount}`" severity="info" />
             </template>
           </Column>
 
-          <Column field="createdAt" :header="t('common.createdDate')" :sortable="true" style="width: 15%">
+          <Column field="createdAt" :header="t('common.createdAt')" :sortable="true" style="width: 15%">
             <template #body="{ data }">
               <span class="list-cell-muted">{{ formatDate(data.createdAt) }}</span>
             </template>
@@ -132,48 +132,64 @@
       </div>
 
       <!-- ── Create / Edit Dialog ─────────────────────────────────── -->
-      <Dialog
+      <AppDialog
         v-model:visible="showCreateDialog"
-        modal
         :header="isEditing ? t('common.edit') : t('userGroups.createNew')"
-        :style="{ width: 'min(760px, 96vw)' }"
+        :icon="isEditing ? 'pi pi-pencil' : 'pi pi-users'"
+        severity="primary"
+        size="md"
       >
-        <form @submit.prevent="saveGroup" class="group-dialog-form">
-          <div class="group-dialog-grid">
-            <div>
-              <label class="block text-sm font-medium mb-2">{{ t('userGroups.name') }} *</label>
-              <InputText v-model="formData.name" :placeholder="t('userGroups.name')" class="w-full" required />
+        <form @submit.prevent="saveGroup" class="dlg-form">
+          <!-- Sezione 1: informazioni gruppo -->
+          <div class="dlg-section">
+            <div class="dlg-section-title">
+              <i class="pi pi-info-circle" />{{ t('common.information') }}
             </div>
-            <div>
-              <label class="block text-sm font-medium mb-2">{{ t('userGroups.description') }}</label>
-              <Textarea v-model="formData.description" :placeholder="t('userGroups.description')" rows="3" class="w-full" />
+            <div class="dlg-fields-2">
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('userGroups.name') }} <span class="req">*</span></label>
+                <InputText v-model="formData.name" :placeholder="t('userGroups.name')" class="w-full" required />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('userGroups.description') }}</label>
+                <Textarea v-model="formData.description" :placeholder="t('userGroups.description')" rows="3" class="w-full" autoResize />
+              </div>
             </div>
           </div>
 
-          <div v-if="!isEditing" class="group-members-picker">
-            <label class="block text-sm font-medium mb-2">{{ t('userGroups.selectMembers') }}</label>
-            <MultiSelect
-              v-model="formData.members"
-              :options="availableUserOptions"
-              optionLabel="label"
-              optionValue="value"
-              display="chip"
-              filter
-              class="w-full"
-              :placeholder="t('userGroups.selectMembersPlaceholder')"
-              :maxSelectedLabels="3"
-              :emptyFilterMessage="t('common.noResults')"
-              :emptyMessage="t('userGroups.noUsersAvailable')"
-            />
-            <p class="group-members-help">{{ t('userGroups.membersHelp') }}</p>
-          </div>
-
-          <div class="group-dialog-actions">
-            <Button type="submit" :label="t('common.save')" />
-            <Button type="button" :label="t('common.cancel')" severity="secondary" @click="showCreateDialog = false" />
+          <!-- Sezione 2: membri (solo in creazione) -->
+          <div v-if="!isEditing" class="dlg-section">
+            <div class="dlg-section-title">
+              <i class="pi pi-user-plus" />{{ t('userGroups.selectMembers') }}
+            </div>
+            <div class="dlg-field">
+              <MultiSelect
+                v-model="formData.members"
+                :options="availableUserOptions"
+                optionLabel="label"
+                optionValue="value"
+                display="chip"
+                filter
+                class="w-full"
+                :placeholder="t('userGroups.selectMembersPlaceholder')"
+                :maxSelectedLabels="3"
+                :emptyFilterMessage="t('common.noResults')"
+                :emptyMessage="t('userGroups.noUsersAvailable')"
+              />
+              <small class="dlg-help">{{ t('userGroups.membersHelp') }}</small>
+            </div>
           </div>
         </form>
-      </Dialog>
+
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showCreateDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" @click="saveGroup">
+            <i class="pi pi-check" />{{ t('common.save') }}
+          </button>
+        </template>
+      </AppDialog>
     </div>
   </MainLayout>
 </template>
@@ -186,8 +202,7 @@ import { useToast } from 'primevue/usetoast'
 import { useUserGroupsStore } from '@/stores/user-groups.store'
 import { useUsersStore } from '@/stores/users.store'
 import MainLayout from '@/layouts/MainLayout.vue'
-import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
+import AppDialog from '@/components/common/AppDialog.vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'

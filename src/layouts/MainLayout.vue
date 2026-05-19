@@ -21,8 +21,8 @@
           <template v-else>
             <div class="tenant-compact-logo-shell">
               <img
-                v-if="tenantCompactLogoUrl"
-                :src="tenantCompactLogoUrl"
+                v-if="tenantCompactLogoUrl || tenantLogoUrl"
+                :src="tenantCompactLogoUrl ?? tenantLogoUrl!"
                 :alt="t('settings.compactLogoAlt')"
                 class="tenant-logo tenant-logo-compact"
               />
@@ -32,44 +32,33 @@
             </div>
           </template>
           <Transition name="fade">
-            <span v-if="sidebarExpanded" class="logo-text">{{ tenantDisplayName }}</span>
+            <span v-if="sidebarExpanded && !tenantLogoUrl" class="logo-text">{{ tenantDisplayName }}</span>
           </Transition>
         </div>
-        <button
-          class="collapse-btn"
-          :title="sidebarExpanded ? $t('nav.collapse') : $t('nav.expand')"
-          @click="toggleSidebarExpanded"
-        >
-          <i :class="sidebarExpanded ? 'pi pi-angle-left' : 'pi pi-angle-right'" />
-        </button>
       </div>
 
       <!-- Navigation -->
       <nav class="sidebar-nav">
         <!--
-          Tenant-scoped sections (Main + Management) sono visibili SOLO ai
-          normali utenti tenant. Il SuperAdmin li vede esclusivamente quando
-          sta impersonando un tenant (in quel caso agisce come un utente del tenant).
+          Tenant-scoped sections sono visibili SOLO ai normali utenti tenant.
+          Il SuperAdmin le vede esclusivamente quando sta impersonando un tenant.
+          Le voci sono raggruppate semanticamente in 5 sezioni invece che 2 lunghe.
         -->
-        <div v-if="!isSuperAdmin || authStore.isImpersonating" class="nav-section">
-          <span v-if="sidebarExpanded" class="nav-section-label">{{ $t('nav.main') }}</span>
-          <NavItem
-            v-for="item in mainMenuItems"
-            :key="item.to"
-            :item="item"
-            :expanded="sidebarExpanded"
-          />
-        </div>
-
-        <div v-if="!isSuperAdmin || authStore.isImpersonating" class="nav-section">
-          <span v-if="sidebarExpanded" class="nav-section-label">{{ $t('nav.management') }}</span>
-          <NavItem
-            v-for="item in managementMenuItems"
-            :key="item.to"
-            :item="item"
-            :expanded="sidebarExpanded"
-          />
-        </div>
+        <template v-if="!isSuperAdmin || authStore.isImpersonating">
+          <div
+            v-for="section in tenantNavSections"
+            :key="section.key"
+            class="nav-section"
+          >
+            <span v-if="sidebarExpanded" class="nav-section-label">{{ section.label }}</span>
+            <NavItem
+              v-for="item in section.items"
+              :key="item.to"
+              :item="item"
+              :expanded="sidebarExpanded"
+            />
+          </div>
+        </template>
 
         <!-- SuperAdmin section - visible only for Platform.Owner when NOT impersonating -->
         <div v-if="isSuperAdmin && !authStore.isImpersonating" class="nav-section superadmin-section">
@@ -138,6 +127,15 @@
             <i class="pi pi-bars" />
           </button>
 
+          <!-- Sidebar collapse toggle -->
+          <button
+            class="collapse-btn"
+            :title="sidebarExpanded ? $t('nav.collapse') : $t('nav.expand')"
+            @click="toggleSidebarExpanded"
+          >
+            <i :class="sidebarExpanded ? 'pi pi-angle-left' : 'pi pi-angle-right'" />
+          </button>
+
           <!-- Page title injected from the current route -->
           <nav class="breadcrumb" aria-label="breadcrumb">
             <RouterLink to="/dashboard" class="breadcrumb-home">
@@ -178,13 +176,31 @@
                   <span>{{ isDarkMode ? $t('nav.lightMode') : $t('nav.darkMode') }}</span>
                 </button>
 
-                <!-- Locale switcher inside user menu -->
-                <button class="user-dropdown-item" @click="handleCycleLocale" :title="$t('nav.language')">
+                <!-- Locale switcher: select nativa popolata da AVAILABLE_LOCALES.
+                     Usiamo <select> nativo (non PrimeSelect) per evitare conflitti
+                     con il close-on-outside-click del dropdown utente: l'overlay
+                     di PrimeSelect verrebbe portal'd fuori da userMenuRef e
+                     scatenerebbe la chiusura del menu prima di selezionare. -->
+                <div class="user-dropdown-locale">
                   <i class="pi pi-globe" />
-                  <span>{{ currentLocale === 'it' ? $t('nav.localeIt') : $t('nav.localeEn') }}</span>
-                </button>
+                  <span class="user-dropdown-locale-label">{{ $t('nav.language') }}</span>
+                  <select
+                      class="user-dropdown-locale-select"
+                      :value="currentLocale"
+                      :aria-label="$t('nav.language')"
+                      @change="onLocaleChange(($event.target as HTMLSelectElement).value)"
+                  >
+                    <option v-for="loc in availableLocales" :key="loc.value" :value="loc.value">
+                      {{ loc.label }}
+                    </option>
+                  </select>
+                </div>
 
                 <div class="user-dropdown-divider" />
+                <button class="user-dropdown-item" @click="openChangePasswordDialog">
+                  <i class="pi pi-lock" />
+                  <span>{{ $t('settings.changePassword') }}</span>
+                </button>
                 <button class="user-dropdown-item" @click="handleLogout">
                   <i class="pi pi-sign-out" />
                   <span>{{ $t('nav.logout') }}</span>
@@ -202,6 +218,60 @@
     </div>
 
     <ConfirmDialog />
+
+    <!-- ─── Change Password Dialog ─────────────────────────────── -->
+    <AppDialog
+        v-model:visible="changePasswordVisible"
+        :header="$t('settings.changePasswordTitle')"
+        icon="pi pi-lock"
+        size="sm"
+    >
+      <template #default>
+        <div class="dlg-field">
+          <label class="dlg-label">{{ $t('settings.currentPassword') }} <span class="required-star">*</span></label>
+          <input
+              v-model="changePwdForm.currentPassword"
+              type="password"
+              class="dlg-input"
+              autocomplete="current-password"
+          />
+        </div>
+        <div class="dlg-field">
+          <label class="dlg-label">{{ $t('settings.newPassword') }} <span class="required-star">*</span></label>
+          <input
+              v-model="changePwdForm.newPassword"
+              type="password"
+              class="dlg-input"
+              autocomplete="new-password"
+          />
+        </div>
+        <div class="dlg-field">
+          <label class="dlg-label">{{ $t('settings.confirmNewPassword') }} <span class="required-star">*</span></label>
+          <input
+              v-model="changePwdForm.confirmNewPassword"
+              type="password"
+              class="dlg-input"
+              autocomplete="new-password"
+          />
+        </div>
+        <p v-if="changePwdError" class="dlg-error-text">{{ changePwdError }}</p>
+      </template>
+      <template #footer>
+        <Button
+            :label="$t('common.cancel')"
+            severity="secondary"
+            text
+            :disabled="changePwdSaving"
+            @click="changePasswordVisible = false"
+        />
+        <Button
+            :label="changePwdSaving ? $t('settings.saving') : $t('settings.changePassword')"
+            icon="pi pi-lock"
+            :loading="changePwdSaving"
+            @click="submitChangePassword"
+        />
+      </template>
+    </AppDialog>
   </div>
 </template>
 
@@ -210,9 +280,14 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ConfirmDialog from 'primevue/confirmdialog'
+import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useTenantsStore } from '@/stores/tenants.store'
+import { AVAILABLE_LOCALES } from '@/i18n'
+import { authApi } from '@/api/auth.api'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -220,6 +295,7 @@ const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const uiStore = useUiStore()
 const tenantsStore = useTenantsStore()
+const toast = useToast()
 
 // ------ State ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 const sidebarExpanded = ref<boolean>(true)
@@ -273,10 +349,9 @@ const currentPageTitle = computed(() => {
 
 const userName = computed(() => {
   const u = authStore.user
-  if (!u) return 'Utente'
-  // Prefer fullName if available, otherwise use email prefix
-  const display = (u as any).fullName || u.email?.split('@')[0] || 'Utente'
-  return display
+  if (!u) return t('common.defaultUser')
+  // Prefer fullName from /auth/me, fallback su email prefix
+  return u.fullName || u.email?.split('@')[0] || t('common.defaultUser')
 })
 const userEmail = computed(() => authStore.user?.email ?? '')
 const userInitials = computed(() => {
@@ -291,17 +366,17 @@ const userInitials = computed(() => {
 
 const primaryRole = computed(() => {
   const roles = authStore.userRoles
-  if (roles.includes('Platform.Owner')) return 'SuperAdmin'
-  if (roles.includes('Tenant.Owner')) return 'Admin'
-  if (roles.includes('Tenant.Contributor')) return 'Contributor'
-  return 'Reader'
+  if (roles.includes('Platform.Owner')) return t('users.roles.platformOwner')
+  if (roles.includes('Tenant.Owner')) return t('users.roles.owner')
+  if (roles.includes('Tenant.Contributor')) return t('users.roles.contributor')
+  return t('users.roles.viewer')
 })
 
 
 const tenantRecord = computed(() => tenantsStore.currentTenant ?? tenantsStore.tenants[0] ?? null)
 const tenantLogoUrl = computed(() => tenantRecord.value?.logoUrl ?? null)
 const tenantCompactLogoUrl = computed(() => tenantRecord.value?.compactLogoUrl ?? null)
-const tenantDisplayName = computed(() => tenantRecord.value?.name ?? 'AppMeetingRoom')
+const tenantDisplayName = computed(() => tenantRecord.value?.name ?? t('app.name'))
 const tenantInitials = computed(() => {
   const base = tenantDisplayName.value.trim()
   if (!base) return 'AM'
@@ -313,37 +388,83 @@ const tenantInitials = computed(() => {
 })
 
 // ------ Menu Items ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-const mainMenuItems = computed(() => [
-  { to: '/dashboard', icon: 'pi-th-large', label: t('nav.dashboard') },
-  { to: '/calendar', icon: 'pi-calendar', label: t('nav.calendar') },
-  { to: '/bookings', icon: 'pi-bookmark', label: t('nav.bookings') },
-  { to: '/bookings/new', icon: 'pi-plus-circle', label: t('bookings.new') },
-])
+// Le voci tenant sono raggruppate in 5 sezioni semantiche (più leggibili
+// del vecchio "Management" da 13 voci):
+//   - Operativo  : lavoro di tutti i giorni (dashboard, calendario, prenotazioni)
+//   - Spazi      : entità "fisiche" (sedi, risorse, tipi, indisponibilità)
+//   - Visitatori : visitatori e accoglienza (check-in)
+//   - Persone    : utenti, gruppi e permessi (alcune voci solo per Owner)
+//   - Sistema    : configurazione globale (notifiche, audit, settings)
+//
+// Voci della sidebar con ruolo MINIMO Tenant richiesto (DRF §3.2):
+//   - Reader (default): tutti
+//   - Contributor: Tenant.Contributor + Tenant.Owner + Platform.Owner
+//   - Owner: solo Tenant.Owner + Platform.Owner
+type MinTenantRole = 'Reader' | 'Contributor' | 'Owner'
+type NavLink  = { to: string; icon: string; label: string; minRole?: MinTenantRole }
+type NavGroup = { key: string; label: string; items: NavLink[] }
 
-const managementMenuItems = computed(() => {
-  const items = [
-    { to: '/checkin', icon: 'pi-qrcode', label: t('nav.checkin') },
-    { to: '/plants', icon: 'pi-building', label: t('nav.plants') },
-    { to: '/resources', icon: 'pi-box', label: t('nav.resources') },
-    { to: '/resource-types', icon: 'pi-th-large', label: t('nav.resourceTypes') },
-    { to: '/visitor-types', icon: 'pi-users', label: t('nav.visitorTypes') },
-    { to: '/visitors', icon: 'pi-book', label: t('nav.visitors') },
-    { to: '/notification-rules', icon: 'pi-bell', label: t('nav.notifications') },
-    { to: '/unavailability', icon: 'pi-ban', label: t('nav.unavailability') },
-    { to: '/user-groups', icon: 'pi-sitemap', label: t('nav.userGroups') },
-    { to: '/users', icon: 'pi-users', label: t('nav.users') },
-    { to: '/audit-log', icon: 'pi-history', label: t('nav.auditLog') },
+const tenantNavSections = computed<NavGroup[]>(() => {
+  // Filtra le voci a cui l'utente non ha accesso. L'allineamento con le
+  // route guards (router/index.ts meta.minRole) è importante: stesse regole
+  // qui e lì, così la sidebar mostra solo ciò a cui realmente l'utente
+  // accederà senza incorrere in /403.
+  const filter = (items: NavLink[]) =>
+      items.filter((it) => !it.minRole || authStore.hasMinTenantRole(it.minRole))
+
+  const sections: NavGroup[] = [
+    {
+      key: 'operations',
+      label: t('nav.sectionOperations'),
+      items: filter([
+        { to: '/dashboard',     icon: 'pi-th-large',    label: t('nav.dashboard') },
+        { to: '/calendar',      icon: 'pi-calendar',    label: t('nav.calendar') },
+        { to: '/bookings',      icon: 'pi-bookmark',    label: t('nav.bookings') },
+        { to: '/bookings/new',  icon: 'pi-plus-circle', label: t('bookings.new'), minRole: 'Contributor' },
+      ]),
+    },
+    {
+      key: 'spaces',
+      label: t('nav.sectionSpaces'),
+      items: filter([
+        { to: '/plants',          icon: 'pi-building', label: t('nav.plants') },
+        { to: '/resources',       icon: 'pi-box',      label: t('nav.resources') },
+        { to: '/resource-types',  icon: 'pi-th-large', label: t('nav.resourceTypes') },
+        { to: '/unavailability',  icon: 'pi-ban',      label: t('nav.unavailability'), minRole: 'Contributor' },
+      ]),
+    },
+    {
+      key: 'visitors',
+      label: t('nav.sectionVisitors'),
+      items: filter([
+        { to: '/visitors',      icon: 'pi-book',   label: t('nav.visitors'),      minRole: 'Contributor' },
+        { to: '/visitor-types', icon: 'pi-users',  label: t('nav.visitorTypes'),  minRole: 'Contributor' },
+        { to: '/checkin',       icon: 'pi-qrcode', label: t('nav.checkin'),       minRole: 'Contributor' },
+      ]),
+    },
+    {
+      key: 'people',
+      label: t('nav.sectionPeople'),
+      items: filter([
+        { to: '/users',              icon: 'pi-users',   label: t('nav.users'),       minRole: 'Contributor' },
+        { to: '/user-groups',        icon: 'pi-sitemap', label: t('nav.userGroups'),  minRole: 'Contributor' },
+        { to: '/settings/relations', icon: 'pi-shield',  label: t('nav.permissions'), minRole: 'Owner' },
+      ]),
+    },
+    {
+      key: 'system',
+      label: t('nav.sectionSystem'),
+      items: filter([
+        { to: '/notification-rules', icon: 'pi-bell',    label: t('nav.notifications'),     minRole: 'Contributor' },
+        { to: '/custom-fields',      icon: 'pi-list',    label: t('common.customFields'),   minRole: 'Owner' },
+        { to: '/audit-log',          icon: 'pi-history', label: t('nav.auditLog'),          minRole: 'Owner' },
+        { to: '/settings',           icon: 'pi-cog',     label: t('nav.settings') },
+      ]),
+    },
   ]
 
-  // Add permissions link for Tenant.Owner and Platform.Owner
-  if (authStore.hasRole('Tenant.Owner') || authStore.isSuperAdmin) {
-    items.push({ to: '/custom-fields', icon: 'pi-list', label: t('common.customFields') })
-    items.push({ to: '/settings/relations', icon: 'pi-shield', label: t('nav.permissions') })
-  }
-
-  items.push({ to: '/settings', icon: 'pi-cog', label: t('nav.settings') })
-
-  return items
+  // Nascondi sezioni vuote (es. "Visitatori" per Reader → tutta la sezione sparisce).
+  return sections.filter((s) => s.items.length > 0)
 })
 
 const isSuperAdmin = computed(() => authStore.isSuperAdmin)
@@ -353,6 +474,45 @@ const superAdminMenuItems = computed(() => [
   { to: '/superadmin/tenants', icon: 'pi-building-columns', label: t('superadmin.tenants.title') },
   { to: '/superadmin/plans', icon: 'pi-credit-card', label: t('superadmin.plans.title') },
 ])
+
+// ------ Change Password ──────────────────────────────────────────────────────
+const changePasswordVisible = ref(false)
+const changePwdSaving = ref(false)
+const changePwdError = ref('')
+const changePwdForm = ref({ currentPassword: '', newPassword: '', confirmNewPassword: '' })
+
+function openChangePasswordDialog(): void {
+  showUserMenu.value = false
+  changePwdForm.value = { currentPassword: '', newPassword: '', confirmNewPassword: '' }
+  changePwdError.value = ''
+  changePasswordVisible.value = true
+}
+
+async function submitChangePassword(): Promise<void> {
+  changePwdError.value = ''
+  if (!changePwdForm.value.currentPassword || !changePwdForm.value.newPassword || !changePwdForm.value.confirmNewPassword) {
+    changePwdError.value = t('settings.fillAllFields')
+    return
+  }
+  if (changePwdForm.value.newPassword.length < 8) {
+    changePwdError.value = t('settings.passwordTooShort')
+    return
+  }
+  if (changePwdForm.value.newPassword !== changePwdForm.value.confirmNewPassword) {
+    changePwdError.value = t('settings.passwordMismatch')
+    return
+  }
+  changePwdSaving.value = true
+  try {
+    await authApi.changePassword(changePwdForm.value.currentPassword, changePwdForm.value.newPassword)
+    changePasswordVisible.value = false
+    toast.add({ severity: 'success', summary: t('common.saved'), detail: t('settings.passwordChanged'), life: 3500 })
+  } catch {
+    changePwdError.value = t('settings.changePasswordError')
+  } finally {
+    changePwdSaving.value = false
+  }
+}
 
 // ------ Methods ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 function toggleSidebarExpanded() {
@@ -364,19 +524,21 @@ function toggleUserMenu() {
   showUserMenu.value = !showUserMenu.value
 }
 
-function cycleLocale() {
-  const next = locale.value === 'it' ? 'en' : 'it'
-  locale.value = next
+/**
+ * Lingue disponibili nel selettore. Importate da `i18n/index.ts` (single
+ * source of truth): per aggiungerne una nuova basta registrarla lì, qui
+ * compare automaticamente.
+ */
+const availableLocales = AVAILABLE_LOCALES
+
+function onLocaleChange(next: string) {
+  locale.value = next as typeof locale.value
   uiStore.setLocale(next)
+  // Non chiudo il menu: l'utente potrebbe voler cambiare anche tema/altro.
 }
 
 function handleToggleDarkMode() {
   uiStore.toggleDarkMode()
-  showUserMenu.value = false
-}
-
-function handleCycleLocale() {
-  cycleLocale()
   showUserMenu.value = false
 }
 

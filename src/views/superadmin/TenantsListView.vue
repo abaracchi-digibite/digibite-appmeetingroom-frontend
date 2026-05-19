@@ -2,24 +2,16 @@
   <MainLayout>
     <div class="tenants-page">
 
-      <!-- Header -->
-      <div class="page-header">
-        <div class="header-left">
-          <div class="header-icon">
-            <i class="pi pi-building-columns" />
-          </div>
-          <div>
-            <!-- <h1 class="header-title">{{ t('superadmin.tenants.title') }}</h1> -->
-            <p class="header-subtitle">{{ t('superadmin.tenants.subtitle') }}</p>
-          </div>
-        </div>
-        <Button
-          :label="t('superadmin.createNewTenant')"
-          icon="pi pi-plus"
-          @click="openCreateDialog"
-          class="btn-create"
-        />
-      </div>
+      <PageHeader
+        :title="t('superadmin.tenants.title')"
+        :subtitle="t('superadmin.tenants.subtitle')"
+      >
+        <template #actions>
+          <button type="button" class="btn-create" @click="openCreateDialog">
+            <i class="pi pi-plus" />{{ t('superadmin.createNewTenant') }}
+          </button>
+        </template>
+      </PageHeader>
 
       <!-- Stats Strip -->
       <div class="stats-strip">
@@ -171,64 +163,69 @@
       </div>
 
       <!-- Create Dialog -->
-      <Dialog
+      <AppDialog
         v-model:visible="showCreateDialog"
         :header="t('superadmin.createNewTenant')"
-        :modal="true"
-        :style="{ width: '640px' }"
-        :breakpoints="{ '768px': '95vw' }"
-        class="create-dialog"
+        icon="pi pi-building-columns"
+        severity="primary"
+        size="md"
       >
-        <form @submit.prevent="saveTenant" class="dialog-form">
-          <div class="form-grid">
-            <div class="form-field">
-              <label>{{ t('superadmin.name') }} *</label>
-              <InputText v-model="formData.name" :placeholder="t('superadmin.name')" class="w-full" required />
+        <form @submit.prevent="saveTenant" class="dlg-form">
+          <div class="dlg-section">
+            <div class="dlg-fields-2">
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('superadmin.name') }} *</label>
+                <InputText v-model="formData.name" :placeholder="t('superadmin.name')" class="w-full" required />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('superadmin.slug') }}</label>
+                <InputText v-model="formData.slug" :placeholder="t('superadmin.slug')" class="w-full" />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('common.description') }}</label>
+                <InputText v-model="formData.description" :placeholder="t('common.description')" class="w-full" />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('superadmin.senderEmail') }}</label>
+                <InputText v-model="formData.senderEmail" type="email" :placeholder="t('superadmin.senderEmail')" class="w-full" />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('superadmin.senderName') }}</label>
+                <InputText v-model="formData.senderName" :placeholder="t('superadmin.senderName')" class="w-full" />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('superadmin.customDomain') }}</label>
+                <InputText v-model="formData.customDomain" :placeholder="t('superadmin.customDomain')" class="w-full" />
+              </div>
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('superadmin.piiRetentionDays') }}</label>
+                <InputNumber v-model="formData.piiRetentionDays" :min="1" :max="3650" class="w-full" />
+              </div>
+              <div class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('plants.logoUrl') }}</label>
+                <InputText v-model="formData.logoUrl" :placeholder="t('plants.logoUrlPlaceholder')" class="w-full" />
+              </div>
             </div>
-            <div class="form-field">
-              <label>{{ t('superadmin.slug') }}</label>
-              <InputText v-model="formData.slug" :placeholder="t('superadmin.slug')" class="w-full" />
-            </div>
-            <div class="form-field full">
-              <label>{{ t('common.description') }}</label>
-              <InputText v-model="formData.description" :placeholder="t('common.description')" class="w-full" />
-            </div>
-            <div class="form-field">
-              <label>{{ t('superadmin.senderEmail') }}</label>
-              <InputText v-model="formData.senderEmail" type="email" :placeholder="t('superadmin.senderEmail')" class="w-full" />
-            </div>
-            <div class="form-field">
-              <label>{{ t('superadmin.senderName') }}</label>
-              <InputText v-model="formData.senderName" :placeholder="t('superadmin.senderName')" class="w-full" />
-            </div>
-            <div class="form-field">
-              <label>{{ t('superadmin.customDomain') }}</label>
-              <InputText v-model="formData.customDomain" :placeholder="t('superadmin.customDomain')" class="w-full" />
-            </div>
-            <div class="form-field">
-              <label>{{ t('superadmin.piiRetentionDays') }}</label>
-              <InputNumber v-model="formData.piiRetentionDays" :min="1" :max="3650" class="w-full" />
-            </div>
-            <div class="form-field full">
-              <label>{{ t('plants.logoUrl') }}</label>
-              <InputText v-model="formData.logoUrl" :placeholder="t('plants.logoUrlPlaceholder')" class="w-full" />
-            </div>
-          </div>
-
-          <div class="dialog-actions">
-            <Button type="button" :label="t('common.cancel')" severity="secondary" outlined @click="closeDialog" />
-            <Button type="submit" :label="t('common.save')" icon="pi pi-check" :loading="tenantsStore.loading" class="btn-create" />
           </div>
         </form>
-      </Dialog>
+
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="closeDialog">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="tenantsStore.loading" @click="saveTenant">
+            <i :class="tenantsStore.loading ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.save') }}
+          </button>
+        </template>
+      </AppDialog>
 
       <!-- Impersonation Role Dialog -->
-      <Dialog
+      <AppDialog
         v-model:visible="showImpersonateDialog"
         :header="t('superadmin.impersonateAs')"
-        :modal="true"
-        :style="{ width: '420px' }"
-        :breakpoints="{ '768px': '95vw' }"
+        icon="pi pi-sign-in"
+        severity="warning"
+        size="sm"
       >
         <div class="impersonate-body">
           <div class="impersonate-tenant-info">
@@ -300,18 +297,14 @@
           </div>
         </div>
         <template #footer>
-          <div class="dialog-actions">
-            <Button :label="t('common.cancel')" severity="secondary" outlined @click="showImpersonateDialog = false" />
-            <Button
-              :label="t('superadmin.impersonate')"
-              icon="pi pi-sign-in"
-              :loading="impersonateLoading"
-              @click="confirmImpersonate"
-              class="btn-impersonate"
-            />
-          </div>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="showImpersonateDialog = false">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="impersonateLoading" @click="confirmImpersonate">
+            <i :class="impersonateLoading ? 'pi pi-spin pi-spinner' : 'pi pi-sign-in'" />{{ t('superadmin.impersonate') }}
+          </button>
         </template>
-      </Dialog>
+      </AppDialog>
 
       <Toast />
     </div>
@@ -326,22 +319,22 @@ import { useToast } from 'primevue/usetoast'
 import { useTenantsStore } from '@/stores/tenants.store'
 import { useAuthStore } from '@/stores/auth.store'
 import MainLayout from '@/layouts/MainLayout.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { authApi, type ImpersonationRole, type ImpersonationTarget } from '@/api/auth.api'
 import type { Tenant, CreateTenantDto } from '@/types/tenant'
 import { TenantStatus } from '@/types/enums'
-import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Select from 'primevue/select'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Toast from 'primevue/toast'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const toast = useToast()
 const tenantsStore = useTenantsStore()
@@ -439,21 +432,21 @@ async function loadImpersonationRoles(): Promise<void> {
     // Fallback: elenco completo dei ruoli DRF --3.2 in caso il backend non risponda.
     // Viene usato solo in caso di errore di rete o endpoint non disponibile.
     impersonateRoles.value = [
-      { key: 'Tenant.Owner',        scope: 'Tenant',       displayName: 'Tenant Owner',        description: 'Accesso completo al tenant', requiresTargetId: false },
-      { key: 'Tenant.Admin',        scope: 'Tenant',       displayName: 'Tenant Admin',        description: 'Amministrazione tenant (utenti, ruoli, configurazione)', requiresTargetId: false },
-      { key: 'Tenant.Contributor',  scope: 'Tenant',       displayName: 'Tenant Contributor',  description: 'Può creare e modificare risorse e prenotazioni tenant-wide', requiresTargetId: false },
-      { key: 'Tenant.Reader',       scope: 'Tenant',       displayName: 'Tenant Reader',       description: 'Sola lettura su tutto il tenant', requiresTargetId: false },
-      { key: 'Plant.Owner',         scope: 'Plant',        displayName: 'Plant Owner',         description: 'Proprietario dello stabilimento (gestisce risorse e prenotazioni)', requiresTargetId: true },
-      { key: 'Plant.Contributor',   scope: 'Plant',        displayName: 'Plant Contributor',   description: 'Gestione operativa dello stabilimento', requiresTargetId: true },
-      { key: 'Plant.Reader',        scope: 'Plant',        displayName: 'Plant Reader',        description: 'Sola lettura sullo stabilimento', requiresTargetId: true },
-      { key: 'ResourceType.Owner',  scope: 'ResourceType', displayName: 'ResourceType Owner',  description: 'Proprietario di un tipo di risorsa (policy, regole di approvazione)', requiresTargetId: true },
-      { key: 'ResourceType.Reader', scope: 'ResourceType', displayName: 'ResourceType Reader', description: 'Sola lettura su un tipo di risorsa', requiresTargetId: true },
-      { key: 'Resource.Owner',      scope: 'Resource',     displayName: 'Resource Owner',      description: 'Proprietario della singola risorsa', requiresTargetId: true },
-      { key: 'Resource.Approver',   scope: 'Resource',     displayName: 'Resource Approver',   description: 'Approvatore delle prenotazioni su una risorsa', requiresTargetId: true },
-      { key: 'Resource.Booker',     scope: 'Resource',     displayName: 'Resource Booker',     description: 'Può prenotare una risorsa', requiresTargetId: true },
-      { key: 'Resource.Reader',     scope: 'Resource',     displayName: 'Resource Reader',     description: 'Sola lettura su una risorsa', requiresTargetId: true },
-      { key: 'Booking.Organizer',   scope: 'Booking',      displayName: 'Booking Organizer',   description: 'Organizzatore della prenotazione', requiresTargetId: true },
-      { key: 'Booking.Reader',      scope: 'Booking',      displayName: 'Booking Reader',      description: 'Sola lettura su una singola prenotazione', requiresTargetId: true },
+      { key: 'Tenant.Owner',        scope: 'Tenant',       displayName: t('superadmin.roleTenantOwner'),        description: t('superadmin.roleDescTenantOwner'), requiresTargetId: false },
+      { key: 'Tenant.Admin',        scope: 'Tenant',       displayName: t('superadmin.roleTenantAdmin'),        description: t('superadmin.roleDescTenantAdmin'), requiresTargetId: false },
+      { key: 'Tenant.Contributor',  scope: 'Tenant',       displayName: t('superadmin.roleTenantContributor'),  description: t('superadmin.roleDescTenantContributor'), requiresTargetId: false },
+      { key: 'Tenant.Reader',       scope: 'Tenant',       displayName: t('superadmin.roleTenantViewer'),       description: t('superadmin.roleDescTenantViewer'), requiresTargetId: false },
+      { key: 'Plant.Owner',         scope: 'Plant',        displayName: t('superadmin.rolePlantOwner'),         description: t('superadmin.roleDescPlantOwner'), requiresTargetId: true },
+      { key: 'Plant.Contributor',   scope: 'Plant',        displayName: t('superadmin.rolePlantContributor'),   description: t('superadmin.roleDescPlantContributor'), requiresTargetId: true },
+      { key: 'Plant.Reader',        scope: 'Plant',        displayName: t('superadmin.rolePlantReader'),        description: t('superadmin.roleDescPlantReader'), requiresTargetId: true },
+      { key: 'ResourceType.Owner',  scope: 'ResourceType', displayName: t('superadmin.roleResourceTypeOwner'),  description: t('superadmin.roleDescResourceTypeOwner'), requiresTargetId: true },
+      { key: 'ResourceType.Reader', scope: 'ResourceType', displayName: t('superadmin.roleResourceTypeReader'), description: t('superadmin.roleDescResourceTypeReader'), requiresTargetId: true },
+      { key: 'Resource.Owner',      scope: 'Resource',     displayName: t('superadmin.roleResourceOwner'),      description: t('superadmin.roleDescResourceOwner'), requiresTargetId: true },
+      { key: 'Resource.Approver',   scope: 'Resource',     displayName: t('superadmin.roleResourceApprover'),   description: t('superadmin.roleDescResourceApprover'), requiresTargetId: true },
+      { key: 'Resource.Booker',     scope: 'Resource',     displayName: t('superadmin.roleResourceBooker'),     description: t('superadmin.roleDescResourceBooker'), requiresTargetId: true },
+      { key: 'Resource.Reader',     scope: 'Resource',     displayName: t('superadmin.roleResourceReader'),     description: t('superadmin.roleDescResourceReader'), requiresTargetId: true },
+      { key: 'Booking.Organizer',   scope: 'Booking',      displayName: t('superadmin.roleBookingOrganizer'),   description: t('superadmin.roleDescBookingOrganizer'), requiresTargetId: true },
+      { key: 'Booking.Reader',      scope: 'Booking',      displayName: t('superadmin.roleBookingReader'),      description: t('superadmin.roleDescBookingReader'), requiresTargetId: true },
     ]
   }
 }
@@ -463,11 +456,11 @@ const emptyForm = (): CreateTenantDto => ({
 })
 const formData = ref<CreateTenantDto>(emptyForm())
 
-const statusOptions = [
-  { label: 'Attivo', value: TenantStatus.Active },
-  { label: 'Sospeso', value: TenantStatus.Suspended },
-  { label: 'Eliminato', value: TenantStatus.Deleted },
-]
+const statusOptions = computed(() => [
+  { label: t('superadmin.active'), value: TenantStatus.Active },
+  { label: t('superadmin.suspended'), value: TenantStatus.Suspended },
+  { label: t('superadmin.deleted'), value: TenantStatus.Deleted },
+])
 
 const filteredTenants = computed(() => {
   let result = tenantsStore.tenants
@@ -502,7 +495,7 @@ function statusIcon(status: string): string {
 
 const formatDate = (dateString: string): string => {
   if (!dateString) return '–'
-  try { return new Date(dateString).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return dateString }
+  try { return new Date(dateString).toLocaleDateString(locale.value, { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return dateString }
 }
 
 const openCreateDialog = () => { formData.value = emptyForm(); showCreateDialog.value = true }
@@ -513,9 +506,9 @@ const saveTenant = async () => {
   try {
     await tenantsStore.createTenant(formData.value)
     closeDialog()
-    toast.add({ severity: 'success', summary: 'Tenant creato', detail: `${formData.value.name} creato con successo`, life: 3000 })
+    toast.add({ severity: 'success', summary: t('superadmin.tenantCreated'), detail: formData.value.name, life: 3000 })
   } catch (error) {
-    toast.add({ severity: 'error', summary: 'Errore', detail: 'Errore nella creazione del tenant', life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.error'), detail: t('superadmin.tenantCreateError'), life: 3000 })
   }
 }
 

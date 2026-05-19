@@ -1,17 +1,12 @@
 <template>
   <MainLayout>
     <div class="ug-container">
-      <div class="ug-header">
-        <div class="ug-header-left">
-          <button class="btn-icon" @click="goBack" :title="t('common.back')">
-            <i class="pi pi-arrow-left" />
-          </button>
-          <div>
-            <!-- <h1 class="ug-title">{{ group?.name || t('userGroups.title') }}</h1> -->
-            <p class="ug-subtitle">{{ t('userGroups.detailSubtitle') }}</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        :title="group?.name || t('userGroups.title')"
+        :subtitle="t('userGroups.detailSubtitle')"
+        show-back-button
+      />
+
 
       <div v-if="loading" class="ug-loading">
         <i class="pi pi-spin pi-spinner" />
@@ -129,112 +124,126 @@
         </div>
       </template>
 
-      <PrimeDialog v-model:visible="showAddMemberDialog" :header="t('userGroups.addMember')" modal :style="{ width: '440px' }">
-        <div class="dialog-body">
-          <div class="dialog-field">
-            <label class="field-label required">{{ t('userGroups.selectUser') }}</label>
-            <PrimeDropdown
-              v-model="memberFormData.userId"
-              :options="availableUsers"
-              optionLabel="label"
-              optionValue="value"
-              :placeholder="t('userGroups.selectUserPlaceholder')"
-              :filter="true"
-              :filterPlaceholder="t('userGroups.selectUserPlaceholder')"
-              class="w-full"
-              :emptyFilterMessage="t('common.noResults')"
-              :emptyMessage="t('userGroups.noUsersAvailable')"
-            />
-            <p v-if="memberError" class="field-error">{{ memberError }}</p>
-          </div>
-        </div>
-        <template #footer>
-          <PrimeButton :label="t('common.cancel')" icon="pi pi-times" text @click="closeMemberDialog" />
-          <PrimeButton
-            :label="t('common.add')"
-            icon="pi pi-check"
-            :loading="savingMember"
-            :disabled="!memberFormData.userId"
-            class="dialog-btn-save"
-            @click="saveMember"
-          />
-        </template>
-      </PrimeDialog>
-
-      <PrimeDialog v-model:visible="showAddRelationDialog" :header="t('userGroups.addRelation')" modal :style="{ width: '520px' }">
-        <div class="dialog-body">
-          <div class="dialog-field">
-            <label class="field-label required">{{ t('userGroups.objectType') }}</label>
-            <PrimeDropdown
-              v-model="relationFormData.objectType"
-              :options="objectTypeOptions"
-              optionLabel="label"
-              optionValue="value"
-              :placeholder="t('userGroups.selectObjectType')"
-              class="w-full"
-            />
-          </div>
-
-          <div class="dialog-field">
-            <label class="field-label required">{{ t('userGroups.relationType') }}</label>
-            <PrimeDropdown
-              v-model="relationFormData.relationType"
-              :options="relationTypeOptions"
-              optionLabel="label"
-              optionValue="value"
-              :placeholder="t('userGroups.selectRelationType')"
-              class="w-full"
-              :filter="true"
-              filterPlaceholder="Cerca tipo relazione..."
-              :disabled="!relationFormData.objectType"
-            />
-          </div>
-
-          <div v-if="relationFormData.objectType" class="dialog-field">
-            <label class="field-label required">{{ t('userGroups.objectName') }}</label>
-
-            <div v-if="relationFormData.objectType === 'tenant'" class="field-readonly">
-              <i class="pi pi-building" />
-              <span>{{ t('userGroups.currentTenant') }}</span>
+      <AppDialog
+        v-model:visible="showAddMemberDialog"
+        :header="t('userGroups.addMember')"
+        icon="pi pi-user-plus"
+        severity="primary"
+        size="sm"
+      >
+        <div class="dlg-form">
+          <div class="dlg-section">
+            <div class="dlg-field">
+              <label class="dlg-label">{{ t('userGroups.selectUser') }} *</label>
+              <PrimeDropdown
+                v-model="memberFormData.userId"
+                :options="availableUsers"
+                optionLabel="label"
+                optionValue="value"
+                :placeholder="t('userGroups.selectUserPlaceholder')"
+                :filter="true"
+                :filterPlaceholder="t('userGroups.selectUserPlaceholder')"
+                class="w-full"
+                :emptyFilterMessage="t('common.noResults')"
+                :emptyMessage="t('userGroups.noUsersAvailable')"
+              />
+              <small v-if="memberError" class="dlg-help" style="color: var(--color-danger, #ef4444);">{{ memberError }}</small>
             </div>
-
-            <PrimeDropdown
-              v-else-if="relationFormData.objectType !== 'booking'"
-              v-model="relationFormData.objectId"
-              :options="objectSelectorItems"
-              optionLabel="label"
-              optionValue="value"
-              :placeholder="loadingObjects ? t('common.loading') : t('userGroups.selectObject')"
-              :loading="loadingObjects"
-              :filter="true"
-              filterPlaceholder="Cerca..."
-              class="w-full"
-              :emptyMessage="t('common.noResults')"
-            />
-
-            <input
-              v-else
-              v-model="relationFormData.objectId"
-              type="text"
-              class="field-input"
-              :placeholder="t('userGroups.objectIdPlaceholder')"
-            />
           </div>
-
-          <p v-if="relationError" class="field-error">{{ relationError }}</p>
         </div>
         <template #footer>
-          <PrimeButton :label="t('common.cancel')" icon="pi pi-times" text @click="closeRelationDialog" />
-          <PrimeButton
-            :label="t('common.add')"
-            icon="pi pi-check"
-            :loading="savingRelation"
-            :disabled="!canSaveRelation"
-            class="dialog-btn-save"
-            @click="saveRelation"
-          />
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="closeMemberDialog">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="!memberFormData.userId || savingMember" @click="saveMember">
+            <i :class="savingMember ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.add') }}
+          </button>
         </template>
-      </PrimeDialog>
+      </AppDialog>
+
+      <AppDialog
+        v-model:visible="showAddRelationDialog"
+        :header="t('userGroups.addRelation')"
+        icon="pi pi-sitemap"
+        severity="primary"
+        size="md"
+      >
+        <div class="dlg-form">
+          <div class="dlg-section">
+            <div class="dlg-fields-2">
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('userGroups.objectType') }} *</label>
+                <PrimeDropdown
+                  v-model="relationFormData.objectType"
+                  :options="objectTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :placeholder="t('userGroups.selectObjectType')"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="dlg-field">
+                <label class="dlg-label">{{ t('userGroups.relationType') }} *</label>
+                <PrimeDropdown
+                  v-model="relationFormData.relationType"
+                  :options="relationTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :placeholder="t('userGroups.selectRelationType')"
+                  class="w-full"
+                  :filter="true"
+                  filterPlaceholder="Cerca tipo relazione..."
+                  :disabled="!relationFormData.objectType"
+                />
+              </div>
+
+              <div v-if="relationFormData.objectType" class="dlg-field dlg-field-full">
+                <label class="dlg-label">{{ t('userGroups.objectName') }} *</label>
+
+                <div v-if="relationFormData.objectType === 'tenant'" class="field-readonly">
+                  <i class="pi pi-building" />
+                  <span>{{ t('userGroups.currentTenant') }}</span>
+                </div>
+
+                <PrimeDropdown
+                  v-else-if="relationFormData.objectType !== 'booking'"
+                  v-model="relationFormData.objectId"
+                  :options="objectSelectorItems"
+                  optionLabel="label"
+                  optionValue="value"
+                  :placeholder="loadingObjects ? t('common.loading') : t('userGroups.selectObject')"
+                  :loading="loadingObjects"
+                  :filter="true"
+                  filterPlaceholder="Cerca..."
+                  class="w-full"
+                  :emptyMessage="t('common.noResults')"
+                />
+
+                <input
+                  v-else
+                  v-model="relationFormData.objectId"
+                  type="text"
+                  class="field-input"
+                  :placeholder="t('userGroups.objectIdPlaceholder')"
+                />
+              </div>
+
+              <div v-if="relationError" class="dlg-field dlg-field-full">
+                <small class="dlg-help" style="color: var(--color-danger, #ef4444);">{{ relationError }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <button type="button" class="dialog-btn dialog-btn-cancel" @click="closeRelationDialog">
+            <i class="pi pi-times" />{{ t('common.cancel') }}
+          </button>
+          <button type="button" class="dialog-btn dialog-btn-save" :disabled="!canSaveRelation || savingRelation" @click="saveRelation">
+            <i :class="savingRelation ? 'pi pi-spin pi-spinner' : 'pi pi-check'" />{{ t('common.add') }}
+          </button>
+        </template>
+      </AppDialog>
     </div>
   </MainLayout>
 </template>
@@ -243,10 +252,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import PrimeButton from 'primevue/button'
-import PrimeDialog from 'primevue/dialog'
 import PrimeDropdown from 'primevue/dropdown'
 import MainLayout from '@/layouts/MainLayout.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePlantsStore } from '@/stores/plants.store'
 import { useResourcesStore } from '@/stores/resources.store'
